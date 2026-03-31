@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  // Dùng đường dẫn tương đối để request đi qua dev server (Vite) và được proxy tới backend
+  baseURL: '/api',
   headers: {
     'Content-Type': 'application/json',
   },

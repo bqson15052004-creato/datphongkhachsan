@@ -17,13 +17,13 @@ const RegisterForm = () => {
     const finalRole = role === 'partner' ? 'partner' : 'customer';
 
     try {
-      // 2. Gửi dữ liệu - Đã cập nhật đường dẫn thành /accounts/register/
+      // 2. Gửi dữ liệu - dùng endpoint /accounts/register/ (tương thích với core/urls.py)
       const response = await axiosClient.post('/accounts/register/', {
         username: values.username,
         email: values.email,
         password: values.password,
         phone: values.phone,
-        full_name: values.fullName,
+        fullName: values.fullName,
         role: finalRole
       });
 
