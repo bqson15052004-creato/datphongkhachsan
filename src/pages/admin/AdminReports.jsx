@@ -13,7 +13,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const AdminReports = () => {
-  // Dữ liệu mẫu cho báo cáo
+  // Dữ liệu mẫu
   const revenueData = [
     { key: '1', month: 'Tháng 1', amount: '150.000.000', bookings: 45, status: 'Tăng' },
     { key: '2', month: 'Tháng 2', amount: '120.000.000', bookings: 38, status: 'Giảm' },

@@ -22,7 +22,8 @@ const featuredHotels = [
 
 const Home = () => {
   const navigate = useNavigate();
-
+  const [query, setQuery] = useState('');
+  const [dates, setDates] = useState([]);
   return (
     <Layout style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
       {/* --- SỬ DỤNG NAVBAR ĐÃ TÁCH --- */}
@@ -48,13 +49,33 @@ const Home = () => {
           <Card style={{ maxWidth: '1000px', margin: '40px auto 0', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
             <Row gutter={[12, 12]} align="middle">
               <Col xs={24} md={10}>
-                <Input size="large" placeholder="Địa điểm (Nha Trang, Đà Nẵng...)" prefix={<EnvironmentOutlined />} />
+                <Input size="large" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Địa điểm (Nha Trang, Đà Nẵng...)" prefix={<EnvironmentOutlined />} />
               </Col>
               <Col xs={24} md={10}>
-                <RangePicker size="large" style={{ width: '100%' }} placeholder={['Nhận phòng', 'Trả phòng']} />
+                <RangePicker
+                  size="large"
+                  style={{ width: '100%' }}
+                  placeholder={['Nhận phòng', 'Trả phòng']}
+                  value={dates}
+                  onChange={(val) => setDates(val)}
+                />
               </Col>
               <Col xs={24} md={4}>
-                <Button size="large" type="primary" block icon={<SearchOutlined />} onClick={() => navigate('/hotels')}>
+                <Button
+                  size="large"
+                  type="primary"
+                  block
+                  icon={<SearchOutlined />}
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (query) params.set('q', query);
+                    if (dates && dates.length === 2) {
+                      params.set('from', dates[0].format('YYYY-MM-DD'));
+                      params.set('to', dates[1].format('YYYY-MM-DD'));
+                    }
+                    navigate(`/hotels?${params.toString()}`);
+                  }}
+                >
                   TÌM KIẾM
                 </Button>
               </Col>
@@ -95,7 +116,6 @@ const Home = () => {
         </div>
       </Content>
       
-      {/* Thêm Footer cho chuyên nghiệp */}
       <Layout.Footer style={{ textAlign: 'center' }}>
         HOTEL BOOKING - Đem lại trải nghiệm nghỉ dưỡng tuyệt vời cho bạn! &copy; 2026
       </Layout.Footer>

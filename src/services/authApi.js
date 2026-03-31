@@ -2,10 +2,13 @@ import axiosClient from './axiosClient';
 
 const authApi = {
   register: (data) => {
-    const url = '/auth/register';
+    const url = '/register/';
     return axiosClient.post(url, data);
   },
-  // Sau này thêm login ở đây...
+  login: (data) => {
+    const url = '/login/';
+    return axiosClient.post(url, data);
+  }
 };
 
 export default authApi;

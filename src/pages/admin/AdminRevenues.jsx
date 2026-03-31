@@ -6,7 +6,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const AdminRevenues = () => {
-  // Dữ liệu mẫu giao dịch
+  // Dữ liệu mẫu
   const transactions = [
     { key: '1', id: 'HD1001', hotel: 'Vinpearl Luxury', amount: 5000000, method: 'Chuyển khoản', date: '2026-03-20', status: 'Thành công' },
     { key: '2', id: 'HD1002', hotel: 'InterContinental', amount: 3200000, method: 'Ví điện tử (Momo)', date: '2026-03-21', status: 'Thành công' },

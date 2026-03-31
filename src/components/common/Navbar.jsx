@@ -22,10 +22,10 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('user');
     message.success('Đã đăng xuất thành công!');
-    navigate('/login');
+    navigate('/');
   };
 
-  // 2. Logic phân luồng Lịch sử đặt phòng (QUAN TRỌNG)
+  // 2. Logic phân luồng Lịch sử đặt phòng
   const handleBookingHistory = () => {
     if (user.role === 'partner') {
       navigate('/partner/bookings'); // Luồng cho đối tác
@@ -41,12 +41,6 @@ const Navbar = () => {
       label: 'Hồ sơ cá nhân',
       icon: <UserOutlined />,
       onClick: () => navigate('/profile'),
-    },
-    {
-      key: 'history',
-      label: user?.role === 'partner' ? 'Quản lý đơn đặt' : 'Chuyến đi của tôi',
-      icon: <HistoryOutlined />,
-      onClick: handleBookingHistory,
     },
     {
       type: 'divider',

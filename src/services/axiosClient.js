@@ -1,16 +1,16 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  // Đây là địa chỉ Backend, sau này nếu ông đổi cổng thì chỉ cần sửa 1 chỗ này thôi
-  baseURL: 'http://localhost:5173/api', 
+  baseURL: 'http://127.0.0.1:8000/api',
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor: Tự động gắn Token vào mỗi khi gửi yêu cầu lên server
+// Interceptor: Gửi Token đi
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,14 +19,18 @@ axiosClient.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Interceptor: Xử lý dữ liệu trả về hoặc bắt lỗi tập trung
+// Interceptor: Nhận dữ liệu về
 axiosClient.interceptors.response.use((response) => {
-  return response.data; // Trả về thẳng data để bên ngoài không cần .data nữa
+  return response.data; 
 }, (error) => {
-  // Nếu lỗi 401 (Hết hạn đăng nhập) thì có thể đẩy người dùng ra trang Login
-  if (error.response && error.response.status === 401) {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
+  // Xử lý lỗi tập trung
+  if (error.response) {
+    if (error.response.status === 401) {
+      console.warn("Phiên đăng nhập hết hạn, đang chuyển hướng...");
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('role');
+      window.location.href = '/login';
+    }
   }
   return Promise.reject(error);
 });

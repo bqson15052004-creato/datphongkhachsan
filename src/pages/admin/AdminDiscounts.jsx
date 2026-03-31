@@ -9,11 +9,11 @@ const AdminDiscounts = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Dữ liệu mẫu (sau này ông có thể cấu hình lưu mảng này vào baitap/data.json)
+  // Dữ liệu mẫu
   const [discounts, setDiscounts] = useState([
     { 
       key: '1', 
-      code: 'SONDEPTRAI20', // Mã giảm giá siêu VIP 
+      code: 'SONDEPTRAI20',
       name: 'Khuyến mãi mùa hè', 
       type: 'Khách hàng', 
       percent: 20, 
@@ -106,7 +106,6 @@ const AdminDiscounts = () => {
         <Table columns={columns} dataSource={discounts} bordered />
       </Card>
 
-      {/* Modal Thêm Mã Khuyến Mãi / Chiết Khấu */}
       <Modal 
         title="Tạo chương trình Chiết khấu / Khuyến mãi mới" 
         open={isModalVisible} 

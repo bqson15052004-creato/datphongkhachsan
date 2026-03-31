@@ -1,5 +1,5 @@
-import React, { useContext } from 'react'; // Thêm useContext
-import { AuthContext } from '../../context/AuthContext'; // Import context
+import React, { useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 
 const Checkout = () => {
   const { user, logout } = useContext(AuthContext); // Lấy user từ kho chung
@@ -20,7 +20,7 @@ const Checkout = () => {
     <Layout>
       <Header style={{ background: '#fff', display: 'flex', justifyContent: 'space-between', padding: '0 50px' }}>
         <div onClick={() => navigate('/')} style={{ cursor: 'pointer', color: '#1890ff', fontWeight: 'bold' }}>
-          🏠 HOTEL.SON
+          🏠 HOTEL BOOKING
         </div>
         
         {/* Nếu có user thì hiện Avatar, không thì hiện nút Đăng nhập */}
@@ -35,7 +35,6 @@ const Checkout = () => {
           <Button type="primary" onClick={() => navigate('/login')}>Đăng nhập</Button>
         )}
       </Header>
-      {/* ... phần còn lại của code checkout */}
     </Layout>
   );
 };

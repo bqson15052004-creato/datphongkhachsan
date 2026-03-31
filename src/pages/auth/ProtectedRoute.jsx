@@ -8,8 +8,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const user = userData ? JSON.parse(userData) : null;
 
   if (!user) {
-    // Chỉ hiện message nếu thực sự cố tình truy cập trái phép
-    // tránh hiện message trùng lặp khi redirect
+    // Chỉ hiện message nếu thực sự cố tình truy cập trái phép tránh hiện message trùng lặp khi redirect
     return <Navigate to="/login" replace />;
   }
 

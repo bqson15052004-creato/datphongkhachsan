@@ -5,26 +5,7 @@ import { CheckCircleOutlined, ExclamationCircleOutlined, MessageOutlined } from 
 const { Title, Text } = Typography;
 
 const AdminComplaints = () => {
-  const complaints = [
-    { 
-      key: '1', 
-      user: 'Nguyễn Văn A', 
-      hotel: 'Hotel Sunshine', 
-      content: 'Phòng không giống như ảnh mô tả, bẩn và có mùi.',
-      level: 'Cao', 
-      status: 'Chưa xử lý',
-      date: '2026-03-23'
-    },
-    { 
-      key: '2', 
-      user: 'Trần Thị B', 
-      hotel: 'Vinpearl Luxury', 
-      content: 'Lỗi thanh toán: Trừ tiền 2 lần nhưng chỉ báo 1 đơn.',
-      level: 'Khẩn cấp', 
-      status: 'Đang xử lý',
-      date: '2026-03-24'
-    },
-  ];
+  const complaints = [];
 
   const columns = [
     { title: 'Ngày gửi', dataIndex: 'date', key: 'date' },

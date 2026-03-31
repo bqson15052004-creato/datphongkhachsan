@@ -8,7 +8,7 @@ const AdminCategories = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Dữ liệu mẫu (sau này lấy từ data.json hoặc API)
+  // Dữ liệu mẫu
   const [categories, setCategories] = useState([
     { key: '1', name: 'Khách sạn 5 sao', type: 'Loại chỗ nghỉ', status: 'Hoạt động', desc: 'Khách sạn cao cấp có đầy đủ tiện nghi' },
     { key: '2', name: 'Resort', type: 'Loại chỗ nghỉ', status: 'Hoạt động', desc: 'Khu nghỉ dưỡng sinh thái' },
