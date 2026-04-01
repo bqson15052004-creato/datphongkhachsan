@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Layout, Input, Button, Typography, Space, Row, Col, Card, Rate, DatePicker } from 'antd';
-import { 
-  SearchOutlined, 
-  EnvironmentOutlined, 
-} from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Layout, Input, Button, Typography, Row, Col, Card, Rate, DatePicker, Space } from 'antd';
+import { SearchOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
-import beachh from '../../assets/beachh.jpg'; // Hình ảnh nền cho Hero section
+import beach_bg from '../../assets/beachh.jpg'; 
 
-const { Content } = Layout;
+const { Content, Footer } = Layout;
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
-// Dữ liệu mẫu (Sau này ông nên fetch từ data.json)
-const featuredHotels = [
+// Dữ liệu mẫu
+const featured_hotels = [
   { id: 1, name: 'Vinpearl Luxury Nha Trang', price: '2.500.000', rate: 5, image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&q=80', location: 'Nha Trang' },
   { id: 2, name: 'InterContinental Da Nang', price: '4.200.000', rate: 5, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500&q=80', location: 'Đà Nẵng' },
   { id: 3, name: 'JW Marriott Phu Quoc', price: '3.800.000', rate: 5, image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=500&q=80', location: 'Phú Quốc' },
@@ -22,42 +19,51 @@ const featuredHotels = [
 
 const Home = () => {
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  const [dates, setDates] = useState([]);
+  const [search_query, set_search_query] = useState('');
+  const [booking_dates, set_booking_dates] = useState([]);
+
+  const handle_search = () => {
+    const params = new URLSearchParams();
+    if (search_query) params.set('q', search_query);
+    if (booking_dates && booking_dates.length === 2) {
+      params.set('from', booking_dates[0].format('YYYY-MM-DD'));
+      params.set('to', booking_dates[1].format('YYYY-MM-DD'));
+    }
+    navigate(`/hotels?${params.toString()}`);
+  };
+
   return (
-    <Layout style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-      {/* --- SỬ DỤNG NAVBAR ĐÃ TÁCH --- */}
+    <Layout style={main_layout_style}>
       <Navbar />
 
       <Content>
-        {/* 1. Hero Section - Tìm Kiếm */}
-        <div style={{ 
-          background: `linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url(${beachh}) no-repeat`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          color: '#fff',
-          padding: '80px 10px',
-          textAlign: 'center',
-          width: '100%',
-        }}>
-          <Title style={{ color: '#fff', fontSize: '42px', marginBottom: '15px', maxWidth: '800px', margin: '0 auto 15px' }}>
+        {/* 1. Hero Section */}
+        <div style={hero_section_style}>
+          <Title style={hero_title_style}>
             Tận hưởng kỳ nghỉ tuyệt vời
           </Title>
-          <Text style={{ color: '#fff', fontSize: '18px', display: 'block', marginBottom: '30px' }}>
+          <Text style={hero_subtitle_style}>
             Với hơn 1.000 khách sạn cao cấp đang chờ đón bạn
           </Text>
-          <Card style={{ maxWidth: '1000px', margin: '40px auto 0', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+
+          <Card style={search_card_style}>
             <Row gutter={[12, 12]} align="middle">
               <Col xs={24} md={10}>
-                <Input size="large" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Địa điểm (Nha Trang, Đà Nẵng...)" prefix={<EnvironmentOutlined />} />
+                <Input 
+                  size="large" 
+                  value={search_query} 
+                  onChange={(e) => set_search_query(e.target.value)} 
+                  placeholder="Địa điểm (Nha Trang, Đà Nẵng...)" 
+                  prefix={<EnvironmentOutlined />} 
+                />
               </Col>
               <Col xs={24} md={10}>
                 <RangePicker
                   size="large"
-                  style={{ width: '100%' }}
+                  style={full_width_style}
                   placeholder={['Nhận phòng', 'Trả phòng']}
-                  value={dates}
-                  onChange={(val) => setDates(val)}
+                  value={booking_dates}
+                  onChange={(val) => set_booking_dates(val)}
                 />
               </Col>
               <Col xs={24} md={4}>
@@ -66,15 +72,7 @@ const Home = () => {
                   type="primary"
                   block
                   icon={<SearchOutlined />}
-                  onClick={() => {
-                    const params = new URLSearchParams();
-                    if (query) params.set('q', query);
-                    if (dates && dates.length === 2) {
-                      params.set('from', dates[0].format('YYYY-MM-DD'));
-                      params.set('to', dates[1].format('YYYY-MM-DD'));
-                    }
-                    navigate(`/hotels?${params.toString()}`);
-                  }}
+                  onClick={handle_search}
                 >
                   TÌM KIẾM
                 </Button>
@@ -84,28 +82,29 @@ const Home = () => {
         </div>
 
         {/* 2. Featured Hotels Section */}
-        <div style={{ maxWidth: '1200px', margin: '60px auto', padding: '0 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-            <Title level={2}>Khách sạn nổi bật</Title>
+        <div style={section_container_style}>
+          <div style={section_header_style}>
+            <Title level={2} style={no_margin_style}>Khách sạn nổi bật</Title>
             <Button type="link" size="large" onClick={() => navigate('/hotels')}>Xem tất cả</Button>
           </div>
 
           <Row gutter={[24, 24]}>
-            {featuredHotels.map((hotel) => (
+            {featured_hotels.map((hotel) => (
               <Col xs={24} sm={12} md={6} key={hotel.id}>
                 <Card
                   hoverable
                   onClick={() => navigate(`/hotel/${hotel.id}`)}
-                  cover={<img alt={hotel.name} src={hotel.image} style={{ height: 220, objectFit: 'cover' }} />}
-                  style={{ borderRadius: '12px', overflow: 'hidden' }}
+                  cover={<img alt={hotel.name} src={hotel.image} style={hotel_img_style} />}
+                  style={hotel_card_style}
                 >
                   <Text type="secondary"><EnvironmentOutlined /> {hotel.location}</Text>
-                  <Title level={5} style={{ margin: '8px 0', minHeight: '44px' }}>{hotel.name}</Title>
-                  <Rate disabled defaultValue={hotel.rate} style={{ fontSize: '14px' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                    <div style={{ lineHeight: 1 }}>
-                      <Text type="danger" strong style={{ fontSize: '20px' }}>{hotel.price}đ</Text>
-                      <br /><Text type="secondary" style={{ fontSize: '12px' }}>/ đêm</Text>
+                  <Title level={5} style={hotel_title_style}>{hotel.name}</Title>
+                  <Rate disabled defaultValue={hotel.rate} style={rate_style} />
+                  
+                  <div style={card_footer_style}>
+                    <div style={price_container_style}>
+                      <Text type="danger" strong style={price_text_style}>{hotel.price}đ</Text>
+                      <br /><Text type="secondary" style={per_night_style}>/ đêm</Text>
                     </div>
                     <Button type="primary" ghost>Chi tiết</Button>
                   </div>
@@ -116,11 +115,42 @@ const Home = () => {
         </div>
       </Content>
       
-      <Layout.Footer style={{ textAlign: 'center' }}>
+      <Footer style={footer_style}>
         HOTEL BOOKING - Đem lại trải nghiệm nghỉ dưỡng tuyệt vời cho bạn! &copy; 2026
-      </Layout.Footer>
+      </Footer>
     </Layout>
   );
 };
+
+// HỆ THỐNG STYLE CONSTANTS
+const main_layout_style = { minHeight: '100vh', backgroundColor: '#fff' };
+const full_width_style = { width: '100%' };
+const no_margin_style = { margin: 0 };
+
+const hero_section_style = { 
+  background: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${beach_bg}) no-repeat`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '100px 20px',
+  textAlign: 'center'
+};
+
+const hero_title_style = { color: '#fff', fontSize: '48px', marginBottom: '15px', fontWeight: '800' };
+const hero_subtitle_style = { color: '#fff', fontSize: '20px', display: 'block', marginBottom: '40px' };
+const search_card_style = { maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.15)' };
+
+const section_container_style = { maxWidth: '1200px', margin: '80px auto', padding: '0 20px' };
+const section_header_style = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' };
+
+const hotel_card_style = { borderRadius: '16px', overflow: 'hidden' };
+const hotel_img_style = { height: 220, objectFit: 'cover' };
+const hotel_title_style = { margin: '8px 0', minHeight: '44px' };
+const rate_style = { fontSize: '14px' };
+
+const card_footer_style = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' };
+const price_container_style = { lineHeight: 1 };
+const price_text_style = { fontSize: '22px' };
+const per_night_style = { fontSize: '12px' };
+const footer_style = { textAlign: 'center', padding: '40px 0', background: '#f8fafc' };
 
 export default Home;

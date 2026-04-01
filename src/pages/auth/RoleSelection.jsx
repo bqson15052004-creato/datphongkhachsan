@@ -8,13 +8,12 @@ const { Title, Text } = Typography;
 const RoleSelection = () => {
   const navigate = useNavigate();
 
-  // 1. ĐỒNG BỘ ROUTE
-  const handleSelect = (role) => {
+  const handle_select = (role) => {
     navigate(`/register/form?role=${role}`);
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={container_style}>
       <div style={{ maxWidth: 900, width: '100%' }}>
         
         {/* 1. Phần Tiêu đề*/}
@@ -32,22 +31,22 @@ const RoleSelection = () => {
           <Col xs={24} sm={11}>
             <Card 
               hoverable 
-              onClick={() => handleSelect('customer')}
+              onClick={() => handle_select('customer')}
               className="role-card customer-card"
-              style={cardStyle}
+              style={card_style}
               cover={
-                <div style={iconContainerStyle}>
+                <div style={icon_container_style}>
                   <UserOutlined style={{ fontSize: '72px', color: '#1890ff' }} />
                 </div>
               }
             >
               <Title level={3}>Tôi là Khách hàng</Title>
               <Text type="secondary" style={{ display: 'block', minHeight: '48px' }}>
-                Tìm kiếm phòng, đặt chỗ nhanh chóng và nhận ưu đãi từ hệ thống AI.
+                Tìm kiếm phòng, đặt chỗ nhanh chóng và nhận nhiều ưu đãi từ chúng tôi.
               </Text>
               <Divider />
               <Button type="primary" shape="round" icon={<ArrowRightOutlined />} block>
-                Bắt đầu ngay
+                Đăng ký để trải nghiệm
               </Button>
             </Card>
           </Col>
@@ -55,11 +54,11 @@ const RoleSelection = () => {
           <Col xs={24} sm={11}>
             <Card 
               hoverable 
-              onClick={() => handleSelect('partner')}
+              onClick={() => handle_select('partner')}
               className="role-card partner-card"
-              style={cardStyle}
+              style={card_style}
               cover={
-                <div style={iconContainerStyle}>
+                <div style={icon_container_style}>
                   <ShopOutlined style={{ fontSize: '72px', color: '#52c41a' }} />
                 </div>
               }
@@ -91,7 +90,6 @@ const RoleSelection = () => {
         </div>
       </div>
 
-      {/* 2. HIỆU ỨNG ACTIVE & HOVER: Thêm CSS nhấc card lên chuyên nghiệp */}
       <style dangerouslySetInnerHTML={{ __html: `
         .role-card {
           transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
@@ -112,8 +110,8 @@ const RoleSelection = () => {
   );
 };
 
-// 3. TỐI ƯU CODE: Tách Style ra hằng số cho gọn
-const containerStyle = {
+// Sửa các biến hằng số chứa Style
+const container_style = {
   minHeight: '100vh', 
   display: 'flex', 
   alignItems: 'center', 
@@ -122,14 +120,14 @@ const containerStyle = {
   padding: '40px 20px'
 };
 
-const cardStyle = {
+const card_style = {
   textAlign: 'center', 
   borderRadius: '20px',
   overflow: 'hidden',
   padding: '10px'
 };
 
-const iconContainerStyle = {
+const icon_container_style = {
   paddingTop: '50px',
   paddingBottom: '20px',
   display: 'flex',

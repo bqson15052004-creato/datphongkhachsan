@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, Select, InputNumber, DatePicker } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PercentageOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
 const AdminDiscounts = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [is_modal_visible, set_is_modal_visible] = useState(false);
   const [form] = Form.useForm();
 
-  // Dữ liệu mẫu
-  const [discounts, setDiscounts] = useState([
+  const [discounts, set_discounts] = useState([
     { 
       key: '1', 
       code: 'SONDEPTRAI20',
@@ -40,7 +39,7 @@ const AdminDiscounts = () => {
     },
   ]);
 
-  const columns = [
+  const table_columns = [
     { title: 'Mã Code', dataIndex: 'code', key: 'code', render: (text) => <b>{text}</b> },
     { title: 'Tên chương trình', dataIndex: 'name', key: 'name' },
     { 
@@ -78,8 +77,8 @@ const AdminDiscounts = () => {
     },
   ];
 
-  const handleAddSubmit = (values) => {
-    const newDiscount = {
+  const handle_add_submit = (values) => {
+    const new_discount = {
       key: Date.now().toString(),
       code: values.code.toUpperCase(),
       name: values.name,
@@ -88,34 +87,34 @@ const AdminDiscounts = () => {
       status: 'Đang chạy',
       expiry: values.expiry ? values.expiry.format('YYYY-MM-DD') : 'Không thời hạn'
     };
-    setDiscounts([...discounts, newDiscount]);
-    setIsModalVisible(false);
+    set_discounts([...discounts, new_discount]);
+    set_is_modal_visible(false);
     form.resetFields();
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={container_style}>
       <Card 
         title={<Title level={3} style={{ margin: 0 }}>Thiết lập Chiết khấu & Khuyến mãi</Title>}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => set_is_modal_visible(true)}>
             Tạo mã mới
           </Button>
         }
       >
-        <Table columns={columns} dataSource={discounts} bordered />
+        <Table columns={table_columns} dataSource={discounts} bordered />
       </Card>
 
       <Modal 
         title="Tạo chương trình Chiết khấu / Khuyến mãi mới" 
-        open={isModalVisible} 
+        open={is_modal_visible} 
         onOk={() => form.submit()} 
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => set_is_modal_visible(false)}
         okText="Khởi tạo"
         cancelText="Hủy bỏ"
         width={600}
       >
-        <Form form={form} layout="vertical" onFinish={handleAddSubmit}>
+        <Form form={form} layout="vertical" onFinish={handle_add_submit}>
           <Form.Item name="name" label="Tên chương trình" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
             <Input placeholder="VD: Khuyến mãi mừng khai trương" />
           </Form.Item>
@@ -126,7 +125,13 @@ const AdminDiscounts = () => {
             </Form.Item>
 
             <Form.Item name="percent" label="Mức tỷ lệ (%)" rules={[{ required: true, message: 'Nhập tỷ lệ!' }]}>
-              <InputNumber min={1} max={100} formatter={value => `${value}%`} parser={value => value.replace('%', '')} style={{ width: '100px' }} />
+              <InputNumber 
+                min={1} 
+                max={100} 
+                formatter={value => `${value}%`} 
+                parser={value => value.replace('%', '')} 
+                style={{ width: '100px' }} 
+              />
             </Form.Item>
           </Space>
 
@@ -145,5 +150,7 @@ const AdminDiscounts = () => {
     </div>
   );
 };
+
+const container_style = { padding: '24px' };
 
 export default AdminDiscounts;

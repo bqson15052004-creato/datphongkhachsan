@@ -11,74 +11,67 @@ const { Title } = Typography;
 
 const AdminPartners = () => {
   const { message } = AntApp.useApp();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState(null);
-  const [requests, setRequests] = useState([]);
+  const [is_modal_open, set_is_modal_open] = useState(false);
+  const [selected_partner, set_selected_partner] = useState(null);
+  const [requests, set_requests] = useState([]);
 
-  // 1. Lấy dữ liệu từ localStorage khi vào trang
-  const loadData = () => {
-    const allHotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-    setRequests(allHotels);
+  // 1. Lấy dữ liệu từ localStorage
+  const load_data = () => {
+    const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
+    set_requests(all_hotels);
   };
 
   useEffect(() => {
-    loadData();
-    // Lắng nghe nếu có thay đổi từ tab khác
-    window.addEventListener('storage', loadData);
-    return () => window.removeEventListener('storage', loadData);
+    load_data();
+    window.addEventListener('storage', load_data);
+    return () => window.removeEventListener('storage', load_data);
   }, []);
 
   // 2. Logic: Phê duyệt đối tác
-  const handleApprove = (id) => {
+  const handle_approve = (id) => {
     Modal.confirm({
       title: 'Xác nhận phê duyệt?',
       content: 'Bạn có chắc chắn muốn duyệt hồ sơ đối tác này? Khách sạn sẽ được hiển thị trên hệ thống ngay lập tức.',
       okText: 'Duyệt ngay',
       cancelText: 'Hủy',
       onOk: () => {
-        const allHotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-        const updated = allHotels.map(req => 
+        const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
+        const updated = all_hotels.map(req => 
           req.id === id ? { ...req, status: 'Đã duyệt' } : req
         );
         
-        // Lưu lại vào localStorage
         localStorage.setItem('all_hotels', JSON.stringify(updated));
-        
-        // KÍCH HOẠT SỰ KIỆN STORAGE THỦ CÔNG ĐỂ SIDEBAR CẬP NHẬT CON SỐ
         window.dispatchEvent(new Event('storage'));
         
-        // Cập nhật lại giao diện tại chỗ
-        setRequests(updated);
+        set_requests(updated);
         message.success('Đã phê duyệt đối tác thành công!');
-        setIsModalOpen(false); 
+        set_is_modal_open(false); 
       }
     });
   };
 
   // 3. Logic: Từ chối đối tác
-  const handleReject = (id) => {
+  const handle_reject = (id) => {
     Modal.confirm({
       title: 'Xác nhận từ chối?',
       content: 'Bạn có chắc chắn muốn từ chối yêu cầu đăng ký này?',
       okText: 'Từ chối',
       okType: 'danger',
       onOk: () => {
-        const allHotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-        const updated = allHotels.filter(req => req.id !== id);
+        const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
+        const updated = all_hotels.filter(req => req.id !== id);
         
         localStorage.setItem('all_hotels', JSON.stringify(updated));
-
-        // KÍCH HOẠT SỰ KIỆN STORAGE THỦ CÔNG
         window.dispatchEvent(new Event('storage'));
 
-        setRequests(updated);
+        set_requests(updated);
         message.warning('Đã từ chối yêu cầu đăng ký.');
-        setIsModalOpen(false);
+        set_is_modal_open(false);
       }
     });
   };
 
-  const columns = [
+  const table_columns = [
     { title: 'Mã yêu cầu', dataIndex: 'id', key: 'id' },
     { title: 'Tên Khách sạn/Đối tác', dataIndex: 'name', key: 'name' }, 
     { title: 'Người đại diện', dataIndex: 'owner', key: 'owner' },
@@ -100,7 +93,7 @@ const AdminPartners = () => {
         <Space size="middle">
           <Button 
             icon={<EyeOutlined />} 
-            onClick={() => { setSelectedPartner(record); setIsModalOpen(true); }}
+            onClick={() => { set_selected_partner(record); set_is_modal_open(true); }}
           >
             Xem chi tiết
           </Button>
@@ -108,7 +101,7 @@ const AdminPartners = () => {
             <Button 
               type="primary" 
               icon={<CheckCircleOutlined />} 
-              onClick={() => handleApprove(record.id)}
+              onClick={() => handle_approve(record.id)}
             >
               Duyệt
             </Button>
@@ -119,43 +112,43 @@ const AdminPartners = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Card title={<Title level={3} style={{margin:0}}><SafetyOutlined /> Phê duyệt Đối tác & Khách sạn</Title>}>
+    <div style={container_style}>
+      <Card title={<Title level={3} style={title_style}><SafetyOutlined /> Phê duyệt Đối tác & Khách sạn</Title>}>
         <Tabs defaultActiveKey="1" items={[
           { 
             key: '1', 
             label: 'Yêu cầu chờ duyệt', 
-            children: <Table columns={columns} dataSource={requests.filter(r => r.status === 'Đang chờ')} rowKey="id" /> 
+            children: <Table columns={table_columns} dataSource={requests.filter(r => r.status === 'Đang chờ')} rowKey="id" /> 
           },
           { 
             key: '2', 
             label: 'Tất cả đối tác', 
-            children: <Table columns={columns} dataSource={requests} rowKey="id" /> 
+            children: <Table columns={table_columns} dataSource={requests} rowKey="id" /> 
           },
         ]} />
       </Card>
 
       <Modal
         title="Chi tiết hồ sơ đăng ký"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        open={is_modal_open}
+        onCancel={() => set_is_modal_open(false)}
         footer={[
-          <Button key="back" onClick={() => setIsModalOpen(false)}>Đóng</Button>,
-          selectedPartner?.status === 'Đang chờ' && (
-            <Button key="reject" danger onClick={() => handleReject(selectedPartner.id)}>Từ chối</Button>
+          <Button key="back" onClick={() => set_is_modal_open(false)}>Đóng</Button>,
+          selected_partner?.status === 'Đang chờ' && (
+            <Button key="reject" danger onClick={() => handle_reject(selected_partner.id)}>Từ chối</Button>
           ),
-          selectedPartner?.status === 'Đang chờ' && (
-            <Button key="approve" type="primary" onClick={() => handleApprove(selectedPartner.id)}>Duyệt hồ sơ</Button>
+          selected_partner?.status === 'Đang chờ' && (
+            <Button key="approve" type="primary" onClick={() => handle_approve(selected_partner.id)}>Duyệt hồ sơ</Button>
           ),
         ]}
         width={700}
       >
-        {selectedPartner && (
+        {selected_partner && (
           <Descriptions bordered column={1}>
-            <Descriptions.Item label="Tên cơ sở">{selectedPartner.name}</Descriptions.Item>
-            <Descriptions.Item label="Chủ sở hữu">{selectedPartner.owner || 'Chưa cập nhật'}</Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ kinh doanh">{selectedPartner.address}</Descriptions.Item>
-            <Descriptions.Item label="Mô tả">{selectedPartner.description || 'Không có mô tả'}</Descriptions.Item>
+            <Descriptions.Item label="Tên cơ sở">{selected_partner.name}</Descriptions.Item>
+            <Descriptions.Item label="Chủ sở hữu">{selected_partner.owner || 'Chưa cập nhật'}</Descriptions.Item>
+            <Descriptions.Item label="Địa chỉ kinh doanh">{selected_partner.address}</Descriptions.Item>
+            <Descriptions.Item label="Mô tả">{selected_partner.description || 'Không có mô tả'}</Descriptions.Item>
             <Descriptions.Item label="Giấy phép kinh doanh">
               <Badge status="processing" text="Đã xác thực thông tin" />
             </Descriptions.Item>
@@ -165,5 +158,8 @@ const AdminPartners = () => {
     </div>
   );
 };
+
+const container_style = { padding: '24px' };
+const title_style = { margin: 0 };
 
 export default AdminPartners;

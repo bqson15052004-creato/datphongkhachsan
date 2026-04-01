@@ -7,28 +7,27 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 const { Title, Text } = Typography;
 
 const RegisterForm = () => {
-  const [searchParams] = useSearchParams();
+  const [search_params] = useSearchParams();
   const navigate = useNavigate();
   const { message } = AntApp.useApp(); 
-  const role = searchParams.get('role'); 
+  
+  const current_role = search_params.get('role'); 
 
-  const onFinish = async (values) => {
-    // 1. Xác định Role: mặc định là customer, trừ khi link có ?role=partner
-    const finalRole = role === 'partner' ? 'partner' : 'customer';
+  const on_finish = async (values) => {
+    const final_role = current_role === 'partner' ? 'partner' : 'customer';
 
     try {
-      // 2. Gửi dữ liệu - dùng endpoint /accounts/register/ (tương thích với core/urls.py)
       const response = await axiosClient.post('/accounts/register/', {
         username: values.username,
         email: values.email,
         password: values.password,
         phone: values.phone,
-        fullName: values.fullName,
-        role: finalRole
+        full_name: values.full_name,
+        role: final_role
       });
 
       if (response) {
-        message.success(`Đăng ký thành công với vai trò ${finalRole === 'partner' ? 'Đối tác' : 'Khách hàng'}!`);
+        message.success(`Đăng ký thành công với vai trò ${final_role === 'partner' ? 'Đối tác' : 'Khách hàng'}!`);
         navigate('/login');
       }
 
@@ -36,12 +35,12 @@ const RegisterForm = () => {
       console.error("Lỗi đăng ký:", error);
       
       if (error.response && error.response.data) {
-        const errorData = error.response.data;
+        const error_data = error.response.data;
         
-        if (typeof errorData === 'object') {
-          const firstErrorKey = Object.keys(errorData)[0];
-          const firstErrorMessage = Object.values(errorData)[0];
-          message.error(`${firstErrorKey}: ${firstErrorMessage}`);
+        if (typeof error_data === 'object') {
+          const first_error_key = Object.keys(error_data)[0];
+          const first_error_message = Object.values(error_data)[0];
+          message.error(`${first_error_key}: ${first_error_message}`);
         } else {
           message.error('Đăng ký thất bại, vui lòng kiểm tra lại thông tin!');
         }
@@ -52,18 +51,18 @@ const RegisterForm = () => {
   };
 
   return (
-    <div style={containerStyle}>
-      <Card style={cardStyle}>
+    <div style={container_style}>
+      <Card style={card_style}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <Title level={3} style={{ color: '#1890ff', marginBottom: '8px' }}>Đăng ký tài khoản</Title>
           <Text type="secondary">
-            Đăng ký tư cách: <b style={{ color: role === 'partner' ? '#52c41a' : '#1890ff' }}>
-              {role === 'partner' ? 'Đối tác' : 'Khách hàng'}
+            Đăng ký tư cách: <b style={{ color: current_role === 'partner' ? '#52c41a' : '#1890ff' }}>
+              {current_role === 'partner' ? 'Đối tác' : 'Khách hàng'}
             </b>
           </Text>
         </div>
 
-        <Form name="register" onFinish={onFinish} layout="vertical" size="large">
+        <Form name="register" onFinish={on_finish} layout="vertical" size="large">
           
           <Form.Item
             name="username"
@@ -77,11 +76,11 @@ const RegisterForm = () => {
           </Form.Item>
 
           <Form.Item
-            name="fullName"
+            name="full_name"
             rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
-            normalize={(value) => {
-              if (!value) return value;
-              return value
+            normalize={(input_value) => {
+              if (!input_value) return input_value;
+              return input_value
                 .trim()
                 .toLowerCase()
                 .split(' ')
@@ -130,8 +129,8 @@ const RegisterForm = () => {
             rules={[
               { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
               ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) return Promise.resolve();
+                validator(_, confirm_value) {
+                  if (!confirm_value || getFieldValue('password') === confirm_value) return Promise.resolve();
                   return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
                 },
               }),
@@ -158,7 +157,8 @@ const RegisterForm = () => {
   );
 };
 
-const containerStyle = { 
+// Sửa các biến Style bọc ngoài
+const container_style = { 
   minHeight: '100vh', 
   display: 'flex', 
   alignItems: 'center', 
@@ -167,7 +167,7 @@ const containerStyle = {
   padding: '40px 20px'
 };
 
-const cardStyle = { 
+const card_style = { 
   maxWidth: 450, 
   width: '100%', 
   borderRadius: '16px', 

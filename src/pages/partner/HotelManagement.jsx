@@ -1,143 +1,231 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Card, Tag, Space, Modal, 
-  Form, Input, Select, Upload, Typography, Row, Col, message 
+  Form, Input, Select, Upload, Typography, Row, Col, message, Popconfirm 
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined } from '@ant-design/icons';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const HotelManagement = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [is_modal_open, set_is_modal_open] = useState(false);
+  const [editing_hotel, set_editing_hotel] = useState(null);
   const [form] = Form.useForm();
-  const [hotels, setHotels] = useState([]);
+  const [hotel_list, set_hotel_list] = useState([]);
 
-  // 1. Lấy dữ liệu từ LocalStorage khi trang vừa load
+  // 1. Load dữ liệu khởi tạo
   useEffect(() => {
-    const savedHotels = JSON.parse(localStorage.getItem('all_hotels')) || [
+    const saved_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [
       {
         id: 'H001',
         name: 'Vinpearl Luxury Nha Trang',
         address: 'Nha Trang, Khánh Hòa',
         status: 'Đã duyệt',
         rooms: 15,
+        type: 'resort'
       }
     ];
-    setHotels(savedHotels);
+    set_hotel_list(saved_hotels);
   }, []);
 
+  // 2. Hàm lưu dữ liệu vào LocalStorage
+  const save_to_local = (data) => {
+    set_hotel_list(data);
+    localStorage.setItem('all_hotels', JSON.stringify(data));
+  };
+
+  // 3. Xử lý thêm mới hoặc cập nhật
+  const on_finish = (values) => {
+    if (editing_hotel) {
+      // Logic Cập nhật
+      const updated_data = hotel_list.map(h => 
+        h.id === editing_hotel.id ? { ...h, ...values } : h
+      );
+      save_to_local(updated_data);
+      message.success('Cập nhật thông tin khách sạn thành công!');
+    } else {
+      // Logic Thêm mới
+      const new_hotel = {
+        id: `REQ${Date.now()}`,
+        ...values,
+        status: 'Đang chờ', 
+        rooms: 0,
+        date_created: new Date().toLocaleDateString('vi-VN')
+      };
+      save_to_local([...hotel_list, new_hotel]);
+      message.success('Đã gửi yêu cầu đăng ký tới Admin!');
+    }
+    close_modal();
+  };
+
+  // 4. Xử lý Xóa
+  const handle_delete = (id) => {
+    const filtered_data = hotel_list.filter(h => h.id !== id);
+    save_to_local(filtered_data);
+    message.success('Đã gỡ bỏ khách sạn.');
+  };
+
+  // 5. Điều khiển Modal
+  const open_modal = (hotel = null) => {
+    if (hotel) {
+      set_editing_hotel(hotel);
+      form.setFieldsValue(hotel);
+    }
+    set_is_modal_open(true);
+  };
+
+  const close_modal = () => {
+    set_is_modal_open(false);
+    set_editing_hotel(null);
+    form.resetFields();
+  };
+
   const columns = [
-    { title: 'Mã HS', dataIndex: 'id', key: 'id' },
-    { title: 'Tên khách sạn', dataIndex: 'name', key: 'name' },
-    { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
-    { title: 'Số phòng', dataIndex: 'rooms', key: 'rooms' },
+    { 
+      title: 'Mã số', 
+      dataIndex: 'id', 
+      key: 'id',
+      render: (id) => <Text code>{id}</Text>
+    },
+    { 
+      title: 'Thông tin khách sạn', 
+      key: 'hotel_info',
+      render: (record) => (
+        <div>
+          <Text strong>{record.name}</Text><br/>
+          <Text type="secondary" style={{fontSize: 12}}>{record.address}</Text>
+        </div>
+      )
+    },
+    { 
+      title: 'Loại hình', 
+      dataIndex: 'type', 
+      key: 'type',
+      render: (type) => <Tag color="blue">{type?.toUpperCase()}</Tag>
+    },
+    { 
+      title: 'Quy mô', 
+      dataIndex: 'rooms', 
+      key: 'rooms',
+      render: (rooms) => `${rooms} phòng`
+    },
     { 
       title: 'Trạng thái', 
       dataIndex: 'status', 
       key: 'status',
-      render: (status) => (
-        // Đồng bộ màu sắc: Đã duyệt (green), Đang chờ (orange)
-        <Tag color={status === 'Đã duyệt' ? 'green' : 'orange'}>
-          {status.toUpperCase()}
-        </Tag>
-      )
+      render: (status) => {
+        const is_approved = status === 'Đã duyệt';
+        return (
+          <Tag color={is_approved ? 'green' : 'orange'} icon={is_approved ? <ShopOutlined /> : null}>
+            {status.toUpperCase()}
+          </Tag>
+        );
+      }
     },
     {
       title: 'Thao tác',
       key: 'action',
       render: (_, record) => (
-        <Space size="middle">
-          <Button icon={<EditOutlined />} />
-          <Button danger icon={<DeleteOutlined />} />
+        <Space>
+          <Button 
+            type="text" 
+            icon={<EditOutlined style={{color: '#1890ff'}} />} 
+            onClick={() => open_modal(record)}
+          />
+          <Popconfirm
+            title="Bạn có chắc chắn muốn xóa?"
+            onConfirm={() => handle_delete(record.id)}
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true }}
+          >
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
-  // 2. Hàm xử lý nạp dữ liệu tự động
-  const onFinish = (values) => {
-    const newHotel = {
-      id: `REQ${Date.now()}`, // Tạo mã yêu cầu duy nhất
-      ...values,
-      status: 'Đang chờ', // Trạng thái để Admin nhận thông báo
-      rooms: 0,
-      date: new Date().toLocaleDateString('vi-VN')
-    };
-
-    const updatedHotels = [...hotels, newHotel];
-    
-    // Lưu vào State để hiển thị ngay
-    setHotels(updatedHotels);
-    
-    // Lưu vào LocalStorage để Admin có thể đọc được
-    localStorage.setItem('all_hotels', JSON.stringify(updatedHotels));
-    
-    message.success('Đã gửi yêu cầu đăng ký khách sạn tới Admin!');
-    setIsModalOpen(false);
-    form.resetFields();
-  };
-
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={container_style}>
       <Card 
-        title={<Title level={3} style={{margin:0}}>Quản lý Khách sạn của bạn</Title>}
+        bordered={false}
+        style={card_style}
+        title={
+          <Space>
+            <ShopOutlined style={{fontSize: 24, color: '#1890ff'}} />
+            <Title level={3} style={no_margin_style}>Quản lý Cơ sở lưu trú</Title>
+          </Space>
+        }
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-            Thêm khách sạn mới
+          <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => open_modal()} shape="round">
+            Đăng ký khách sạn mới
           </Button>
         }
       >
-        <Table columns={columns} dataSource={hotels} rowKey="id" />
+        <Table 
+          columns={columns} 
+          dataSource={hotel_list} 
+          rowKey="id" 
+          pagination={{ pageSize: 6 }}
+        />
       </Card>
 
       <Modal 
-        title="Đăng ký khách sạn mới" 
-        open={isModalOpen} 
-        onCancel={() => setIsModalOpen(false)}
+        title={editing_hotel ? "Chỉnh sửa thông tin khách sạn" : "Đăng ký cơ sở kinh doanh mới"} 
+        open={is_modal_open} 
+        onCancel={close_modal}
         onOk={() => form.submit()}
-        width={800}
-        okText="Gửi yêu cầu"
-        cancelText="Hủy"
+        width={720}
+        okText={editing_hotel ? "Lưu thay đổi" : "Gửi yêu cầu đăng ký"}
+        cancelText="Hủy bỏ"
+        centered
       >
-        <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form form={form} layout="vertical" onFinish={on_finish} style={{marginTop: 20}}>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="name" label="Tên khách sạn" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
-                <Input placeholder="Ví dụ: Khách sạn Mường Thanh" />
+            <Col span={14}>
+              <Form.Item name="name" label="Tên thương mại" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
+                <Input placeholder="Ví dụ: Khách sạn Landmark 81" />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="type" label="Loại hình" rules={[{ required: true }]}>
+            <Col span={10}>
+              <Form.Item name="type" label="Loại hình kinh doanh" rules={[{ required: true }]}>
                 <Select placeholder="Chọn loại hình">
                   <Select.Option value="hotel">Khách sạn</Select.Option>
-                  <Select.Option value="resort">Resort</Select.Option>
-                  <Select.Option value="homestay">Homestay</Select.Option>
+                  <Select.Option value="resort">Khu nghỉ dưỡng (Resort)</Select.Option>
+                  <Select.Option value="homestay">Homestay / Villa</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
           </Row>
           
-          <Form.Item name="address" label="Địa chỉ chi tiết" rules={[{ required: true }]}>
-            <Input placeholder="Số nhà, tên đường, tỉnh thành..." />
+          <Form.Item name="address" label="Địa chỉ kinh doanh" rules={[{ required: true }]}>
+            <Input placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh..." />
           </Form.Item>
 
-          <Form.Item name="description" label="Mô tả khách sạn">
-            <TextArea rows={4} placeholder="Giới thiệu ngắn gọn về khách sạn của bạn" />
+          <Form.Item name="description" label="Giới thiệu chung">
+            <TextArea rows={4} placeholder="Mô tả ngắn về vị trí, dịch vụ đặc sắc..." />
           </Form.Item>
 
-          <Form.Item label="Hình ảnh khách sạn">
+          <Form.Item label="Giấy phép kinh doanh / Hình ảnh mặt tiền">
             <Upload listType="picture-card" beforeUpload={() => false}>
               <div>
                 <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
+                <div style={{ marginTop: 8 }}>Tải ảnh</div>
               </div>
             </Upload>
+            <Text type="secondary" style={{fontSize: 12}}>* Định dạng JPG, PNG. Tối đa 5MB.</Text>
           </Form.Item>
         </Form>
       </Modal>
     </div>
   );
 };
+
+// Hệ thống Style Constants
+const container_style = { padding: '30px', background: '#f0f2f5', minHeight: '100vh' };
+const card_style = { borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' };
+const no_margin_style = { margin: 0 };
 
 export default HotelManagement;

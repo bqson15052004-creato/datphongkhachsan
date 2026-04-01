@@ -8,22 +8,22 @@ const { Title } = Typography;
 const AdminLogin = () => {
   const navigate = useNavigate();
 
-  const ADMIN_CREDENTIALS = {
+  const admin_credentials = {
     email: 'admin@gmail.com',
     username: 'admin@gmail.com',
     password: 'admin123',
-    fullName: 'Quản trị viên',
+    full_name: 'Quản trị viên',
     role: 'admin',
   };
 
-  const onFinish = (values) => {
+  const on_finish = (values) => {
     const { email, password } = values;
 
-    if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-      message.success(`Chào mừng ${ADMIN_CREDENTIALS.fullName} đã quay trở lại!`);
+    if (email === admin_credentials.email && password === admin_credentials.password) {
+      message.success(`Chào mừng ${admin_credentials.full_name} đã quay trở lại!`);
       
-      localStorage.setItem('user', JSON.stringify(ADMIN_CREDENTIALS)); 
-      localStorage.setItem('adminToken', 'secret-key-123');
+      localStorage.setItem('user', JSON.stringify(admin_credentials)); 
+      localStorage.setItem('admin_token', 'secret-key-123');
       navigate('/'); 
     } else {
       message.error('Thông tin đăng nhập không chính xác! Vui lòng thử lại.');
@@ -31,27 +31,16 @@ const AdminLogin = () => {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh', 
-      background: 'linear-gradient(135deg, #1890ff 0%, #001529 100%)' 
-    }}>
-      <Card style={{ 
-        width: 400, 
-        borderRadius: 12, 
-        boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-        padding: '20px'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <Title level={2} style={{ color: '#1890ff', margin: 0 }}>HOTEL BOOKING ADMIN</Title>
+    <div style={container_style}>
+      <Card style={card_style}>
+        <div style={header_style}>
+          <Title level={2} style={title_style}>HOTEL BOOKING ADMIN</Title>
           <Typography.Text type="secondary">Đăng nhập bằng tài khoản admin</Typography.Text>
         </div>
 
         <Form 
           name="admin_auth" 
-          onFinish={onFinish} 
+          onFinish={on_finish} 
           layout="vertical" 
           size="large"
         >
@@ -72,7 +61,7 @@ const AdminLogin = () => {
           </Form.Item>
 
           <Form.Item style={{ marginTop: 10 }}>
-            <Button type="primary" htmlType="submit" block style={{ height: 45, fontWeight: 'bold' }}>
+            <Button type="primary" htmlType="submit" block style={button_style}>
               VÀO HỆ THỐNG
             </Button>
           </Form.Item>
@@ -80,6 +69,37 @@ const AdminLogin = () => {
       </Card>
     </div>
   );
+};
+
+// Hệ thống Style Hằng số
+const container_style = { 
+  display: 'flex', 
+  justifyContent: 'center', 
+  alignItems: 'center', 
+  height: '100vh', 
+  background: 'linear-gradient(135deg, #1890ff 0%, #001529 100%)' 
+};
+
+const card_style = { 
+  width: 400, 
+  borderRadius: 12, 
+  boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+  padding: '20px'
+};
+
+const header_style = { 
+  textAlign: 'center', 
+  marginBottom: 30 
+};
+
+const title_style = { 
+  color: '#1890ff', 
+  margin: 0 
+};
+
+const button_style = { 
+  height: 45, 
+  fontWeight: 'bold' 
 };
 
 export default AdminLogin;

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Layout, Row, Col, Typography, Button, Card, Tag, 
-  Table, Tabs, Image, Rate, Divider, Space, Avatar, Dropdown, Spin, List 
+  Table, Tabs, Image, Rate, Divider, Space, Avatar, Spin, List, Empty 
 } from 'antd';
 import { 
   EnvironmentOutlined, CheckCircleOutlined, InfoCircleOutlined,
-  ArrowLeftOutlined, UserOutlined, LogoutOutlined, SolutionOutlined, HomeOutlined 
+  ArrowLeftOutlined, UserOutlined, HomeOutlined 
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '../../services/axiosClient';
 import Navbar from '../../components/common/Navbar';
 
 const { Content } = Layout;
@@ -18,40 +18,39 @@ const HotelDetail = () => {
   const { id } = useParams(); 
   const navigate = useNavigate();
   
-  const [currentUser, setCurrentUser] = useState(null);
-  const [room, setRoom] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [current_user, set_current_user] = useState(null);
+  const [room, set_room] = useState(null);
+  const [reviews, set_reviews] = useState([]);
+  const [is_loading, set_is_loading] = useState(true);
 
   useEffect(() => {
-    // 1. Lấy thông tin user
     const user = JSON.parse(localStorage.getItem('user'));
-    if (user) setCurrentUser(user);
+    if (user) set_current_user(user);
 
-    const fetchData = async () => {
-      setLoading(true);
+    const fetch_data = async () => {
+      set_is_loading(true);
       try {
-        // 2. Gọi API lấy chi tiết phòng
-        const roomRes = await axios.get(`http://127.0.0.1:8000/api/hotels/rooms/${id}/`);
-        setRoom(roomRes.data);
+        // 1. Lấy chi tiết phòng
+        const room_res = await axiosClient.get(`/hotels/rooms/${id}/`);
+        set_room(room_res);
 
-        // 3. Gọi API lấy danh sách đánh giá của phòng này
-        const reviewRes = await axios.get(`http://127.0.0.1:8000/api/hotels/reviews/`, {
+        // 2. Lấy danh sách đánh giá
+        const review_res = await axiosClient.get(`/hotels/reviews/`, {
           params: { room_id: id }
         });
-        setReviews(reviewRes.data);
+        set_reviews(review_res);
       } catch (error) {
         console.error("Lỗi lấy dữ liệu:", error);
       } finally {
-        setLoading(false);
+        set_is_loading(false);
       }
     };
 
-    fetchData();
+    fetch_data();
   }, [id]);
 
-  // Cấu hình bảng hiển thị thông tin đặt phòng (Show chính cái phòng đang xem)
-  const columns = [
+  // Cấu hình bảng hiển thị thông tin đặt phòng
+  const table_columns = [
     { 
       title: 'Hạng phòng', 
       dataIndex: 'room_type_name', 
@@ -85,22 +84,22 @@ const HotelDetail = () => {
     },
   ];
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
-  if (!room) return <div style={{ textAlign: 'center', padding: '100px' }}><Text>Không tìm thấy thông tin.</Text></div>;
+  if (is_loading) return <div style={loading_container_style}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
+  if (!room) return <div style={loading_container_style}><Empty description="Không tìm thấy thông tin phòng" /></div>;
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#fff' }}>
+    <Layout style={main_layout_style}>
       <Navbar />
 
-      <Content style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 50px', background: '#fff', width: '100%' }}>
-        <div style={{ marginBottom: 10 }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ paddingLeft: 0 }}>
+      <Content style={content_wrapper_style}>
+        <div style={back_container_style}>
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={back_btn_style}>
             Quay lại trang danh sách
           </Button>
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <Title level={2} style={{ marginBottom: 4 }}>Khách sạn {room.hotel_owner_name}</Title>
+        <div style={header_section_style}>
+          <Title level={2} style={no_margin_style}>Khách sạn {room.hotel_owner_name}</Title>
           <Space size="large">
             <Rate disabled defaultValue={5} />
             <Text type="secondary"><EnvironmentOutlined /> Thuộc hệ thống đối tác của nền tảng</Text>
@@ -108,28 +107,29 @@ const HotelDetail = () => {
           </Space>
         </div>
 
-        {/* Khối hình ảnh */}
+        {/* Khối hình ảnh Grid */}
         <Row gutter={[12, 12]}>
           <Col span={16}>
             <Image 
               src={room.image || 'https://via.placeholder.com/800x450'} 
-              style={{ width: '100%', height: 450, objectFit: 'cover', borderRadius: 12 }} 
+              style={main_image_style} 
             />
           </Col>
           <Col span={8}>
-            <Space direction="vertical" size={12} style={{ width: '100%' }}>
-              <Image src="https://via.placeholder.com/400x219?text=Phòng+Khách" style={{ width: '100%', height: 219, objectFit: 'cover', borderRadius: 12 }} />
-              <Image src="https://via.placeholder.com/400x219?text=Tiện+Nghi" style={{ width: '100%', height: 219, objectFit: 'cover', borderRadius: 12 }} />
+            <Space direction="vertical" size={12} style={full_width_style}>
+              <Image src="https://via.placeholder.com/400x219?text=Phòng+Khách" style={sub_image_style} />
+              <Image src="https://via.placeholder.com/400x219?text=Tiện+Nghi" style={sub_image_style} />
             </Space>
           </Col>
         </Row>
 
-        <Row gutter={40} style={{ marginTop: 40 }}>
+        <Row gutter={40} style={main_row_style}>
+          {/* Cột trái: Nội dung chi tiết */}
           <Col span={16}>
             <Tabs defaultActiveKey="1">
               <Tabs.TabPane tab="Tổng quan" key="1">
                 <Title level={4}>Thông tin hạng phòng: {room.room_type_name}</Title>
-                <Paragraph style={{ fontSize: 16, lineHeight: 1.8 }}>
+                <Paragraph style={paragraph_style}>
                   Trải nghiệm không gian nghỉ dưỡng tuyệt vời tại phòng {room.room_number}. 
                   Với thiết kế hiện đại, đầy đủ tiện nghi và dịch vụ chuyên nghiệp từ đối tác {room.hotel_owner_name}.
                 </Paragraph>
@@ -157,7 +157,9 @@ const HotelDetail = () => {
                           <div>
                             <Text>{item.comment}</Text>
                             <br />
-                            <Text type="secondary" style={{ fontSize: 12 }}>{new Date(item.created_at).toLocaleDateString('vi-VN')}</Text>
+                            <Text type="secondary" style={date_text_style}>
+                              {new Date(item.created_at).toLocaleDateString('vi-VN')}
+                            </Text>
                           </div>
                         }
                       />
@@ -168,11 +170,11 @@ const HotelDetail = () => {
               </Tabs.TabPane>
             </Tabs>
 
-            <div id="room-selection" style={{ marginTop: 40 }}>
+            <div id="room-selection" style={selection_section_style}>
               <Title level={4}>Xác nhận thông tin phòng</Title>
               <Table 
-                columns={columns} 
-                dataSource={[room]} // Truyền chính object room hiện tại vào mảng
+                columns={table_columns} 
+                dataSource={[room]} 
                 pagination={false} 
                 bordered 
                 rowKey="id" 
@@ -180,16 +182,16 @@ const HotelDetail = () => {
             </div>
           </Col>
 
-          {/* Cột Sticky bên phải */}
+          {/* Cột phải: Sticky Booking Card */}
           <Col span={8}>
-            <Card bordered style={{ borderRadius: 16, backgroundColor: '#f9f9f9', position: 'sticky', top: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-              <Title level={4} style={{ color: '#ff4d4f', marginBottom: 0 }}>
+            <Card bordered style={sticky_card_style}>
+              <Title level={4} style={price_title_style}>
                 {parseFloat(room.price).toLocaleString()} ₫
               </Title>
               <Text type="secondary">/ đêm / phòng</Text>
               <Divider />
               <Title level={5}><InfoCircleOutlined /> Tại sao nên đặt ở đây?</Title>
-              <ul style={{ paddingLeft: 20, color: '#4b5563' }}>
+              <ul style={perk_list_style}>
                 <li>Giá tốt nhất cho hạng {room.room_type_name}</li>
                 <li>Hỗ trợ đổi ngày đặt linh hoạt</li>
                 <li>Xác nhận phòng ngay lập tức</li>
@@ -201,6 +203,7 @@ const HotelDetail = () => {
                 shape="round"
                 disabled={!room.is_available}
                 onClick={() => document.getElementById('room-selection').scrollIntoView({ behavior: 'smooth' })}
+                style={cta_btn_style}
               >
                 {room.is_available ? 'Kiểm tra & Đặt ngay' : 'Hết phòng'}
               </Button>
@@ -210,6 +213,32 @@ const HotelDetail = () => {
       </Content>
     </Layout>
   );
+};
+
+// Hệ thống Style Constants
+const main_layout_style = { minHeight: '100vh', background: '#fff' };
+const content_wrapper_style = { maxWidth: 1200, margin: '0 auto', padding: '20px 50px', width: '100%' };
+const full_width_style = { width: '100%' };
+const no_margin_style = { marginBottom: 4 };
+const loading_container_style = { textAlign: 'center', padding: '100px' };
+const back_container_style = { marginBottom: 10 };
+const back_btn_style = { paddingLeft: 0 };
+const header_section_style = { marginBottom: 20 };
+const main_image_style = { width: '100%', height: 450, objectFit: 'cover', borderRadius: 12 };
+const sub_image_style = { width: '100%', height: 219, objectFit: 'cover', borderRadius: 12 };
+const main_row_style = { marginTop: 40 };
+const paragraph_style = { fontSize: 16, lineHeight: 1.8 };
+const date_text_style = { fontSize: 12 };
+const selection_section_style = { marginTop: 40 };
+const price_title_style = { color: '#ff4d4f', marginBottom: 0 };
+const perk_list_style = { paddingLeft: 20, color: '#4b5563' };
+const cta_btn_style = { height: 50, fontWeight: 'bold' };
+const sticky_card_style = { 
+  borderRadius: 16, 
+  backgroundColor: '#f9f9f9', 
+  position: 'sticky', 
+  top: 100, 
+  boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
 };
 
 export default HotelDetail;

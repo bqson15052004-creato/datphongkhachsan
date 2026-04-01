@@ -1,40 +1,56 @@
-import React, { useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
+import React, { createContext, useEffect, useState } from 'react';
 
-const Checkout = () => {
-  const { user, logout } = useContext(AuthContext); // Lấy user từ kho chung
-  const navigate = useNavigate();
+export const AuthContext = createContext({
+  user: null,
+  login: () => {},
+  logout: () => {},
+  setUser: () => {},
+});
 
-  // Menu dùng hàm logout từ Context
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<SolutionOutlined />}>Hồ sơ của {user?.name}</Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} danger onClick={logout}>
-        Đăng xuất
-      </Menu.Item>
-    </Menu>
-  );
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'user') {
+        setUser(e.newValue ? JSON.parse(e.newValue) : null);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const login = (userObj, tokens = {}) => {
+    if (tokens.access) localStorage.setItem('access_token', tokens.access);
+    if (tokens.refresh) localStorage.setItem('refresh_token', tokens.refresh);
+    if (userObj) {
+      localStorage.setItem('user', JSON.stringify(userObj));
+      if (userObj.role) localStorage.setItem('role', userObj.role);
+    }
+    setUser(userObj);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('role');
+    setUser(null);
+    window.location.href = '/';
+  };
 
   return (
-    <Layout>
-      <Header style={{ background: '#fff', display: 'flex', justifyContent: 'space-between', padding: '0 50px' }}>
-        <div onClick={() => navigate('/')} style={{ cursor: 'pointer', color: '#1890ff', fontWeight: 'bold' }}>
-          🏠 HOTEL BOOKING
-        </div>
-        
-        {/* Nếu có user thì hiện Avatar, không thì hiện nút Đăng nhập */}
-        {user ? (
-          <Dropdown overlay={userMenu}>
-            <Space style={{ cursor: 'pointer' }}>
-              <Text strong>{user.name}</Text>
-              <Avatar src={user.avatar} icon={<UserOutlined />} />
-            </Space>
-          </Dropdown>
-        ) : (
-          <Button type="primary" onClick={() => navigate('/login')}>Đăng nhập</Button>
-        )}
-      </Header>
-    </Layout>
+    <AuthContext.Provider value={{ user, setUser, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

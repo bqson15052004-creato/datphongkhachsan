@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Button, theme, Avatar, Dropdown, App as AntApp, Modal } from 'antd';
+import { Layout, Menu, Button, theme, Avatar, Dropdown, App as AntApp, Modal, Typography, Space } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -18,10 +18,11 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
+const { Text } = Typography;
 const { confirm } = Modal;
 
 const PartnerLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [is_collapsed, set_is_collapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { message } = AntApp.useApp();
@@ -30,52 +31,55 @@ const PartnerLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // Lấy thông tin user từ localStorage
-  const user = JSON.parse(localStorage.getItem('user')) || { fullName: 'Đối tác' };
+  // 1. Lấy thông tin user_data
+  const user_data = JSON.parse(localStorage.getItem('user_data')) || { 
+    full_name: 'Đối tác khách sạn',
+    avatar_url: null 
+  };
 
-  const handleLogout = () => {
+  const handle_logout = () => {
     confirm({
       title: 'Xác nhận đăng xuất',
       icon: <ExclamationCircleFilled />,
-      content: 'Bạn có chắc chắn muốn đăng xuất khỏi hệ thống đối tác?',
+      content: 'Bạn có chắc chắn muốn rời khỏi hệ thống quản trị đối tác?',
       okText: 'Đăng xuất',
       okType: 'danger',
       cancelText: 'Hủy',
       onOk() {
-        localStorage.removeItem('user');
+        localStorage.removeItem('user_data');
+        localStorage.removeItem('access_token');
         message.success('Đã đăng xuất thành công!');
         navigate('/');
       },
     });
   };
 
-  const userMenuItems = [
+  // 2. Menu người dùng
+  const user_menu_items = [
     {
       key: 'profile',
-      label: 'Hồ sơ cá nhân',
+      label: 'Hồ sơ doanh nghiệp',
       icon: <ProfileOutlined />,
-      onClick: () => navigate('/profile'),
+      onClick: () => navigate('/partner/profile'),
     },
-    {
-      type: 'divider',
-    },
+    { type: 'divider' },
     {
       key: 'logout',
       label: 'Đăng xuất',
       icon: <LogoutOutlined />,
       danger: true,
-      onClick: handleLogout,
+      onClick: handle_logout,
     },
   ];
 
-  // Danh sách Menu
-  const menuItems = [
+  // 3. Danh sách Menu điều hướng Sider
+  const sidebar_menu_items = [
     { key: '/partner/dashboard', icon: <BarChartOutlined />, label: 'Báo cáo doanh thu' },
     { key: '/partner/hotels', icon: <ShopOutlined />, label: 'Quản lý khách sạn' },
     { key: '/partner/rooms', icon: <HomeOutlined />, label: 'Quản lý phòng' },
     { key: '/partner/bookings', icon: <CalendarOutlined />, label: 'Đơn đặt phòng' },
     { key: '/partner/withdraw', icon: <WalletOutlined />, label: 'Quản lý rút tiền' },
-    { key: '/partner/messages', icon: <MessageOutlined />, label: 'Nhắn tin' },
+    { key: '/partner/messages', icon: <MessageOutlined />, label: 'Tin nhắn khách hàng' },
   ];
 
   return (
@@ -83,61 +87,78 @@ const PartnerLayout = () => {
       <Sider 
         trigger={null}
         collapsible 
-        collapsed={collapsed}
+        collapsed={is_collapsed}
         theme="dark"
+        width={250}
         style={{ boxShadow: '2px 0 8px 0 rgba(29,35,41,.05)' }}
       >
-        <div style={{ 
-          height: 64, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          fontSize: collapsed ? 16 : 18,
-          fontWeight: 'bold',
-          color: '#1890ff',
-          borderBottom: '1px solid #333'
-        }}>
-          {collapsed ? 'PH' : 'PARTNER HOTEL'}
+        <div style={logo_style}>
+          <div style={{ color: '#1890ff', fontSize: is_collapsed ? 16 : 20, fontWeight: 'bold' }}>
+            {is_collapsed ? 'PH' : 'PARTNER HUB'}
+          </div>
         </div>
         <Menu
           theme="dark"
           mode="inline"
           selectedKeys={[location.pathname]}
           onClick={({ key }) => navigate(key)}
-          items={menuItems}
+          items={sidebar_menu_items}
+          style={{ borderRight: 0 }}
         />
       </Sider>
 
       <Layout>
         <Header style={{ 
-          padding: 0, 
+          padding: '0 24px 0 0', 
           background: colorBgContainer, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
-          paddingRight: 24 
+          boxShadow: '0 1px 4px rgba(0,21,41,.08)',
+          zIndex: 1
         }}>
           <Button
             type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
+            icon={is_collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => set_is_collapsed(!is_collapsed)}
             style={{ fontSize: '16px', width: 64, height: 64 }}
           />
           
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '0 12px' }}>
-              <Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
-              <span style={{ fontWeight: 500 }}>{user.fullName}</span>
-            </div>
+          <Dropdown menu={{ items: user_menu_items }} placement="bottomRight" arrow>
+            <Space style={{ cursor: 'pointer', padding: '0 12px' }}>
+              <Avatar 
+                src={user_data.avatar_url} 
+                style={{ backgroundColor: '#1890ff' }} 
+                icon={<UserOutlined />} 
+              />
+              <Text strong>{user_data.full_name}</Text>
+            </Space>
           </Dropdown>
         </Header>
 
-        <Content style={{ margin: '24px 16px', padding: 24, background: colorBgContainer, borderRadius: borderRadiusLG }}>
+        <Content style={{ 
+          margin: '24px 16px', 
+          padding: 24, 
+          background: colorBgContainer, 
+          borderRadius: borderRadiusLG,
+          minHeight: 280,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        }}>
           <Outlet />
         </Content>
       </Layout>
     </Layout>
   );
+};
+
+// HỆ THỐNG STYLE CONSTANTS
+const logo_style = { 
+  height: 64, 
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'center',
+  background: '#002140',
+  borderBottom: '1px solid #111'
 };
 
 export default PartnerLayout;

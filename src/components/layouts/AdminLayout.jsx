@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, theme, Avatar, Dropdown, App as AntApp, Modal, Typography, Badge } from 'antd';
+import { Layout, Menu, Button, theme, Avatar, Dropdown, App as AntApp, Modal, Typography, Badge, Space } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -16,14 +16,15 @@ import {
   ExclamationCircleFilled
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import axiosClient from '../../services/axiosClient';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 const { confirm } = Modal;
 
 const AdminLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [is_collapsed, set_is_collapsed] = useState(false);
+  const [pending_count, set_pending_count] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { message } = AntApp.useApp();
@@ -32,33 +33,37 @@ const AdminLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 1. Lấy thông tin user từ localStorage (bao gồm isRoot)
-  const user = JSON.parse(localStorage.getItem('user')) || { 
-    fullName: 'Quản trị viên', 
+  // 1. Lấy thông tin admin_data từ localStorage
+  const admin_data = JSON.parse(localStorage.getItem('admin_data')) || { 
+    full_name: 'Quản trị viên', 
     role: 'admin', 
-    isRoot: false 
+    is_root: false 
   };
 
-  // 2. Logic tự động đếm số lượng "Đang chờ"
-  useEffect(() => {
-    const updateCount = () => {
-      const allHotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-      const count = allHotels.filter(h => h.status === 'Đang chờ').length;
-      setPendingCount(count);
-    };
+  // 2. Logic cập nhật số lượng đối tác đang chờ phê duyệt từ API
+  const fetch_pending_count = async () => {
+    try {
+      const response = await axios_client.get('/admin/partners/pending-count');
+      set_pending_count(response.data.count);
+    } catch (error) {
+      console.error("Không thể lấy số lượng chờ duyệt");
+    }
+  };
 
-    updateCount();
-    window.addEventListener('storage', updateCount);
-    return () => window.removeEventListener('storage', updateCount);
+  useEffect(() => {
+    fetch_pending_count();
+    // Thiết lập interval để cập nhật badge sau mỗi 5 phút nếu cần
+    const interval = setInterval(fetch_pending_count, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // 3. MENU NGƯỜI DÙNG
-  const userMenuItems = [
+  const user_menu_items = [
     {
       key: 'profile',
       label: 'Hồ sơ cá nhân',
       icon: <ProfileOutlined />,
-      onClick: () => navigate('/profile'),
+      onClick: () => navigate('/admin/profile'),
     },
     { type: 'divider' },
     {
@@ -74,23 +79,24 @@ const AdminLayout = () => {
           okText: 'Đăng xuất',
           okType: 'danger',
           onOk() {
-            localStorage.removeItem('user');
+            localStorage.removeItem('admin_data');
+            localStorage.removeItem('access_token');
             message.success('Đã đăng xuất thành công!');
-            navigate('/');
+            navigate('/login');
           },
         });
       },
     },
   ];
 
-  // 4. DANH SÁCH MENU TỔNG (Có đánh dấu isRootOnly cho Admin Cấp 1)
-  const menuConfig = [
+  // 4. CẤU HÌNH MENU (Lọc dựa trên quyền is_root)
+  const menu_config = [
     { key: '/admin/dashboard', icon: <DashboardOutlined />, label: 'Tổng quan' },
     { 
       key: '/admin/revenues', 
       icon: <BarChartOutlined />, 
       label: 'Báo cáo doanh thu', 
-      isRootOnly: true // Chỉ Admin Cấp 1 thấy
+      is_root_only: true 
     },
     { 
       key: '/admin/partners', 
@@ -98,12 +104,8 @@ const AdminLayout = () => {
       label: (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>Phê duyệt đối tác</span>
-          {pendingCount > 0 && (
-            <Badge 
-              count={pendingCount} 
-              size="small" 
-              style={{ backgroundColor: '#f5222d' }} 
-            />
+          {pending_count > 0 && (
+            <Badge count={pending_count} size="small" style={{ backgroundColor: '#f5222d' }} />
           )}
         </div>
       ) 
@@ -112,7 +114,7 @@ const AdminLayout = () => {
       key: '/admin/users', 
       icon: <UserOutlined />, 
       label: 'Quản lý người dùng', 
-      isRootOnly: true // Chỉ Admin Cấp 1 thấy
+      is_root_only: true 
     },
     { key: '/admin/categories', icon: <AppstoreOutlined />, label: 'Quản lý danh mục' },
     { key: '/admin/reports', icon: <FileTextOutlined />, label: 'Quản lý báo cáo' },
@@ -120,39 +122,30 @@ const AdminLayout = () => {
       key: '/admin/discounts', 
       icon: <PercentageOutlined />, 
       label: 'Quản lý chiết khấu', 
-      isRootOnly: true // Chỉ Admin Cấp 1 thấy
+      is_root_only: true 
     },
     { key: '/admin/complaints', icon: <WarningOutlined />, label: 'Quản lý khiếu nại' },
   ];
 
-  // Lọc menu dựa trên quyền
-  const sideMenuItems = menuConfig.filter(item => !item.isRootOnly || user.isRoot);
+  const side_menu_items = menu_config.filter(item => !item.is_root_only || admin_data.is_root);
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider 
         trigger={null} 
         collapsible 
-        collapsed={collapsed}
+        collapsed={is_collapsed}
         theme="dark"
-        width={250}
+        width={260}
         style={{ boxShadow: '2px 0 8px 0 rgba(0,0,0,0.15)' }}
       >
-        <div style={{ 
-          height: 64, 
-          display: 'flex', 
-          flexDirection: 'column',
-          alignItems: 'center', 
-          justifyContent: 'center',
-          background: '#002140',
-          lineHeight: '1.2'
-        }}>
-          <div style={{ color: '#fff', fontWeight: 'bold', fontSize: collapsed ? 14 : 18 }}>
-            {collapsed ? 'AD' : 'HOTEL ADMIN'}
+        <div style={logo_container_style}>
+          <div style={{ color: '#fff', fontWeight: 'bold', fontSize: is_collapsed ? 14 : 18 }}>
+            {is_collapsed ? 'AD' : 'HOTEL ADMIN'}
           </div>
-          {!collapsed && (
-            <div style={{ color: user.isRoot ? '#ffbb96' : '#91d5ff', fontSize: 10 }}>
-              {user.isRoot ? 'HỆ THỐNG TỐI CAO' : 'QUẢN TRỊ VIÊN'}
+          {!is_collapsed && (
+            <div style={{ color: admin_data.is_root ? '#ffbb96' : '#91d5ff', fontSize: 10, marginTop: 4 }}>
+              {admin_data.is_root ? 'HỆ THỐNG TỐI CAO' : 'QUẢN TRỊ VIÊN'}
             </div>
           )}
         </div>
@@ -161,7 +154,8 @@ const AdminLayout = () => {
           mode="inline"
           selectedKeys={[location.pathname]}
           onClick={({ key }) => navigate(key)}
-          items={sideMenuItems}
+          items={side_menu_items}
+          style={{ borderRight: 0 }}
         />
       </Sider>
 
@@ -171,25 +165,27 @@ const AdminLayout = () => {
           background: colorBgContainer, 
           display: 'flex', 
           alignItems: 'center', 
-          justifyContent: 'space-between' 
+          justifyContent: 'space-between',
+          boxShadow: '0 1px 4px rgba(0,21,41,.08)'
         }}>
           <Button
             type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
+            icon={is_collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => set_is_collapsed(!is_collapsed)}
             style={{ fontSize: '16px', width: 64, height: 64 }}
           />
           
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+          <Dropdown menu={{ items: user_menu_items }} placement="bottomRight" arrow>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '0 16px' }}>
               <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
-                <Text strong style={{ display: 'block' }}>{user.fullName}</Text>
+                <Text strong style={{ display: 'block' }}>{admin_data.full_name}</Text>
                 <Text type="secondary" style={{ fontSize: '11px' }}>
-                  {user.isRoot ? 'Admin Cấp 1' : 'Admin Cấp 2'}
+                  {admin_data.is_root ? 'Admin Cấp 1' : 'Admin Cấp 2'}
                 </Text>
               </div>
               <Avatar 
-                style={{ backgroundColor: user.isRoot ? '#f5222d' : '#1890ff' }} 
+                src={admin_data.avatar_url}
+                style={{ backgroundColor: admin_data.is_root ? '#f5222d' : '#1890ff' }} 
                 icon={<UserOutlined />} 
               />
             </div>
@@ -201,13 +197,25 @@ const AdminLayout = () => {
           padding: 24, 
           background: colorBgContainer, 
           borderRadius: borderRadiusLG,
-          minHeight: 280 
+          minHeight: 280,
+          overflow: 'initial'
         }}>
           <Outlet />
         </Content>
       </Layout>
     </Layout>
   );
+};
+
+// HỆ THỐNG STYLE CONSTANTS
+const logo_container_style = { 
+  height: 64, 
+  display: 'flex', 
+  flexDirection: 'column',
+  alignItems: 'center', 
+  justifyContent: 'center',
+  background: '#002140',
+  lineHeight: '1.2'
 };
 
 export default AdminLayout;

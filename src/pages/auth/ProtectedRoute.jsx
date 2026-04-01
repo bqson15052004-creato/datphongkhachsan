@@ -2,17 +2,16 @@ import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { message } from 'antd';
 
-const ProtectedRoute = ({ allowedRoles }) => {
-  // Thêm bọc try-catch hoặc kiểm tra null để tránh crash app
-  const userData = localStorage.getItem('user');
-  const user = userData ? JSON.parse(userData) : null;
+const ProtectedRoute = ({ allowed_roles }) => {
+  const user_data = localStorage.getItem('user');
+  const user = user_data ? JSON.parse(user_data) : null;
 
   if (!user) {
-    // Chỉ hiện message nếu thực sự cố tình truy cập trái phép tránh hiện message trùng lặp khi redirect
+    // Chỉ hiện message nếu thực sự cố tình truy cập trái phép
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowed_roles && !allowed_roles.includes(user.role)) {
     message.error("Bạn không có quyền truy cập!");
     return <Navigate to="/" replace />;
   }
