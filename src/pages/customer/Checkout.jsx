@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Layout, Card, Radio, Button, Typography, Row, Col, 
-  Divider, Space, Tag, Modal, message, DatePicker 
+  Divider, Space, Tag, Modal, App as AntApp, DatePicker, Avatar
 } from 'antd';
 import { 
   BankOutlined, WalletOutlined, LockOutlined, ArrowLeftOutlined, 
-  EnvironmentOutlined, CalendarOutlined, InfoCircleOutlined
+  CalendarOutlined, InfoCircleOutlined, EnvironmentOutlined, SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axiosClient from '../../services/axiosClient';
@@ -19,163 +19,232 @@ const { RangePicker } = DatePicker;
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { message: antdMessage } = AntApp.useApp();
   
-  // Lấy dữ liệu từ state
   const { room } = location.state || {};
-  
-  const [current_user, set_current_user] = useState(null);
-  const [payment_method, set_payment_method] = useState('banking');
-  const [dates, set_dates] = useState([dayjs(), dayjs().add(1, 'day')]); 
-  const [loading, set_loading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('banking');
+  const [dates, setDates] = useState([dayjs(), dayjs().add(1, 'day')]); 
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user) {
-      message.warning('Vui lòng đăng nhập để tiếp tục thanh toán!');
+      antdMessage?.warning('Vui lòng đăng nhập để tiếp tục thanh toán!');
       navigate('/login');
     } else {
-      set_current_user(user);
+      setCurrentUser(user);
     }
 
     if (!room) {
-      message.error("Không tìm thấy thông tin phòng!");
+      antdMessage?.error("Không tìm thấy thông tin phòng!");
       navigate('/');
     }
   }, [navigate, room]);
 
-  // TÍNH TOÁN CHI PHÍ
-  const nights = dates ? dates[1].diff(dates[0], 'day') : 0;
-  const room_price = room?.price || 0;
-  const sub_total = room_price * nights;
-  const tax_fee = sub_total * 0.05;
-  const total_amount = sub_total + tax_fee;
+  // Dùng useMemo để chỉ tính toán lại khi dates hoặc room thay đổi
+  const billingDetails = useMemo(() => {
+    const nights = (dates && dates[0] && dates[1]) ? dates[1].diff(dates[0], 'day') : 0;
+    const subTotal = (room?.price_per_night || 0) * nights;
+    const tax = subTotal * 0.05;
+    const total = subTotal + tax;
+    return { nights, subTotal, tax, total };
+  }, [dates, room]);
 
-  // XỬ LÝ ĐẶT PHÒNG
-  const handle_confirm = async () => {
-    if (nights <= 0) return message.error("Vui lòng chọn ngày nhận và trả phòng hợp lệ!");
+  const handleConfirm = async () => {
+    if (billingDetails.nights <= 0) {
+      return antdMessage?.error("Thời gian lưu trú tối thiểu là 1 đêm!");
+    }
 
-    set_loading(true);
+    setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const booking_data = {
-        room: room.id,
+      const bookingData = {
+        id_room: room.id_room,
         check_in: dates[0].format('YYYY-MM-DD'),
         check_out: dates[1].format('YYYY-MM-DD'),
-        total_price: total_amount,
+        total_price: billingDetails.total,
+        payment_method: paymentMethod
       };
 
-      await axiosClient.post('/hotels/bookings/', booking_data);
+      await axiosClient.post('/hotels/bookings/', bookingData);
 
       Modal.success({
-        title: 'Đặt phòng thành công!',
+        title: 'Đã gửi yêu cầu đặt phòng!',
+        centered: true,
         content: (
-          <div>
-            <p>Chúc mừng <b>{current_user.full_name || current_user.fullName}</b>!</p>
-            <p>Đơn hàng của bạn đã được xác nhận. Vui lòng kiểm tra lịch sử ở trang cá nhân.</p>
+          <div style={{ marginTop: 10 }}>
+            <p>Chào <b>{currentUser?.fullName}</b>, chúng tôi đã tiếp nhận đơn đặt phòng số <b>{room.room_number}</b>.</p>
+            <p>Vui lòng kiểm tra email hoặc mục <b>Quản lý đơn đặt</b> để cập nhật trạng thái mới nhất từ khách sạn.</p>
           </div>
         ),
         onOk: () => navigate('/profile'),
       });
     } catch (error) {
-      console.error(error);
-      const error_msg = error.response?.data?.non_field_errors?.[0] || 'Lịch đặt phòng bị trùng hoặc có lỗi xảy ra.';
-      message.error(error_msg);
+      const errorMsg = error.response?.data?.detail || 'Phòng đã được đặt trong khoảng thời gian này.';
+      antdMessage?.error(errorMsg);
     } finally {
-      set_loading(false);
+      setLoading(false);
     }
   };
 
   if (!room) return null;
 
   return (
-    <Layout style={layout_style}>
+    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
       <Navbar />
-
-      <Content style={content_wrapper_style}>
-        <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={back_btn_style}>
-          Quay lại
+      <Content style={{ maxWidth: 1100, margin: '40px auto', padding: '0 20px', width: '100%' }}>
+        <Button 
+          type="link" 
+          icon={<ArrowLeftOutlined />} 
+          onClick={() => navigate(-1)} 
+          style={{ marginBottom: 16, padding: 0, color: '#64748b' }}
+        >
+          Quay lại thông tin khách sạn
         </Button>
 
-        <Row gutter={24}>
-          {/* CỘT TRÁI: THÔNG TIN LƯU TRÚ */}
-          <Col span={14}>
-            <Space direction="vertical" size="large" style={full_width_style}>
+        <Row gutter={[32, 32]}>
+          <Col xs={24} lg={15}>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
               
-              <Card title={<Space><CalendarOutlined /> <Title level={5} style={no_margin_style}>Thời gian lưu trú</Title></Space>}>
-                <Text type="secondary">Chọn ngày nhận và trả phòng:</Text>
-                <div style={picker_container_style}>
-                  <RangePicker 
-                    style={range_picker_style} 
-                    value={dates}
-                    disabledDate={(current) => current && current < dayjs().startOf('day')}
-                    onChange={(val) => set_dates(val)}
-                    format="DD/MM/YYYY"
-                  />
+              {/* Card 1: Thông tin khách hàng */}
+              <Card bordered={false} style={{ borderRadius: 16 }}>
+                <Title level={5}><ShieldCheckOutlined style={{ color: '#52c41a' }} /> Xác nhận thông tin người đặt</Title>
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, padding: '12px', background: '#f8fafc', borderRadius: 12 }}>
+                  <Avatar size={48} src={currentUser?.avatar} style={{ backgroundColor: '#1890ff' }}>
+                    {currentUser?.fullName?.charAt(0)}
+                  </Avatar>
+                  <div style={{ marginLeft: 16 }}>
+                    <Text strong style={{ display: 'block' }}>{currentUser?.fullName}</Text>
+                    <Text type="secondary">{currentUser?.email}</Text>
+                  </div>
                 </div>
               </Card>
 
-              <Card title={<Title level={5} style={no_margin_style}>Phương thức thanh toán</Title>}>
-                <Radio.Group onChange={(e) => set_payment_method(e.target.value)} value={payment_method} style={full_width_style}>
-                  <Space direction="vertical" style={full_width_style}>
-                    <Card size="small" hoverable style={payment_card_style(payment_method === 'banking')}>
-                      <Radio value="banking"><Space><BankOutlined style={{color: '#1890ff'}}/> Chuyển khoản ngân hàng (QR Code)</Space></Radio>
-                    </Card>
-                    <Card size="small" hoverable style={payment_card_style(payment_method === 'momo')}>
-                      <Radio value="momo"><Space><WalletOutlined style={{color: '#ae2070'}}/> Ví điện tử Momo / ZaloPay</Space></Radio>
-                    </Card>
-                  </Space>
+              {/* Card 2: Lịch trình */}
+              <Card bordered={false} style={{ borderRadius: 16 }}>
+                <Title level={5}><CalendarOutlined /> Chọn kỳ nghỉ của bạn</Title>
+                <div style={{ marginTop: 16 }}>
+                  <RangePicker
+                    style={{ width: '100%', height: 50, borderRadius: 8 }}
+                    value={dates}
+                    disabledDate={(current) => current && current < dayjs().startOf('day')}
+                    onChange={(val) => setDates(val)}
+                    format="DD [Tháng] MM, YYYY"
+                    allowClear={false}
+                  />
+                  {billingDetails.nights > 0 && (
+                    <Alert 
+                      message={`Bạn đã chọn lưu trú trong ${billingDetails.nights} đêm`} 
+                      type="info" 
+                      showIcon 
+                      style={{ marginTop: 16, borderRadius: 8 }} 
+                    />
+                  )}
+                </div>
+              </Card>
+
+              {/* Card 3: Thanh toán */}
+              <Card bordered={false} style={{ borderRadius: 16 }} title={<Title level={5} style={{margin:0}}>Hình thức thanh toán</Title>}>
+                <Radio.Group onChange={(e) => setPaymentMethod(e.target.value)} value={paymentMethod} style={{ width: '100%' }}>
+                  <Row gutter={[16, 16]}>
+                    <Col span={12}>
+                      <div 
+                        onClick={() => setPaymentMethod('banking')}
+                        style={{ 
+                          padding: '16px', 
+                          borderRadius: 12, 
+                          border: `2px solid ${paymentMethod === 'banking' ? '#1890ff' : '#f0f0f0'}`,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        <Radio value="banking"><Text strong>Chuyển khoản</Text></Radio>
+                        <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>QR Code hoặc Internet Banking</div>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div 
+                        onClick={() => setPaymentMethod('momo')}
+                        style={{ 
+                          padding: '16px', 
+                          borderRadius: 12, 
+                          border: `2px solid ${paymentMethod === 'momo' ? '#1890ff' : '#f0f0f0'}`,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        <Radio value="momo"><Text strong>Ví điện tử</Text></Radio>
+                        <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>Momo, ZaloPay, ShopeePay</div>
+                      </div>
+                    </Col>
+                  </Row>
                 </Radio.Group>
               </Card>
             </Space>
           </Col>
 
-          {/* CỘT PHẢI: TÓM TẮT ĐƠN HÀNG */}
-          <Col span={10}>
-            <Card style={summary_card_style}>
-              <img 
-                alt="room" 
-                src={room.image || 'https://via.placeholder.com/400x220'} 
-                style={room_image_style} 
-              />
-              <Tag color="blue">Khách sạn {room.hotel_owner_name}</Tag>
-              <Title level={4} style={room_title_style}>Phòng số {room.room_number}</Title>
-              <Text type="secondary"><EnvironmentOutlined /> Hạng phòng: {room.room_type_name}</Text>
-              
-              <Divider dashed />
-              
-              <Space direction="vertical" style={full_width_style}>
-                <div style={flex_between_style}>
-                  <Text>{parseFloat(room_price).toLocaleString()}đ x {nights} đêm</Text>
-                  <Text strong>{sub_total.toLocaleString()}đ</Text>
-                </div>
-                <div style={flex_between_style}>
-                  <Text type="secondary">Phí dịch vụ & Thuế (5%)</Text>
-                  <Text>{tax_fee.toLocaleString()}đ</Text>
-                </div>
-                <Divider />
-                <div style={flex_center_between_style}>
-                  <Title level={4} style={no_margin_style}>Tổng cộng</Title>
-                  <Title level={3} style={total_price_style}>{total_amount.toLocaleString()}đ</Title>
-                </div>
-              </Space>
-
-              <Button 
-                type="primary" 
-                block 
-                size="large" 
-                icon={<LockOutlined />} 
-                loading={loading}
-                style={confirm_btn_style}
-                onClick={handle_confirm}
-              >
-                Xác nhận đặt phòng
-              </Button>
-              
-              <div style={security_info_style}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  <InfoCircleOutlined /> Thông tin của bạn được bảo mật tuyệt đối
-                </Text>
+          {/* Cột Tóm tắt thanh toán */}
+          <Col xs={24} lg={9}>
+            <Card 
+              sticky 
+              bordered={false} 
+              style={{ borderRadius: 20, boxShadow: '0 10px 25px rgba(0,0,0,0.05)', position: 'sticky', top: 20 }}
+            >
+              <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                <img
+                  alt="room"
+                  src={room.image || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304'}
+                  style={{ width: '100%', height: 180, objectFit: 'cover' }}
+                />
               </div>
+              
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <div>
+                  <Tag color="blue">{room.hotel_name}</Tag>
+                  <Title level={4} style={{ margin: '8px 0 4px' }}>Phòng {room.room_number}</Title>
+                  <Text type="secondary"><EnvironmentOutlined /> {room.room_type_name}</Text>
+                </div>
+                
+                <Divider style={{ margin: '12px 0' }} />
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text>{parseFloat(room.price_per_night).toLocaleString()}đ x {billingDetails.nights} đêm</Text>
+                  <Text strong>{billingDetails.subTotal.toLocaleString()}đ</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">Phí & Thuế (5%)</Text>
+                  <Text>{billingDetails.tax.toLocaleString()}đ</Text>
+                </div>
+                
+                <Divider style={{ margin: '12px 0' }} />
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Title level={4} style={{ margin: 0 }}>Tổng cộng</Title>
+                  <Title level={3} style={{ color: '#ff4d4f', margin: 0 }}>{billingDetails.total.toLocaleString()}đ</Title>
+                </div>
+
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  loading={loading}
+                  onClick={handleConfirm}
+                  style={{ 
+                    marginTop: 20, 
+                    height: 55, 
+                    borderRadius: 12, 
+                    fontSize: 18, 
+                    fontWeight: 700,
+                    boxShadow: '0 4px 14px 0 rgba(24, 144, 255, 0.39)'
+                  }}
+                >
+                  THANH TOÁN NGAY
+                </Button>
+                
+                <Text type="secondary" style={{ textAlign: 'center', display: 'block', fontSize: 12, marginTop: 12 }}>
+                  <InfoCircleOutlined /> Nhấn đặt phòng đồng nghĩa với việc bạn đồng ý với Điều khoản của chúng tôi.
+                </Text>
+              </Space>
             </Card>
           </Col>
         </Row>
@@ -183,27 +252,5 @@ const Checkout = () => {
     </Layout>
   );
 };
-
-// Hệ thống Style Constants
-const layout_style = { minHeight: '100vh', background: '#f8fafc' };
-const content_wrapper_style = { maxWidth: 1200, margin: '0 auto', padding: '30px 50px', width: '100%' };
-const full_width_style = { width: '100%' };
-const no_margin_style = { margin: 0 };
-const back_btn_style = { marginBottom: 20 };
-const picker_container_style = { marginTop: 12 };
-const range_picker_style = { width: '100%', height: 45 };
-const summary_card_style = { borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' };
-const room_image_style = { width: '100%', height: 180, objectFit: 'cover', borderRadius: '8px', marginBottom: 16 };
-const room_title_style = { marginTop: 8 };
-const flex_between_style = { display: 'flex', justifyContent: 'space-between' };
-const flex_center_between_style = { display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
-const total_price_style = { color: '#ff4d4f', margin: 0 };
-const confirm_btn_style = { marginTop: 24, height: 50, borderRadius: '8px', fontWeight: 'bold' };
-const security_info_style = { marginTop: 16, textAlign: 'center' };
-
-const payment_card_style = (is_selected) => ({
-  border: is_selected ? '1px solid #1890ff' : '1px solid #f0f0f0',
-  transition: 'all 0.3s'
-});
 
 export default Checkout;

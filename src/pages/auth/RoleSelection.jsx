@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Row, Col, Typography, Button, Space, Divider } from 'antd';
-import { UserOutlined, ShopOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Typography, Button, Space, Divider, ConfigProvider } from 'antd';
+import { UserOutlined, ShopOutlined, ArrowRightOutlined, CheckCircleFilled } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
@@ -8,130 +8,170 @@ const { Title, Text } = Typography;
 const RoleSelection = () => {
   const navigate = useNavigate();
 
-  const handle_select = (role) => {
+  const handleSelect = (role) => {
+    // Chuyển hướng sang form đăng ký với query param role
     navigate(`/register/form?role=${role}`);
   };
 
   return (
-    <div style={container_style}>
-      <div style={{ maxWidth: 900, width: '100%' }}>
+    <div style={containerStyle}>
+      <div style={{ maxWidth: 1000, width: '100%', padding: '0 20px' }}>
         
-        {/* 1. Phần Tiêu đề*/}
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <Title level={1} style={{ color: '#262626', marginBottom: '16px' }}>
-            Chào mừng bạn đến với Hotel Booking
+        {/* Header Section */}
+        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <Title style={{ color: '#1a3353', marginBottom: '12px', fontSize: '38px' }}>
+            Bắt đầu cùng StayHub
           </Title>
           <Text type="secondary" style={{ fontSize: '18px' }}>
-            Chọn vai trò phù hợp để bắt đầu hành trình của bạn
+            Bạn muốn trải nghiệm dịch vụ hay trở thành đối tác kinh doanh của chúng tôi?
           </Text>
         </div>
         
-        {/* 2. Phần Vai trò*/}
-        <Row gutter={[32, 32]} justify="center">
-          <Col xs={24} sm={11}>
-            <Card 
-              hoverable 
-              onClick={() => handle_select('customer')}
-              className="role-card customer-card"
-              style={card_style}
-              cover={
-                <div style={icon_container_style}>
-                  <UserOutlined style={{ fontSize: '72px', color: '#1890ff' }} />
-                </div>
-              }
+        <Row gutter={[40, 40]} justify="center">
+          {/* VAI TRÒ CUSTOMER */}
+          <Col xs={24} md={10}>
+            <Card
+              hoverable
+              onClick={() => handleSelect('customer')}
+              className="role-card customer-hover"
+              style={cardStyle}
             >
-              <Title level={3}>Tôi là Khách hàng</Title>
-              <Text type="secondary" style={{ display: 'block', minHeight: '48px' }}>
-                Tìm kiếm phòng, đặt chỗ nhanh chóng và nhận nhiều ưu đãi từ chúng tôi.
-              </Text>
+              <div style={iconWrapperStyle('#e6f7ff')}>
+                <UserOutlined style={{ fontSize: '64px', color: '#1890ff' }} />
+              </div>
+              <Title level={3} style={{ marginTop: 24 }}>Tôi là Khách hàng</Title>
+              <ul style={featureListStyle}>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Tìm phòng giá tốt nhất</li>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Đặt phòng trong 30 giây</li>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Tích điểm đổi quà tặng</li>
+              </ul>
               <Divider />
-              <Button type="primary" shape="round" icon={<ArrowRightOutlined />} block>
-                Đăng ký để trải nghiệm
+              <Button 
+                type="primary" 
+                size="large" 
+                shape="round" 
+                icon={<ArrowRightOutlined />} 
+                block
+                style={{ height: '50px', fontWeight: 'bold' }}
+              >
+                Khám phá ngay
               </Button>
             </Card>
           </Col>
           
-          <Col xs={24} sm={11}>
-            <Card 
-              hoverable 
-              onClick={() => handle_select('partner')}
-              className="role-card partner-card"
-              style={card_style}
-              cover={
-                <div style={icon_container_style}>
-                  <ShopOutlined style={{ fontSize: '72px', color: '#52c41a' }} />
-                </div>
-              }
+          {/* VAI TRÒ PARTNER */}
+          <Col xs={24} md={10}>
+            <Card
+              hoverable
+              onClick={() => handleSelect('partner')}
+              className="role-card partner-hover"
+              style={cardStyle}
             >
-              <Title level={3}>Tôi là Đối tác</Title>
-              <Text type="secondary" style={{ display: 'block', minHeight: '48px' }}>
-                Quản lý khách sạn, tối ưu doanh thu và kết nối hàng triệu khách hàng.
-              </Text>
+              <div style={iconWrapperStyle('#f6ffed')}>
+                <ShopOutlined style={{ fontSize: '64px', color: '#52c41a' }} />
+              </div>
+              <Title level={3} style={{ marginTop: 24 }}>Tôi là Đối tác</Title>
+              <ul style={featureListStyle}>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Đăng tải phòng miễn phí</li>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Quản lý booking thông minh</li>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Báo cáo doanh thu chi tiết</li>
+              </ul>
               <Divider />
-              <Button type="primary" shape="round" icon={<ArrowRightOutlined />} block style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}>
-                Đăng ký kinh doanh
+              <Button 
+                type="primary" 
+                size="large" 
+                shape="round" 
+                icon={<ArrowRightOutlined />} 
+                block 
+                style={{ 
+                  backgroundColor: '#52c41a', 
+                  borderColor: '#52c41a', 
+                  height: '50px', 
+                  fontWeight: 'bold' 
+                }}
+              >
+                Hợp tác kinh doanh
               </Button>
             </Card>
           </Col>
         </Row>
 
-        {/* 3. Dòng ĐĂNG NHẬP*/}
-        <div style={{ textAlign: 'center', marginTop: '60px' }}>
-          <Space size="small">
-            <Text style={{ fontSize: '16px', color: '#8c8c8c' }}>Bạn đã có tài khoản?</Text>
-            <Button 
-              type="link" 
-              onClick={() => navigate('/login')} 
-              style={{ fontSize: '16px', padding: 0, fontWeight: '700' }}
-            >
-              Đăng nhập ngay
-            </Button>
-          </Space>
+        {/* Footer Login Link */}
+        <div style={{ textAlign: 'center', marginTop: '50px' }}>
+          <Card size="small" style={{ display: 'inline-block', borderRadius: '30px', padding: '0 20px', background: '#fff' }}>
+            <Space>
+              <Text style={{ color: '#8c8c8c' }}>Bạn đã có tài khoản?</Text>
+              <Button
+                type="link"
+                onClick={() => navigate('/login')}
+                style={{ fontWeight: 'bold', padding: 0 }}
+              >
+                Đăng nhập tại đây
+              </Button>
+            </Space>
+          </Card>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
         .role-card {
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1) !important;
+          transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
           border: 2px solid transparent !important;
+          border-radius: 24px !important;
+          padding: 20px !important;
         }
         .role-card:hover {
-          transform: translateY(-12px);
-          box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+          transform: translateY(-15px);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
         }
-        .customer-card:hover {
+        .customer-hover:hover {
           border-color: #1890ff !important;
         }
-        .partner-card:hover {
+        .partner-hover:hover {
           border-color: #52c41a !important;
         }
+        ul { padding: 0; list-style: none; }
       `}} />
     </div>
   );
 };
 
-// Sửa các biến hằng số chứa Style
-const container_style = {
+// Styles chuyên biệt
+const containerStyle = { 
   minHeight: '100vh', 
   display: 'flex', 
   alignItems: 'center', 
-  justifyContent: 'center',
-  backgroundColor: '#f8fafc',
-  padding: '40px 20px'
+  justifyContent: 'center', 
+  background: 'linear-gradient(180deg, #f0f2f5 0%, #ffffff 100%)', 
+  padding: '40px 0' 
 };
 
-const card_style = {
+const cardStyle = { 
   textAlign: 'center', 
-  borderRadius: '20px',
-  overflow: 'hidden',
-  padding: '10px'
+  height: '100%', 
+  display: 'flex', 
+  flexDirection: 'column', 
+  justifyContent: 'center' 
 };
 
-const icon_container_style = {
-  paddingTop: '50px',
-  paddingBottom: '20px',
+const iconWrapperStyle = (bgColor) => ({
+  width: '120px',
+  height: '120px',
+  backgroundColor: bgColor,
+  borderRadius: '50%',
   display: 'flex',
-  justifyContent: 'center'
+  alignItems: 'center',
+  justifyContent: 'center',
+  margin: '0 auto'
+});
+
+const featureListStyle = {
+  textAlign: 'left',
+  margin: '20px auto',
+  display: 'inline-block',
+  fontSize: '15px',
+  color: '#595959',
+  lineHeight: '2.5'
 };
 
 export default RoleSelection;

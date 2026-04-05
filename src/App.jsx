@@ -19,7 +19,7 @@ import HotelDetail from './pages/customer/HotelDetail';
 import Checkout from './pages/customer/Checkout';
 import CustomerBookings from './pages/customer/CustomerBookings';
 
-// 3. NHÓM ĐỐI TÁC
+// 3. NHÓM ĐỐI TÁC (PARTNER)
 import PartnerLayout from './components/layouts/PartnerLayout';
 import PartnerDashboard from './pages/partner/PartnerDashboard';
 import HotelManagement from './pages/partner/HotelManagement';
@@ -28,21 +28,23 @@ import PartnerBookings from './pages/partner/PartnerBookings';
 import PartnerMessages from './pages/partner/PartnerMessages';
 import PartnerWithdrawals from './pages/partner/PartnerWithdrawals';
 
-// 4. NHÓM QUẢN TRỊ VIÊN
+// 4. NHÓM QUẢN TRỊ VIÊN (ADMIN)
 import AdminLayout from './components/layouts/AdminLayout';
 import AdminPartners from './pages/admin/AdminPartners';
 import UserManagement from './pages/admin/UserManagement';
-import AdminCategories from './pages/admin/AdminCotegories';
+import AdminCategories from './pages/admin/AdminCategories';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminReports from './pages/admin/AdminReports';
 import AdminRevenues from './pages/admin/AdminRevenues';
 import AdminComplaints from './pages/admin/AdminComplaints';
 
-// LOGIC BẢO VỆ ROUTE ROOT ADMIN (Chỉ dành cho Admin Cấp 1)
 const RootAdminRoute = () => {
-  // Lấy từ admin_data để đồng bộ với AdminLayout
-  const admin_data = JSON.parse(localStorage.getItem('admin_data')) || {};
-  return admin_data.is_root ? <Outlet /> : <Navigate to="/admin/dashboard" replace />;
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  
+  // Kiểm tra: Phải là admin VÀ phải là Level 1
+  const is_authorized = user.role === 'admin';// && user.level === 1;
+  
+  return is_authorized ? <Outlet /> : <Navigate to="/admin/dashboard" replace />;
 };
 
 function App() {
@@ -52,7 +54,7 @@ function App() {
         token: { 
           colorPrimary: '#1890ff', 
           borderRadius: 8,
-          fontFamily: 'Inter, sans-serif' // Thêm font cho hiện đại
+          fontFamily: 'Inter, sans-serif'
         } 
       }}
     >
@@ -76,7 +78,9 @@ function App() {
                 <Route path="/my-bookings" element={<CustomerBookings />} />
               </Route>
 
-              {/* --- PHÂN HỆ ĐỐI TÁC (PARTNER) --- */}
+              {/* --- PHÂN HỆ ĐỐI TÁC (PARTNER) --- 
+                  Khớp với thực thể partner trong ERD (business_name, id_tax...)
+              */}
               <Route element={<ProtectedRoute allowedRoles={['partner']} />}>
                 <Route path="/partner" element={<PartnerLayout />}>
                   <Route index element={<Navigate to="/partner/dashboard" replace />} />
@@ -89,17 +93,21 @@ function App() {
                 </Route>
               </Route>
 
-              {/* --- PHÂN HỆ QUẢN TRỊ (ADMIN) --- */}
+              {/* --- PHÂN HỆ QUẢN TRỊ (ADMIN) --- 
+                  ProtectedRoute sẽ check current_user.role === 'admin'
+              */}
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<Navigate to="/admin/dashboard" replace />} />
                   <Route path="dashboard" element={<div style={{ padding: '24px' }}><h2>Hệ thống quản trị sẵn sàng!</h2></div>} />
+                  
+                  {/* Các trang Admin Cấp 2 cũng thấy được */}
                   <Route path="partners" element={<AdminPartners />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="reports" element={<AdminReports />} />
                   <Route path="complaints" element={<AdminComplaints />} />
 
-                  {/* CHỈ ADMIN CẤP 1 (ROOT) MỚI VÀO ĐƯỢC CÁC ROUTE NÀY */}
+                  {/* CHỈ ADMIN CẤP 1 (ROOT LEVEL 1) MỚI VÀO ĐƯỢC CÁC ROUTE NÀY */}
                   <Route element={<RootAdminRoute />}>
                     <Route path="users" element={<UserManagement />} />
                     <Route path="revenues" element={<AdminRevenues />} />
