@@ -1,151 +1,144 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Tag, Space, Button, Card, Typography, 
-  message, Modal, Input, Badge, Select, Descriptions 
+import {
+  Table, Tag, Space, Button, Card, Typography,
+  message, Modal, Input, Badge, Select, Descriptions, Avatar, Tooltip
 } from 'antd';
-import { 
-  DeleteOutlined, SearchOutlined, UserOutlined, 
-  EyeOutlined, LockOutlined, UnlockOutlined 
+import {
+  DeleteOutlined, SearchOutlined, UserOutlined,
+  EyeOutlined, LockOutlined, UnlockOutlined, CrownOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [searchText, setSearchText] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [search_text, setSearchText] = useState('');
+  const [is_modal_open, setIsModalOpen] = useState(false);
+  const [selected_user, setSelectedUser] = useState(null);
 
-  // Lấy thông tin Admin đang đăng nhập từ localStorage để kiểm tra quyền
-  const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-
-  // 1. Khởi tạo dữ liệu với phân cấp rõ ràng
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('users')) || [];
+    const data = JSON.parse(localStorage.getItem('users_list')) || [];
     if (data.length === 0) {
-      const demoData = [
-        { 
-          email: 'admin@hotel.com', 
-          username: 'admin', 
-          fullName: 'Admin Cấp 1 (Root)', 
-          role: 'admin', 
-          isRoot: true,
-          status: 'active', 
-          createdAt: new Date().toISOString(), 
-          phone: '0123456789' 
+      const demo_data = [
+        {
+          email_address: 'admin@hotel.com',
+          user_name: 'admin_root',
+          full_name: 'Sơn Admin (Root)',
+          user_role: 'admin',
+          is_root: true,
+          account_status: 'active',
+          created_at: new Date().toISOString(),
+          phone_number: '0987654321'
         },
-        { 
-          email: 'doitac@gmail.com', 
-          username: 'doitac', 
-          fullName: 'Hotel A', 
-          role: 'partner', 
-          isRoot: false, 
-          status: 'active', 
-          createdAt: new Date().toISOString() 
+        {
+          email_address: 'partner01@gmail.com',
+          user_name: 'p_vinpearl',
+          full_name: 'Vinpearl Manager',
+          user_role: 'partner',
+          is_root: false,
+          account_status: 'active',
+          created_at: new Date().toISOString()
         },
-        { 
-          email: 'khachhang@gmail.com', 
-          username: 'khachhang', 
-          fullName: 'Nguyễn Văn A', 
-          role: 'customer', 
-          isRoot: false, 
-          status: 'active', 
-          createdAt: new Date().toISOString() 
+        {
+          email_address: 'customer01@gmail.com',
+          user_name: 'guest_vn',
+          full_name: 'Trần Văn A',
+          user_role: 'customer',
+          is_root: false,
+          account_status: 'blocked',
+          created_at: new Date().toISOString()
         },
       ];
-      localStorage.setItem('users', JSON.stringify(demoData));
-      setUsers(demoData);
+      localStorage.setItem('users_list', JSON.stringify(demo_data));
+      setUsers(demo_data);
     } else {
       setUsers(data);
     }
   }, []);
 
-  const saveUsers = (newUsers) => {
-    localStorage.setItem('users', JSON.stringify(newUsers));
-    setUsers(newUsers);
+  const save_users_data = (new_users) => {
+    localStorage.setItem('users_list', JSON.stringify(new_users));
+    setUsers(new_users);
+    window.dispatchEvent(new Event('storage')); // Đồng bộ các tab khác
   };
 
-  // 2. Logic: Xóa người dùng (Bảo vệ Root)
-  const handleDelete = (email) => {
+  const handle_delete_user = (email) => {
     Modal.confirm({
-      title: 'Xác nhận xóa?',
-      content: `Bạn có chắc chắn muốn xóa tài khoản ${email}?`,
-      okText: 'Xóa ngay',
+      title: 'Xóa tài khoản vĩnh viễn?',
+      icon: <DeleteOutlined style={{ color: 'red' }} />,
+      content: `Dữ liệu của tài khoản ${email} sẽ bị gỡ bỏ hoàn toàn.`,
+      okText: 'Xác nhận xóa',
       okType: 'danger',
       onOk: () => {
-        const newUsers = users.filter(u => u.email !== email);
-        saveUsers(newUsers);
-        message.success('Đã xóa người dùng thành công!');
+        const new_users = users.filter(u => u.email_address !== email);
+        save_users_data(new_users);
+        message.success('Đã gỡ bỏ người dùng khỏi hệ thống!');
       }
     });
   };
 
-  // 3. Logic: Khóa / Mở khóa
-  const handleToggleStatus = (email) => {
-    const newUsers = users.map(u => {
-      if (u.email === email) {
-        const newStatus = u.status === 'active' ? 'blocked' : 'active';
-        return { ...u, status: newStatus };
+  const handle_toggle_status = (user) => {
+    const action = user.account_status === 'active' ? 'KHÓA' : 'MỞ KHÓA';
+    Modal.confirm({
+      title: `Xác nhận ${action} tài khoản?`,
+      content: `Người dùng ${user.full_name} sẽ ${user.account_status === 'active' ? 'không thể' : 'có thể'} đăng nhập vào hệ thống.`,
+      onOk: () => {
+        const new_users = users.map(u => {
+          if (u.email_address === user.email_address) {
+            return { ...u, account_status: u.account_status === 'active' ? 'blocked' : 'active' };
+          }
+          return u;
+        });
+        save_users_data(new_users);
+        message.info(`Đã ${action} thành công.`);
       }
-      return u;
     });
-    saveUsers(newUsers);
-    message.info('Đã cập nhật trạng thái tài khoản');
-  };
-
-  // 4. Logic: Thay đổi vai trò (Quan trọng nhất)
-  const handleRoleChange = (email, newRole) => {
-    const newUsers = users.map(u => {
-      if (u.email === email) {
-        // Mọi thay đổi vai trò qua đây đều gán isRoot = false
-        // Điều này biến họ thành Admin cấp 2 nếu chọn role 'admin'
-        return { ...u, role: newRole, isRoot: false };
-      }
-      return u;
-    });
-    saveUsers(newUsers);
-    message.success(`Đã chuyển thành ${newRole.toUpperCase()}`);
   };
 
   const columns = [
     {
-      title: 'Họ và tên',
-      dataIndex: 'fullName',
-      key: 'fullName',
-      render: (text, record) => (
+      title: 'Người dùng',
+      key: 'user_info',
+      render: (_, record) => (
         <Space>
-          <Text strong>{text}</Text>
-          {record.isRoot && <Tag color="gold">TỐI CAO</Tag>}
+          <Avatar 
+            icon={<UserOutlined />} 
+            src={record.avatar_url} 
+            style={{ backgroundColor: record.is_root ? '#f5222d' : '#1890ff' }}
+          />
+          <div>
+            <Text strong>{record.full_name}</Text>
+            <div style={{ fontSize: '12px', color: '#8c8c8c' }}>@{record.user_name}</div>
+          </div>
         </Space>
       ),
     },
     {
-      title: 'Email/Tài khoản',
-      key: 'account',
-      render: (_, record) => (
-        <div>
-          <div>{record.email}</div>
-          <Text type="secondary" style={{ fontSize: '12px' }}>User: {record.username}</Text>
-        </div>
-      ),
+      title: 'Email',
+      dataIndex: 'email_address',
+      key: 'email_address',
     },
     {
-      title: 'Vai trò',
-      dataIndex: 'role',
-      key: 'role',
+      title: 'Cấp bậc / Vai trò',
+      dataIndex: 'user_role',
+      key: 'user_role',
       render: (role, record) => {
-        // Nếu là Root Admin (Cấp 1) thì không được đổi quyền
-        if (record.isRoot) return <Tag color="volcano">ADMIN CẤP 1</Tag>;
+        if (record.is_root) return <Tag color="gold" icon={<CrownOutlined />}>ADMIN CẤP 1 (ROOT)</Tag>;
 
         return (
-          <Select 
-            value={role} 
-            style={{ width: 150 }}
-            onChange={(value) => handleRoleChange(record.email, value)}
+          <Select
+            value={role}
+            size="small"
+            style={{ width: 140 }}
+            onChange={(val) => {
+              const new_users = users.map(u => u.email_address === record.email_address ? { ...u, user_role: val } : u);
+              save_users_data(new_users);
+              message.success('Đã cập nhật quyền hạn');
+            }}
             options={[
-              { value: 'admin', label: 'ADMIN CẤP 2' },
-              { value: 'partner', label: 'ĐỐI TÁC' },
-              { value: 'customer', label: 'KHÁCH HÀNG' },
+              { value: 'admin', label: 'Admin Cấp 2' },
+              { value: 'partner', label: 'Đối tác' },
+              { value: 'customer', label: 'Khách hàng' },
             ]}
           />
         );
@@ -153,40 +146,37 @@ const UserManagement = () => {
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => (
-        <Badge 
-          status={status === 'active' ? 'success' : 'error'} 
-          text={status === 'active' ? 'Hoạt động' : 'Đã khóa'} 
-        />
-      ),
+      dataIndex: 'account_status',
+      key: 'account_status',
+      render: (status) => {
+        const config = status === 'active' ? { color: 'green', text: 'Hoạt động' } : { color: 'red', text: 'Đã khóa' };
+        return <Badge status={status === 'active' ? 'success' : 'error'} text={<Tag color={config.color}>{config.text}</Tag>} />;
+      },
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       key: 'action',
+      align: 'right',
       render: (_, record) => (
-        <Space size="middle">
-          <Button 
-            type="text" 
-            icon={<EyeOutlined />} 
-            onClick={() => { setSelectedUser(record); setIsModalOpen(true); }}
-          />
-          {/* Chỉ hiển thị nút xóa/khóa nếu không phải là Root Admin */}
-          {!record.isRoot && (
+        <Space>
+          <Tooltip title="Xem chi tiết">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => { setSelectedUser(record); setIsModalOpen(true); }} />
+          </Tooltip>
+          
+          {!record.is_root && (
             <>
-              <Button 
-                type="text"
-                icon={record.status === 'active' ? <LockOutlined /> : <UnlockOutlined />}
-                danger={record.status === 'active'}
-                onClick={() => handleToggleStatus(record.email)}
-              />
-              <Button 
-                type="text" 
-                danger 
-                icon={<DeleteOutlined />} 
-                onClick={() => handleDelete(record.email)}
-              />
+              <Tooltip title={record.account_status === 'active' ? "Khóa tài khoản" : "Mở khóa"}>
+                <Button 
+                  size="small" 
+                  icon={record.account_status === 'active' ? <LockOutlined /> : <UnlockOutlined />} 
+                  danger={record.account_status === 'active'}
+                  type={record.account_status !== 'active' ? 'primary' : 'default'}
+                  onClick={() => handle_toggle_status(record)}
+                />
+              </Tooltip>
+              <Tooltip title="Xóa tài khoản">
+                <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handle_delete_user(record.email_address)} />
+              </Tooltip>
             </>
           )}
         </Space>
@@ -194,49 +184,50 @@ const UserManagement = () => {
     },
   ];
 
-  const filteredData = users.filter(u => 
-    u.fullName?.toLowerCase().includes(searchText.toLowerCase()) || 
-    u.email?.toLowerCase().includes(searchText.toLowerCase())
-  );
-
   return (
-    <Card bordered={false}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, alignItems: 'center' }}>
-        <Title level={3} style={{ margin: 0 }}><UserOutlined /> Quản lý người dùng</Title>
+    <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+        <Title level={4} style={{ margin: 0 }}><UserOutlined /> Quản lý danh sách tài khoản</Title>
         <Input
           placeholder="Tìm theo tên hoặc email..."
           prefix={<SearchOutlined />}
-          style={{ width: 300 }}
+          allowClear
+          style={{ width: 320, borderRadius: 8 }}
           onChange={e => setSearchText(e.target.value)}
         />
       </div>
 
-      <Table 
-        columns={columns} 
-        dataSource={filteredData} 
-        rowKey="email"
-        pagination={{ pageSize: 8 }}
+      <Table
+        columns={columns}
+        dataSource={users.filter(u => 
+          u.full_name?.toLowerCase().includes(search_text.toLowerCase()) || 
+          u.email_address?.toLowerCase().includes(search_text.toLowerCase())
+        )}
+        rowKey="email_address"
+        pagination={{ pageSize: 7, showTotal: (total) => `Tổng cộng ${total} tài khoản` }}
       />
 
       <Modal
-        title="Chi tiết hồ sơ người dùng"
-        open={isModalOpen}
+        title={<Space><UserOutlined /> Hồ sơ chi tiết</Space>}
+        open={is_modal_open}
         onCancel={() => setIsModalOpen(false)}
-        footer={[<Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
+        footer={[<Button key="ok" type="primary" onClick={() => setIsModalOpen(false)}>Xác nhận</Button>]}
+        width={600}
       >
-        {selectedUser && (
-          <Descriptions bordered column={1}>
-            <Descriptions.Item label="Họ tên">{selectedUser.fullName}</Descriptions.Item>
-            <Descriptions.Item label="Quyền hạn">
-              <Tag color={selectedUser.isRoot ? 'volcano' : 'blue'}>
-                {selectedUser.isRoot ? 'ADMIN CẤP 1' : selectedUser.role === 'admin' ? 'ADMIN CẤP 2' : selectedUser.role.toUpperCase()}
+        {selected_user && (
+          <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
+            <Descriptions.Item label="Họ tên" span={2}>{selected_user.full_name}</Descriptions.Item>
+            <Descriptions.Item label="Email">{selected_user.email_address}</Descriptions.Item>
+            <Descriptions.Item label="Username">{selected_user.user_name}</Descriptions.Item>
+            <Descriptions.Item label="Vai trò" span={2}>
+              <Tag color={selected_user.is_root ? 'volcano' : 'blue'}>
+                {selected_user.is_root ? 'ADMIN TỐI CAO' : selected_user.user_role.toUpperCase()}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Email">{selectedUser.email}</Descriptions.Item>
-            <Descriptions.Item label="Số điện thoại">{selectedUser.phone || 'Chưa cập nhật'}</Descriptions.Item>
-            <Descriptions.Item label="Ngày tham gia">
-               {new Date(selectedUser.createdAt).toLocaleString('vi-VN')}
+            <Descriptions.Item label="Ngày tạo">
+               {new Date(selected_user.created_at).toLocaleDateString('vi-VN')}
             </Descriptions.Item>
+            <Descriptions.Item label="Số điện thoại">{selected_user.phone_number || 'N/A'}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

@@ -1,42 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Layout, Menu, Card, Avatar, Button, Typography, Tag, 
-  Modal, Form, Input, Upload, Row, Col, Table, Space, Rate, Empty, message
+import {
+  Layout, Menu, Card, Avatar, Button, Typography, Tag,
+  Modal, Form, Input, Row, Col, Table, Space, Rate, Empty, App as AntApp, Descriptions, Badge
 } from 'antd';
-import { 
-  UserOutlined, LockOutlined, HistoryOutlined, 
-  EditOutlined, ArrowLeftOutlined, UploadOutlined,
-  MessageOutlined, StarOutlined, DeleteOutlined
+import {
+  UserOutlined, HistoryOutlined,
+  ArrowLeftOutlined, StarOutlined, DeleteOutlined, 
+  LogoutOutlined, VerifiedOutlined, CarryOutOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '../../services/axiosClient';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { message: antdMessage, modal: antdModal } = AntApp.useApp();
+  
   const [activeTab, setActiveTab] = useState('info');
   const [formReview] = Form.useForm();
   
-  const [userData, setUserData] = useState(JSON.parse(localStorage.getItem('user')) || {});
-  const [bookings, setBookings] = useState([]); 
+  const [userData] = useState(JSON.parse(localStorage.getItem('user')) || {});
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  // 1. Lấy danh sách đơn đặt phòng từ API
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get('http://127.0.0.1:8000/api/hotels/bookings/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setBookings(response.data);
+      const response = await axiosClient.get('/hotels/bookings/');
+      setBookings(Array.isArray(response) ? response : response.data || []);
     } catch (error) {
-      console.error("Lỗi lấy lịch sử đặt phòng:", error);
-      message.error("Không thể tải lịch sử đặt phòng.");
+      antdMessage?.error("Không thể tải lịch sử đặt phòng.");
     } finally {
       setLoading(false);
     }
@@ -46,91 +43,94 @@ const Profile = () => {
     fetchBookings();
   }, []);
 
-  // 2. Logic Hủy phòng
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    antdMessage.success("Đã đăng xuất thành công");
+    navigate('/login');
+  };
+
   const handleCancelBooking = (bookingId) => {
-    Modal.confirm({
-      title: 'Xác nhận hủy phòng?',
-      content: 'Lưu ý: Bạn chỉ có thể hủy phòng khi trạng thái là "Chờ xác nhận".',
+    antdModal?.confirm({
+      title: 'Xác nhận hủy đơn đặt phòng?',
+      icon: <DeleteOutlined style={{ color: 'red' }} />,
+      content: 'Lưu ý: Hành động này không thể hoàn tác. Bạn chỉ có thể hủy đơn ở trạng thái "Chờ xác nhận".',
       okText: 'Xác nhận hủy',
       okType: 'danger',
+      cancelText: 'Quay lại',
       async onOk() {
         try {
-          const token = localStorage.getItem('access_token');
-          await axios.delete(`http://127.0.0.1:8000/api/hotels/bookings/${bookingId}/`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          message.success('Đã hủy phòng thành công!');
+          await axiosClient.delete(`/hotels/bookings/${bookingId}/`);
+          antdMessage?.success('Đã hủy đơn thành công!');
           fetchBookings();
         } catch (error) {
-          message.error("Không thể hủy phòng vào lúc này.");
+          antdMessage?.error("Hủy đơn thất bại. Vui lòng liên hệ hỗ trợ.");
         }
       },
     });
   };
 
-  // 3. Logic Gửi đánh giá (POST lên /api/hotels/reviews/)
   const handleReviewSubmit = async (values) => {
     try {
-      const token = localStorage.getItem('access_token');
       const reviewData = {
-        room: selectedBooking.room, // ID phòng lấy từ đơn đặt
+        room_id: selectedBooking.room_id,
         rating: values.rating,
         comment: values.comment
       };
-
-      await axios.post('http://127.0.0.1:8000/api/hotels/reviews/', reviewData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      message.success('Cảm ơn bạn đã đánh giá dịch vụ!');
+      await axiosClient.post('/hotels/reviews/', reviewData);
+      antdMessage?.success('Cảm ơn bạn đã đóng góp ý kiến!');
       setIsReviewModalOpen(false);
       formReview.resetFields();
     } catch (error) {
-      message.error("Gửi đánh giá thất bại.");
+      antdMessage?.error("Không thể gửi đánh giá lúc này.");
     }
   };
 
   const columns = [
-    { title: 'Mã đơn', dataIndex: 'id', key: 'id', width: 80 },
     { 
-      title: 'Khách sạn / Phòng', 
+      title: 'Mã đơn', 
+      dataIndex: 'id', 
+      key: 'id', 
+      render: (id) => <Text code>#{id}</Text> 
+    },
+    {
+      title: 'Thông tin phòng',
       key: 'hotel',
       render: (record) => (
-        <div>
-          <Text strong>KS {record.hotel_owner_name}</Text><br/>
-          <Text type="secondary" style={{fontSize: 12}}>Phòng: {record.room_number}</Text>
-        </div>
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.hotel_name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>Phòng: {record.room_number} ({record.room_type_name})</Text>
+        </Space>
       )
     },
-    { 
-      title: 'Thời gian', 
-      key: 'time',
-      render: (record) => (
-        <Text style={{fontSize: 13}}>{record.check_in} → {record.check_out}</Text>
-      )
-    },
-    { 
-      title: 'Trạng thái', 
-      dataIndex: 'status', 
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
       key: 'status',
       render: (status) => {
-        let color = status === 'Confirmed' ? 'green' : status === 'Cancelled' ? 'red' : 'orange';
-        let text = status === 'Confirmed' ? 'Đã xác nhận' : status === 'Cancelled' ? 'Đã hủy' : 'Chờ xác nhận';
-        return <Tag color={color}>{text}</Tag>
+        const statusMap = {
+          'Confirmed': { color: 'success', text: 'Đã xác nhận' },
+          'Cancelled': { color: 'error', text: 'Đã hủy' },
+          'Pending': { color: 'processing', text: 'Đang chờ' }
+        };
+        const current = statusMap[status] || { color: 'default', text: status };
+        return <Badge status={current.color} text={current.text} />;
       }
     },
-    { 
-      title: 'Tổng tiền', 
-      dataIndex: 'total_price', 
-      render: (total) => <Text strong color="red">{parseFloat(total).toLocaleString()}đ</Text> 
+    {
+      title: 'Thanh toán',
+      dataIndex: 'total_price',
+      align: 'right',
+      render: (total) => <Text strong style={{ color: '#ff4d4f' }}>{parseFloat(total).toLocaleString()}₫</Text>
     },
-    { 
-      title: 'Thao tác', 
+    {
+      title: 'Hành động',
       key: 'action',
+      align: 'center',
       render: (_, record) => (
-        <Space size="small">
+        <Space>
           {record.status === 'Pending' && (
-            <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleCancelBooking(record.id)}>Hủy</Button>
+            <Button size="small" danger ghost icon={<DeleteOutlined />} onClick={() => handleCancelBooking(record.id)}>Hủy đơn</Button>
           )}
           {record.status === 'Confirmed' && (
             <Button size="small" type="primary" ghost icon={<StarOutlined />} onClick={() => { setSelectedBooking(record); setIsReviewModalOpen(true); }}>Đánh giá</Button>
@@ -141,74 +141,111 @@ const Profile = () => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+    <Layout style={{ minHeight: '100vh', background: '#f4f7fe' }}>
       <Row gutter={0} style={{ minHeight: '100vh', width: '100%' }}>
-        {/* SIDEBAR */}
-        <Col xs={24} md={8} lg={5} style={{ background: '#001529', color: '#fff' }}>
+        {/* SIDEBAR TỐI ƯU CHO MOBILE */}
+        <Col xs={24} lg={5} style={{ background: '#001529', boxShadow: '4px 0 10px rgba(0,0,0,0.1)' }}>
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <Avatar size={100} icon={<UserOutlined />} style={{ border: '3px solid rgba(255,255,255,0.2)', backgroundColor: '#1890ff' }} />
-            <Title level={4} style={{ color: '#fff', margin: '15px 0' }}>{userData.fullName}</Title>
-            <Tag color="gold">THÀNH VIÊN VIP</Tag>
+            <Badge count={<VerifiedOutlined style={{ color: '#52c41a', fontSize: 20 }} />} offset={[-10, 80]}>
+              <Avatar size={90} icon={<UserOutlined />} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.full_name}`} style={{ backgroundColor: '#1890ff', border: '2px solid #fff' }} />
+            </Badge>
+            <Title level={4} style={{ color: '#fff', marginTop: 15, marginBottom: 5 }}>{userData.full_name}</Title>
+            <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{userData.email}</Text>
+            <div style={{ marginTop: 15 }}><Tag color="gold">THÀNH VIÊN BẠC</Tag></div>
           </div>
           
           <Menu
             theme="dark"
             mode="inline"
             selectedKeys={[activeTab]}
-            onClick={({ key }) => (key === 'back' ? navigate('/') : setActiveTab(key))}
+            style={{ borderRight: 0 }}
+            onClick={({ key }) => {
+              if (key === 'back') navigate('/');
+              else if (key === 'logout') handleLogout();
+              else setActiveTab(key);
+            }}
             items={[
-              { key: 'info', icon: <UserOutlined />, label: 'Thông tin cá nhân' },
+              { key: 'info', icon: <UserOutlined />, label: 'Hồ sơ cá nhân' },
               { key: 'history', icon: <HistoryOutlined />, label: 'Lịch sử đặt phòng' },
+              { type: 'divider' },
               { key: 'back', icon: <ArrowLeftOutlined />, label: 'Về trang chủ' },
+              { key: 'logout', icon: <LogoutOutlined />, label: 'Đăng xuất', danger: true },
             ]}
           />
         </Col>
 
         {/* MAIN CONTENT */}
-        <Col xs={24} md={16} lg={19} style={{ padding: '32px' }}>
-          {activeTab === 'info' && (
-            <Card title="Hồ sơ cá nhân">
-               <Row style={{ padding: '15px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <Col span={8}><Text type="secondary">Họ và tên</Text></Col>
-                <Col span={16}><Text strong>{userData.fullName}</Text></Col>
-              </Row>
-              <Row style={{ padding: '15px 0', borderBottom: '1px solid #f0f0f0' }}>
-                <Col span={8}><Text type="secondary">Email</Text></Col>
-                <Col span={16}><Text>{userData.email}</Text></Col>
-              </Row>
-            </Card>
-          )}
+        <Col xs={24} lg={19} style={{ padding: '40px' }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+            {activeTab === 'info' && (
+              <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+                <Title level={3} style={{ marginBottom: 30 }}>Thông tin cá nhân</Title>
+                <Descriptions bordered column={1}>
+                  <Descriptions.Item label="Họ và tên" labelStyle={{ width: 200 }}>{userData.full_name}</Descriptions.Item>
+                  <Descriptions.Item label="Địa chỉ Email">{userData.email}</Descriptions.Item>
+                  <Descriptions.Item label="Số điện thoại">{userData.phone || 'Chưa cập nhật'}</Descriptions.Item>
+                  <Descriptions.Item label="Ngày tham gia">15/03/2026</Descriptions.Item>
+                  <Descriptions.Item label="Trạng thái tài khoản">
+                    <Tag color="green">Đã xác thực</Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+                <Button type="primary" style={{ marginTop: 24, borderRadius: 8 }}>Cập nhật thông tin</Button>
+              </Card>
+            )}
 
-          {activeTab === 'history' && (
-            <Card title="Lịch sử chuyến đi">
-              <Table 
-                columns={columns} 
-                dataSource={bookings} 
-                rowKey="id" 
-                loading={loading}
-                pagination={{ pageSize: 6 }}
-                locale={{ emptyText: <Empty description="Bạn chưa có chuyến đi nào" /> }}
-              />
-            </Card>
-          )}
+            {activeTab === 'history' && (
+              <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <Title level={3} style={{ margin: 0 }}>Lịch sử chuyến đi</Title>
+                  <Button icon={<CarryOutOutlined />} onClick={fetchBookings}>Làm mới</Button>
+                </div>
+                <Table
+                  columns={columns}
+                  dataSource={bookings}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{ pageSize: 5 }}
+                  locale={{ 
+                    emptyText: (
+                      <Empty 
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="Bạn chưa có kế hoạch vi vu nào"
+                      >
+                        <Button type="primary" onClick={() => navigate('/')}>Khám phá ngay</Button>
+                      </Empty>
+                    ) 
+                  }}
+                />
+              </Card>
+            )}
+          </div>
         </Col>
       </Row>
 
-      {/* MODAL ĐÁNH GIÁ */}
       <Modal
-        title="Đánh giá kỳ nghỉ"
+        title={
+          <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: 10 }}>
+            <Title level={4} style={{ margin: 0 }}>Đánh giá dịch vụ</Title>
+            {selectedBooking && <Text type="secondary" style={{ fontSize: 13 }}>{selectedBooking.hotel_name} - Phòng {selectedBooking.room_number}</Text>}
+          </div>
+        }
         open={isReviewModalOpen}
         onCancel={() => setIsReviewModalOpen(false)}
         footer={null}
+        centered
+        borderRadius={12}
       >
-        <Form form={formReview} layout="vertical" onFinish={handleReviewSubmit}>
-          <Form.Item name="rating" label="Bạn cảm thấy thế nào?" rules={[{ required: true }]}>
-            <Rate />
+        <Form form={formReview} layout="vertical" onFinish={handleReviewSubmit} style={{ marginTop: 20 }}>
+          <Form.Item name="rating" label="Chất lượng phòng & dịch vụ" rules={[{ required: true, message: 'Vui lòng chọn số sao' }]}>
+            <Rate allowHalf style={{ fontSize: 32 }} />
           </Form.Item>
-          <Form.Item name="comment" label="Chia sẻ trải nghiệm của bạn" rules={[{ required: true, message: 'Vui lòng nhập nội dung' }]}>
-            <TextArea rows={4} placeholder="Phòng sạch sẽ, view đẹp..." />
+          <Form.Item name="comment" label="Ý kiến đóng góp của bạn" rules={[{ required: true, message: 'Hãy chia sẻ một chút về cảm nhận của bạn' }]}>
+            <TextArea rows={5} placeholder="Ví dụ: Phòng sạch sẽ, nhân viên hỗ trợ nhiệt tình, view rất đẹp..." style={{ borderRadius: 8 }} />
           </Form.Item>
-          <Button type="primary" block htmlType="submit">Gửi đánh giá</Button>
+          <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+            <Button block size="large" onClick={() => setIsReviewModalOpen(false)}>Bỏ qua</Button>
+            <Button type="primary" block size="large" htmlType="submit">Gửi phản hồi</Button>
+          </div>
         </Form>
       </Modal>
     </Layout>

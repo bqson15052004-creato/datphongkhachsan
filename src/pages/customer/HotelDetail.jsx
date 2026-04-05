@@ -1,208 +1,252 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Layout, Row, Col, Typography, Button, Card, Tag, 
-  Table, Tabs, Image, Rate, Divider, Space, Avatar, Dropdown, Spin, List 
+import {
+  Layout, Row, Col, Typography, Button, Card, Tag,
+  Table, Tabs, Image, Rate, Divider, Space, Avatar, Spin, List, Empty, App as AntApp
 } from 'antd';
-import { 
+import {
   EnvironmentOutlined, CheckCircleOutlined, InfoCircleOutlined,
-  ArrowLeftOutlined, UserOutlined, LogoutOutlined, SolutionOutlined, HomeOutlined 
+  ArrowLeftOutlined, UserOutlined, HomeOutlined, SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import axiosClient from '../../services/axiosClient';
 import Navbar from '../../components/common/Navbar';
+import dayjs from 'dayjs';
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
 
+// --- STYLE CONSTANTS (Giữ nguyên của Sơn và thêm 1 chút tinh chỉnh) ---
+const main_image_style = { width: '100%', height: 450, objectFit: 'cover', borderRadius: '16px 0 0 16px' };
+const sub_image_style = { width: '100%', height: 219, objectFit: 'cover', borderRadius: 12, cursor: 'pointer', transition: 'opacity 0.3s' };
+const sticky_card_style = { 
+  borderRadius: 16, 
+  backgroundColor: '#fff', 
+  position: 'sticky', 
+  top: 100, 
+  border: '1px solid #f0f0f0',
+  boxShadow: '0 10px 30px rgba(0,0,0,0.05)' 
+};
+
 const HotelDetail = () => {
-  const { id } = useParams(); 
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { message: antdMessage } = AntApp.useApp();
   
-  const [currentUser, setCurrentUser] = useState(null);
   const [room, setRoom] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Lấy thông tin user
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) setCurrentUser(user);
-
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 2. Gọi API lấy chi tiết phòng
-        const roomRes = await axios.get(`http://127.0.0.1:8000/api/hotels/rooms/${id}/`);
-        setRoom(roomRes.data);
+        const roomRes = await axiosClient.get(`/hotels/rooms/${id}/`);
+        setRoom(roomRes.data || roomRes);
 
-        // 3. Gọi API lấy danh sách đánh giá của phòng này
-        const reviewRes = await axios.get(`http://127.0.0.1:8000/api/hotels/reviews/`, {
-          params: { room_id: id }
-        });
-        setReviews(reviewRes.data);
+        const reviewRes = await axiosClient.get(`/hotels/reviews/`, { params: { room_id: id } });
+        setReviews(Array.isArray(reviewRes) ? reviewRes : reviewRes.data || []); 
       } catch (error) {
-        console.error("Lỗi lấy dữ liệu:", error);
+        antdMessage?.error("Không tải được chi tiết phòng.");
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [id]);
+  }, [id, antdMessage]);
 
-  // Cấu hình bảng hiển thị thông tin đặt phòng (Show chính cái phòng đang xem)
+  const isRoomAvailable = room?.status === 'available' || room?.is_available;
+
   const columns = [
-    { 
-      title: 'Hạng phòng', 
-      dataIndex: 'room_type_name', 
-      key: 'room_type_name', 
-      render: (text) => <Text strong>{text}</Text> 
+    {
+      title: 'Hạng phòng',
+      key: 'room_info',
+      render: (record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontSize: 16 }}>{record.room_type_name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>Diện tích: 35m² • Hướng biển</Text>
+        </Space>
+      )
     },
-    { 
-      title: 'Số phòng', 
-      dataIndex: 'room_number', 
-      key: 'room_number',
-      render: (num) => <Tag color="blue">{num}</Tag>
+    {
+      title: 'Giá phòng',
+      dataIndex: 'price_per_night',
+      key: 'price_per_night',
+      align: 'center',
+      render: (price) => (
+        <div style={{ textAlign: 'center' }}>
+          <Text type="danger" strong style={{ fontSize: 18 }}>{parseFloat(price).toLocaleString()}đ</Text>
+          <br /><Text type="secondary" style={{ fontSize: 10 }}>Gồm thuế & phí</Text>
+        </div>
+      )
     },
-    { 
-      title: 'Giá/Đêm', 
-      dataIndex: 'price', 
-      key: 'price', 
-      render: (price) => <Text type="danger" strong>{parseFloat(price).toLocaleString()}đ</Text> 
+    {
+      title: 'Trạng thái',
+      key: 'status',
+      align: 'center',
+      render: () => (
+        <Tag color={isRoomAvailable ? 'green' : 'red'}>
+          {isRoomAvailable ? 'Còn chỗ' : 'Hết phòng'}
+        </Tag>
+      )
     },
-    { 
-      title: 'Thao tác', 
-      key: 'action', 
+    {
+      title: 'Hành động',
+      key: 'action',
+      width: 150,
       render: (_, record) => (
-        <Button 
-          type="primary" 
-          disabled={!record.is_available}
-          onClick={() => navigate('/checkout', { state: { room: record } })} 
+        <Button
+          type="primary"
+          block
+          size="large"
+          disabled={!isRoomAvailable}
+          onClick={() => navigate('/checkout', { state: { room: record } })}
+          style={{ borderRadius: 8 }}
         >
-          Đặt ngay
+          {isRoomAvailable ? 'Đặt phòng' : 'Đã hết'}
         </Button>
-      ) 
+      )
     },
   ];
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
-  if (!room) return <div style={{ textAlign: 'center', padding: '100px' }}><Text>Không tìm thấy thông tin.</Text></div>;
+  if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" tip="Đang chuẩn bị phòng cho bạn..." /></div>;
+  if (!room) return <div style={{ textAlign: 'center', padding: '100px' }}><Empty description="Phòng này không tồn tại hoặc đã bị gỡ." /></div>;
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
       <Navbar />
 
-      <Content style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 50px', background: '#fff', width: '100%' }}>
-        <div style={{ marginBottom: 10 }}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ paddingLeft: 0 }}>
-            Quay lại trang danh sách
-          </Button>
+      <Content style={{ maxWidth: 1200, margin: '0 auto', padding: '20px 20px', width: '100%' }}>
+        <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: '#64748b', marginBottom: 16, padding: 0 }}>
+          Quay lại danh sách khách sạn
+        </Button>
+
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <Title level={2} style={{ marginBottom: 8 }}>{room.hotel_name || 'Khách sạn đối tác'}</Title>
+              <Space split={<Divider type="vertical" />}>
+                <Rate disabled defaultValue={5} style={{ fontSize: 14 }} />
+                <Text type="secondary"><EnvironmentOutlined /> {room.location_city || 'Khu vực trung tâm'}</Text>
+                <Tag color="blue" icon={<HomeOutlined />}>Phòng {room.room_number}</Tag>
+              </Space>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+               <Text type="secondary">Giá chỉ từ</Text>
+               <Title level={3} style={{ color: '#ff4d4f', margin: 0 }}>{parseFloat(room.price_per_night).toLocaleString()}đ</Title>
+            </div>
+          </div>
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <Title level={2} style={{ marginBottom: 4 }}>Khách sạn {room.hotel_owner_name}</Title>
-          <Space size="large">
-            <Rate disabled defaultValue={5} />
-            <Text type="secondary"><EnvironmentOutlined /> Thuộc hệ thống đối tác của nền tảng</Text>
-            <Tag color="purple"><HomeOutlined /> Phòng {room.room_number}</Tag>
-          </Space>
-        </div>
-
-        {/* Khối hình ảnh */}
         <Row gutter={[12, 12]}>
           <Col span={16}>
-            <Image 
-              src={room.image || 'https://via.placeholder.com/800x450'} 
-              style={{ width: '100%', height: 450, objectFit: 'cover', borderRadius: 12 }} 
+            <Image
+              src={room.image || 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800'}
+              style={main_image_style}
+              preview={{ mask: "Xem ảnh phóng to" }}
             />
           </Col>
           <Col span={8}>
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
-              <Image src="https://via.placeholder.com/400x219?text=Phòng+Khách" style={{ width: '100%', height: 219, objectFit: 'cover', borderRadius: 12 }} />
-              <Image src="https://via.placeholder.com/400x219?text=Tiện+Nghi" style={{ width: '100%', height: 219, objectFit: 'cover', borderRadius: 12 }} />
+              <Image src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400" style={sub_image_style} />
+              <div style={{ position: 'relative' }}>
+                <Image src="https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=400" style={sub_image_style} />
+                <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '4px 12px', borderRadius: 20, fontSize: 12 }}>
+                  +15 ảnh khác
+                </div>
+              </div>
             </Space>
           </Col>
         </Row>
 
         <Row gutter={40} style={{ marginTop: 40 }}>
-          <Col span={16}>
-            <Tabs defaultActiveKey="1">
-              <Tabs.TabPane tab="Tổng quan" key="1">
-                <Title level={4}>Thông tin hạng phòng: {room.room_type_name}</Title>
-                <Paragraph style={{ fontSize: 16, lineHeight: 1.8 }}>
-                  Trải nghiệm không gian nghỉ dưỡng tuyệt vời tại phòng {room.room_number}. 
-                  Với thiết kế hiện đại, đầy đủ tiện nghi và dịch vụ chuyên nghiệp từ đối tác {room.hotel_owner_name}.
+          <Col xs={24} lg={16}>
+            <Tabs defaultActiveKey="1" size="large" className="custom-tabs">
+              <Tabs.TabPane tab="Mô tả chi tiết" key="1">
+                <Title level={4}>Về hạng phòng {room.room_type_name}</Title>
+                <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
+                  Chào mừng bạn đến với không gian nghỉ dưỡng tại {room.hotel_name}. Phòng {room.room_number} được trang bị nội thất cao cấp, 
+                  tầm nhìn thoáng đãng và không gian yên tĩnh tuyệt đối, phù hợp cho cả chuyến công tác lẫn du lịch nghỉ dưỡng.
                 </Paragraph>
                 <Divider />
-                <Title level={4}>Tiện nghi đi kèm</Title>
-                <Row gutter={[16, 16]}>
-                  {['Wifi miễn phí', 'Điều hòa 24/7', 'Bữa sáng tại phòng', 'Tivi 4K', 'Mini Bar'].map(item => (
+                <Title level={4}>Tiện ích cao cấp</Title>
+                <Row gutter={[16, 24]}>
+                  {['Wifi tốc độ cao', 'Bồn tắm nằm', 'Dịch vụ dọn phòng', 'Máy pha cà phê', 'Két sắt bảo mật', 'Ăn sáng buffet'].map(item => (
                     <Col span={8} key={item}>
-                      <Text><CheckCircleOutlined style={{ color: '#52c41a' }} /> {item}</Text>
+                      <Space><CheckCircleOutlined style={{ color: '#52c41a' }} /> <Text>{item}</Text></Space>
                     </Col>
                   ))}
                 </Row>
               </Tabs.TabPane>
 
-              <Tabs.TabPane tab={`Đánh giá (${reviews.length})`} key="2">
+              <Tabs.TabPane tab={`Khách hàng đánh giá (${reviews.length})`} key="2">
                 <List
                   itemLayout="horizontal"
                   dataSource={reviews}
                   renderItem={item => (
                     <List.Item>
                       <List.Item.Meta
-                        avatar={<Avatar icon={<UserOutlined />} />}
-                        title={<Space><Text strong>{item.customer_name}</Text> <Rate disabled defaultValue={item.rating} style={{ fontSize: 12 }} /></Space>}
+                        avatar={<Avatar src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.customer_name}`} />}
+                        title={<Space><Text strong>{item.customer_name}</Text> <Rate disabled defaultValue={item.rating} style={{ fontSize: 10 }} /></Space>}
                         description={
                           <div>
-                            <Text>{item.comment}</Text>
-                            <br />
-                            <Text type="secondary" style={{ fontSize: 12 }}>{new Date(item.created_at).toLocaleDateString('vi-VN')}</Text>
+                            <Paragraph style={{ margin: '4px 0' }}>{item.comment || 'Khách hàng không để lại bình luận.'}</Paragraph>
+                            <Text type="secondary" style={{ fontSize: 11 }}>{dayjs(item.created_at).format('DD [tháng] MM, YYYY')}</Text>
                           </div>
                         }
                       />
                     </List.Item>
                   )}
-                  locale={{ emptyText: <Empty description="Chưa có đánh giá nào cho phòng này." /> }}
+                  locale={{ emptyText: <Empty description="Hãy là người đầu tiên trải nghiệm và đánh giá phòng này!" /> }}
                 />
               </Tabs.TabPane>
             </Tabs>
 
-            <div id="room-selection" style={{ marginTop: 40 }}>
-              <Title level={4}>Xác nhận thông tin phòng</Title>
-              <Table 
-                columns={columns} 
-                dataSource={[room]} // Truyền chính object room hiện tại vào mảng
-                pagination={false} 
-                bordered 
-                rowKey="id" 
+            <div id="room-selection" style={{ marginTop: 60, padding: '24px', background: '#f8fafc', borderRadius: 16 }}>
+              <Title level={4}><SafetyCertificateOutlined /> Lựa chọn của bạn</Title>
+              <Table
+                columns={columns}
+                dataSource={[room]}
+                pagination={false}
+                bordered={false}
+                rowKey="id_room"
+                style={{ marginTop: 16 }}
               />
             </div>
           </Col>
 
-          {/* Cột Sticky bên phải */}
-          <Col span={8}>
-            <Card bordered style={{ borderRadius: 16, backgroundColor: '#f9f9f9', position: 'sticky', top: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-              <Title level={4} style={{ color: '#ff4d4f', marginBottom: 0 }}>
-                {parseFloat(room.price).toLocaleString()} ₫
-              </Title>
-              <Text type="secondary">/ đêm / phòng</Text>
+          <Col xs={24} lg={8}>
+            <Card style={sticky_card_style}>
+              <div style={{ marginBottom: 16 }}>
+                <Text type="secondary">Giá mỗi đêm từ</Text>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                   <Title level={2} style={{ color: '#ff4d4f', margin: 0 }}>{parseFloat(room.price_per_night).toLocaleString()}đ</Title>
+                   <Text type="secondary">/ phòng</Text>
+                </div>
+              </div>
+              <Alert 
+                message="Đảm bảo giá tốt nhất" 
+                type="success" 
+                showIcon 
+                style={{ marginBottom: 20, borderRadius: 8 }}
+              />
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text><CheckCircleOutlined style={{ color: '#52c41a' }} /> Xác nhận tức thì</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text><CheckCircleOutlined style={{ color: '#52c41a' }} /> Không phí hủy phòng</Text>
+                </div>
+              </Space>
               <Divider />
-              <Title level={5}><InfoCircleOutlined /> Tại sao nên đặt ở đây?</Title>
-              <ul style={{ paddingLeft: 20, color: '#4b5563' }}>
-                <li>Giá tốt nhất cho hạng {room.room_type_name}</li>
-                <li>Hỗ trợ đổi ngày đặt linh hoạt</li>
-                <li>Xác nhận phòng ngay lập tức</li>
-              </ul>
-              <Button 
-                type="primary" 
-                block 
-                size="large" 
-                shape="round"
-                disabled={!room.is_available}
+              <Button
+                type="primary"
+                block
+                size="large"
+                style={{ height: 50, fontSize: 16, fontWeight: 700, borderRadius: 12 }}
+                disabled={!isRoomAvailable}
                 onClick={() => document.getElementById('room-selection').scrollIntoView({ behavior: 'smooth' })}
               >
-                {room.is_available ? 'Kiểm tra & Đặt ngay' : 'Hết phòng'}
+                {isRoomAvailable ? 'CHỌN PHÒNG NGAY' : 'HẾT PHÒNG'}
               </Button>
             </Card>
           </Col>

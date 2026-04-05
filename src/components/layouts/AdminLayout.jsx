@@ -13,9 +13,9 @@ import {
   FileTextOutlined,
   PercentageOutlined,
   WarningOutlined,
-  ExclamationCircleFilled
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+// import axiosClient from '../../services/axiosClient'; // Mở ra khi kết nối BE thật
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -23,7 +23,7 @@ const { confirm } = Modal;
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [pending_count, set_pending_count] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { message } = AntApp.useApp();
@@ -32,34 +32,84 @@ const AdminLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 1. Lấy thông tin user từ localStorage (bao gồm isRoot)
-  const user = JSON.parse(localStorage.getItem('user')) || { 
-    fullName: 'Quản trị viên', 
-    role: 'admin', 
-    isRoot: false 
-  };
+  // 1. LẤY THÔNG TIN USER (Đồng bộ với key 'user' từ Login.jsx)
+  const userData = localStorage.getItem('user');
+  const user = userData ? JSON.parse(userData) : null;
 
-  // 2. Logic tự động đếm số lượng "Đang chờ"
+  // 2. KIỂM TRA QUYỀN TRUY CẬP NHANH
   useEffect(() => {
-    const updateCount = () => {
-      const allHotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-      const count = allHotels.filter(h => h.status === 'Đang chờ').length;
-      setPendingCount(count);
-    };
+    // Nếu không có user hoặc role không phải admin thì đá ra ngoài trang chủ
+    if (!user || user.role !== 'admin') {
+      message.error('Bạn không có quyền truy cập vùng này!');
+      navigate('/');
+    }
+  }, [user, navigate, message]);
 
-    updateCount();
-    window.addEventListener('storage', updateCount);
-    return () => window.removeEventListener('storage', updateCount);
+  // 3. LOGIC ĐẾM SỐ LƯỢNG CHỜ DUYỆT
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        /* KẾT NỐI BE THẬT */
+        // const res = await axiosClient.get('/admin/hotels/pending-count/');
+        // set_pending_count(res.count);
+
+        /* LOGIC MOCK DATA */
+        const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
+        const count = all_hotels.filter(h => h.status === 'pending').length;
+        set_pending_count(count);
+      } catch (error) {
+        console.error("Lỗi cập nhật số lượng chờ duyệt:", error);
+      }
+    };
+    fetchPendingCount();
   }, []);
 
-  // 3. MENU NGƯỜI DÙNG
-  const userMenuItems = [
+  // Giả lập level cho Mock User (Nếu user chưa có level thì mặc định là 1 - Sếp)
+  const userLevel = user?.level || 1;
+
+  // 4. CẤU HÌNH MENU NỘI BỘ
+  const menu_config = [
+    { key: '/admin/dashboard', icon: <DashboardOutlined />, label: 'Tổng quan' },
     {
-      key: 'profile',
-      label: 'Hồ sơ cá nhân',
-      icon: <ProfileOutlined />,
-      onClick: () => navigate('/profile'),
+      key: '/admin/revenues',
+      icon: <BarChartOutlined />,
+      label: 'Báo cáo doanh thu',
+      level_required: 1 // Chỉ level 1 (Sếp) mới thấy
     },
+    {
+      key: '/admin/partners',
+      icon: <SolutionOutlined />,
+      label: (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Phê duyệt đối tác</span>
+          {pending_count > 0 && <Badge count={pending_count} size="small" offset={[10, 0]} />}
+        </div>
+      )
+    },
+    {
+      key: '/admin/users',
+      icon: <UserOutlined />,
+      label: 'Quản lý người dùng',
+      level_required: 1
+    },
+    { key: '/admin/categories', icon: <AppstoreOutlined />, label: 'Quản lý danh mục' },
+    { key: '/admin/reports', icon: <FileTextOutlined />, label: 'Quản lý báo cáo' },
+    {
+      key: '/admin/discounts',
+      icon: <PercentageOutlined />,
+      label: 'Quản lý chiết khấu',
+      level_required: 1
+    },
+    { key: '/admin/complaints', icon: <WarningOutlined />, label: 'Quản lý khiếu nại' },
+  ];
+
+  // Lọc menu theo level (số càng nhỏ quyền càng cao)
+  const side_menu_items = menu_config.filter(item => 
+    !item.level_required || userLevel <= item.level_required
+  );
+
+  const user_menu_items = [
+    { key: 'profile', label: 'Hồ sơ cá nhân', icon: <ProfileOutlined />, onClick: () => navigate('/profile') },
     { type: 'divider' },
     {
       key: 'logout',
@@ -69,13 +119,15 @@ const AdminLayout = () => {
       onClick: () => {
         confirm({
           title: 'Xác nhận đăng xuất',
-          icon: <ExclamationCircleFilled />,
-          content: 'Bạn có chắc chắn muốn thoát khỏi hệ thống quản trị?',
-          okText: 'Đăng xuất',
-          okType: 'danger',
-          onOk() {
+          content: 'Thoát khỏi hệ thống quản trị?',
+          async onOk() {
+            /* --- GỌI API LOGOUT BE --- */
+            // try { await axiosClient.post('/accounts/logout/'); } catch(e) {}
+
             localStorage.removeItem('user');
-            message.success('Đã đăng xuất thành công!');
+            localStorage.removeItem('role');
+            localStorage.removeItem('token');
+            message.success('Đã đăng xuất!');
             navigate('/');
           },
         });
@@ -83,76 +135,19 @@ const AdminLayout = () => {
     },
   ];
 
-  // 4. DANH SÁCH MENU TỔNG (Có đánh dấu isRootOnly cho Admin Cấp 1)
-  const menuConfig = [
-    { key: '/admin/dashboard', icon: <DashboardOutlined />, label: 'Tổng quan' },
-    { 
-      key: '/admin/revenues', 
-      icon: <BarChartOutlined />, 
-      label: 'Báo cáo doanh thu', 
-      isRootOnly: true // Chỉ Admin Cấp 1 thấy
-    },
-    { 
-      key: '/admin/partners', 
-      icon: <SolutionOutlined />, 
-      label: (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Phê duyệt đối tác</span>
-          {pendingCount > 0 && (
-            <Badge 
-              count={pendingCount} 
-              size="small" 
-              style={{ backgroundColor: '#f5222d' }} 
-            />
-          )}
-        </div>
-      ) 
-    },
-    { 
-      key: '/admin/users', 
-      icon: <UserOutlined />, 
-      label: 'Quản lý người dùng', 
-      isRootOnly: true // Chỉ Admin Cấp 1 thấy
-    },
-    { key: '/admin/categories', icon: <AppstoreOutlined />, label: 'Quản lý danh mục' },
-    { key: '/admin/reports', icon: <FileTextOutlined />, label: 'Quản lý báo cáo' },
-    { 
-      key: '/admin/discounts', 
-      icon: <PercentageOutlined />, 
-      label: 'Quản lý chiết khấu', 
-      isRootOnly: true // Chỉ Admin Cấp 1 thấy
-    },
-    { key: '/admin/complaints', icon: <WarningOutlined />, label: 'Quản lý khiếu nại' },
-  ];
-
-  // Lọc menu dựa trên quyền
-  const sideMenuItems = menuConfig.filter(item => !item.isRootOnly || user.isRoot);
+  // Chặn render nếu không phải admin để tránh lộ UI trước khi chuyển hướng
+  if (!user || user.role !== 'admin') return null;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider 
-        trigger={null} 
-        collapsible 
-        collapsed={collapsed}
-        theme="dark"
-        width={250}
-        style={{ boxShadow: '2px 0 8px 0 rgba(0,0,0,0.15)' }}
-      >
-        <div style={{ 
-          height: 64, 
-          display: 'flex', 
-          flexDirection: 'column',
-          alignItems: 'center', 
-          justifyContent: 'center',
-          background: '#002140',
-          lineHeight: '1.2'
-        }}>
+      <Sider trigger={null} collapsible collapsed={collapsed} theme="dark" width={250}>
+        <div style={{ height: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#002140' }}>
           <div style={{ color: '#fff', fontWeight: 'bold', fontSize: collapsed ? 14 : 18 }}>
             {collapsed ? 'AD' : 'HOTEL ADMIN'}
           </div>
           {!collapsed && (
-            <div style={{ color: user.isRoot ? '#ffbb96' : '#91d5ff', fontSize: 10 }}>
-              {user.isRoot ? 'HỆ THỐNG TỐI CAO' : 'QUẢN TRỊ VIÊN'}
+            <div style={{ color: userLevel === 1 ? '#ffbb96' : '#91d5ff', fontSize: 10 }}>
+              {userLevel === 1 ? 'ADMIN CẤP 1 (SẾP)' : 'ADMIN CẤP 2 (NV)'}
             </div>
           )}
         </div>
@@ -161,48 +156,37 @@ const AdminLayout = () => {
           mode="inline"
           selectedKeys={[location.pathname]}
           onClick={({ key }) => navigate(key)}
-          items={sideMenuItems}
+          items={side_menu_items}
         />
       </Sider>
 
       <Layout>
-        <Header style={{ 
-          padding: '0 24px 0 0', 
-          background: colorBgContainer, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between' 
-        }}>
+        <Header style={{ padding: '0 24px 0 0', background: colorBgContainer, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: '16px', width: 64, height: 64 }}
+            style={{ width: 64, height: 64 }}
           />
           
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
+          <Dropdown menu={{ items: user_menu_items }} placement="bottomRight">
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '0 16px' }}>
-              <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
-                <Text strong style={{ display: 'block' }}>{user.fullName}</Text>
+              <div style={{ textAlign: 'right' }}>
+                <Text strong style={{ display: 'block' }}>{user.full_name}</Text>
                 <Text type="secondary" style={{ fontSize: '11px' }}>
-                  {user.isRoot ? 'Admin Cấp 1' : 'Admin Cấp 2'}
+                  Cấp độ: {userLevel}
                 </Text>
               </div>
               <Avatar 
-                style={{ backgroundColor: user.isRoot ? '#f5222d' : '#1890ff' }} 
+                style={{ backgroundColor: userLevel === 1 ? '#f5222d' : '#1890ff' }} 
+                src={user.avatar} 
                 icon={<UserOutlined />} 
               />
             </div>
           </Dropdown>
         </Header>
 
-        <Content style={{ 
-          margin: '24px 16px', 
-          padding: 24, 
-          background: colorBgContainer, 
-          borderRadius: borderRadiusLG,
-          minHeight: 280 
-        }}>
+        <Content style={{ margin: '24px 16px', padding: 24, background: colorBgContainer, borderRadius: borderRadiusLG, minHeight: 280 }}>
           <Outlet />
         </Content>
       </Layout>

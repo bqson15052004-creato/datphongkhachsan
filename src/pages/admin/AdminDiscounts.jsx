@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, Select, InputNumber, DatePicker } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PercentageOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -9,85 +9,96 @@ const AdminDiscounts = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
 
-  // Dữ liệu mẫu
+  // 1. Dữ liệu mẫu theo chuẩn snake_case (Khớp với bảng discount trong ERD)
   const [discounts, setDiscounts] = useState([
-    { 
-      key: '1', 
+    {
+      id_discount: '1',
       code: 'SONDEPTRAI20',
-      name: 'Khuyến mãi mùa hè', 
-      type: 'Khách hàng', 
-      percent: 20, 
-      status: 'Đang chạy', 
-      expiry: '2026-06-30' 
+      name: 'Khuyến mãi mùa hè',
+      target_type: 'customer', // customer | partner
+      percentage: 20,
+      status: 'active', // active | expired | hidden
+      start_date: '2026-03-01',
+      end_date: '2026-06-30'
     },
-    { 
-      key: '2', 
-      code: 'PARTNER15', 
-      name: 'Hoa hồng tiêu chuẩn', 
-      type: 'Đối tác', 
-      percent: 15, 
-      status: 'Đang chạy', 
-      expiry: 'Không thời hạn' 
-    },
-    { 
-      key: '3', 
-      code: 'FLASH50', 
-      name: 'Giảm giá Flash Sale', 
-      type: 'Khách hàng', 
-      percent: 50, 
-      status: 'Hết hạn', 
-      expiry: '2026-02-15' 
-    },
+    {
+      id_discount: '2',
+      code: 'PARTNER15',
+      name: 'Hoa hồng tiêu chuẩn',
+      target_type: 'partner',
+      percentage: 15,
+      status: 'active',
+      start_date: '2026-01-01',
+      end_date: null // Không thời hạn
+    }
   ]);
 
+  // 2. Cấu hình cột Table
   const columns = [
-    { title: 'Mã Code', dataIndex: 'code', key: 'code', render: (text) => <b>{text}</b> },
+    { 
+      title: 'Mã Code', 
+      dataIndex: 'code', 
+      key: 'code', 
+      render: (text) => <Tag color="orange" style={{ fontWeight: 'bold' }}>{text}</Tag> 
+    },
     { title: 'Tên chương trình', dataIndex: 'name', key: 'name' },
-    { 
-      title: 'Đối tượng áp dụng', 
-      dataIndex: 'type', 
-      key: 'type',
+    {
+      title: 'Đối tượng',
+      dataIndex: 'target_type',
+      key: 'target_type',
       render: (type) => (
-        <Tag color={type === 'Khách hàng' ? 'blue' : 'purple'}>{type}</Tag>
+        <Tag color={type === 'customer' ? 'blue' : 'purple'}>
+          {type === 'customer' ? 'Khách hàng' : 'Đối tác'}
+        </Tag>
       )
     },
-    { 
-      title: 'Mức giảm (%)', 
-      dataIndex: 'percent', 
-      key: 'percent',
-      render: (percent) => <Text type="danger" strong>{percent}%</Text>
+    {
+      title: 'Mức giảm (%)',
+      dataIndex: 'percentage',
+      key: 'percentage',
+      render: (val) => <Text type="danger" strong>{val}%</Text>
     },
-    { title: 'Hạn sử dụng', dataIndex: 'expiry', key: 'expiry' },
     { 
-      title: 'Trạng thái', 
-      dataIndex: 'status', 
+      title: 'Hạn dùng', 
+      dataIndex: 'end_date', 
+      key: 'end_date',
+      render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'Vô thời hạn'
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
       key: 'status',
-      render: (status) => (
-        <Tag color={status === 'Đang chạy' ? 'green' : 'default'}>{status}</Tag>
-      )
+      render: (status) => {
+        let color = status === 'active' ? 'green' : 'default';
+        let text = status === 'active' ? 'Đang chạy' : 'Hết hạn';
+        return <Tag color={color}>{text}</Tag>;
+      }
     },
     {
       title: 'Hành động',
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="primary" ghost icon={<EditOutlined />} size="small">Sửa</Button>
-          <Button danger icon={<DeleteOutlined />} size="small">Xóa</Button>
+          <Button type="link" icon={<EditOutlined />} size="small">Sửa</Button>
+          <Button type="link" danger icon={<DeleteOutlined />} size="small">Xóa</Button>
         </Space>
       ),
     },
   ];
 
+  // 3. Xử lý thêm mới (Dữ liệu gửi lên Backend)
   const handleAddSubmit = (values) => {
     const newDiscount = {
-      key: Date.now().toString(),
+      id_discount: Date.now().toString(),
       code: values.code.toUpperCase(),
       name: values.name,
-      type: values.type,
-      percent: values.percent,
-      status: 'Đang chạy',
-      expiry: values.expiry ? values.expiry.format('YYYY-MM-DD') : 'Không thời hạn'
+      target_type: values.target_type,
+      percentage: values.percentage,
+      status: 'active',
+      start_date: dayjs().format('YYYY-MM-DD'), // Ngày tạo là ngày bắt đầu
+      end_date: values.end_date ? values.end_date.format('YYYY-MM-DD') : null
     };
+
     setDiscounts([...discounts, newDiscount]);
     setIsModalVisible(false);
     form.resetFields();
@@ -95,50 +106,55 @@ const AdminDiscounts = () => {
 
   return (
     <div style={{ padding: '24px' }}>
-      <Card 
-        title={<Title level={3} style={{ margin: 0 }}>Thiết lập Chiết khấu & Khuyến mãi</Title>}
+      <Card
+        title={<Title level={4} style={{ margin: 0 }}>Quản lý Chiết khấu & Hoa hồng</Title>}
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
             Tạo mã mới
           </Button>
         }
       >
-        <Table columns={columns} dataSource={discounts} bordered />
+        <Table 
+          columns={columns} 
+          dataSource={discounts} 
+          rowKey="id_discount" // Khớp với khóa chính trong ERD
+          bordered 
+        />
       </Card>
 
-      <Modal 
-        title="Tạo chương trình Chiết khấu / Khuyến mãi mới" 
-        open={isModalVisible} 
-        onOk={() => form.submit()} 
+      <Modal
+        title="Thiết lập chương trình mới"
+        open={isModalVisible}
+        onOk={() => form.submit()}
         onCancel={() => setIsModalVisible(false)}
-        okText="Khởi tạo"
-        cancelText="Hủy bỏ"
-        width={600}
+        okText="Lưu cấu hình"
+        cancelText="Hủy"
+        width={500}
       >
         <Form form={form} layout="vertical" onFinish={handleAddSubmit}>
-          <Form.Item name="name" label="Tên chương trình" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
-            <Input placeholder="VD: Khuyến mãi mừng khai trương" />
+          <Form.Item name="name" label="Tên chương trình" rules={[{ required: true, message: 'Bắt buộc nhập!' }]}>
+            <Input placeholder="VD: Giảm giá khai trương hè 2026" />
           </Form.Item>
           
-          <Space style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-            <Form.Item name="code" label="Mã Code" rules={[{ required: true, message: 'Nhập mã!' }]}>
-              <Input placeholder="VD: SUMMER20" style={{ textTransform: 'uppercase' }} />
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <Form.Item name="code" label="Mã Code" style={{ flex: 1 }} rules={[{ required: true, message: 'Nhập mã!' }]}>
+              <Input placeholder="VD: SUMMER26" style={{ textTransform: 'uppercase' }} />
             </Form.Item>
 
-            <Form.Item name="percent" label="Mức tỷ lệ (%)" rules={[{ required: true, message: 'Nhập tỷ lệ!' }]}>
-              <InputNumber min={1} max={100} formatter={value => `${value}%`} parser={value => value.replace('%', '')} style={{ width: '100px' }} />
+            <Form.Item name="percentage" label="Tỷ lệ (%)" rules={[{ required: true, message: 'Nhập %!' }]}>
+              <InputNumber min={1} max={100} style={{ width: '100%' }} />
             </Form.Item>
-          </Space>
+          </div>
 
-          <Form.Item name="type" label="Đối tượng áp dụng" rules={[{ required: true, message: 'Vui lòng chọn!' }]}>
-            <Select placeholder="Chọn đối tượng">
-              <Select.Option value="Khách hàng">Khách hàng (Mã giảm giá đặt phòng)</Select.Option>
-              <Select.Option value="Đối tác">Đối tác (Tỷ lệ thu hoa hồng)</Select.Option>
+          <Form.Item name="target_type" label="Đối tượng áp dụng" rules={[{ required: true }]}>
+            <Select placeholder="Chọn loại đối tượng">
+              <Select.Option value="customer">Khách hàng (Mã giảm giá đặt phòng)</Select.Option>
+              <Select.Option value="partner">Đối tác (Tỷ lệ thu hoa hồng hệ thống)</Select.Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="expiry" label="Ngày hết hạn (Bỏ trống nếu không thời hạn)">
-            <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="Chọn ngày hết hạn" />
+          <Form.Item name="end_date" label="Ngày hết hạn (Bỏ trống nếu vô thời hạn)">
+            <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
           </Form.Item>
         </Form>
       </Modal>

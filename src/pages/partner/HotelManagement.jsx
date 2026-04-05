@@ -1,139 +1,242 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Button, Card, Tag, Space, Modal, 
-  Form, Input, Select, Upload, Typography, Row, Col, message 
+import {
+  Table, Button, Card, Tag, Space, Modal,
+  Form, Input, Select, Typography, Row, Col, App as AntApp, Popconfirm, Avatar, Tooltip
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { 
+  PlusOutlined, 
+  EditOutlined, 
+  DeleteOutlined, 
+  ShopOutlined, 
+  EnvironmentOutlined,
+  InfoCircleOutlined 
+} from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import axiosClient from '../../services/axiosClient';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const HotelManagement = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const { message: antdMessage } = AntApp.useApp();
   const [form] = Form.useForm();
+  
   const [hotels, setHotels] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
-  // 1. Lấy dữ liệu từ LocalStorage khi trang vừa load
+  // 1. Lấy danh sách khách sạn (Xử lý cả lỗi kết nối BE)
+  const fetchMyHotels = async () => {
+    setLoading(true);
+    try {
+      // Gọi API thật từ Backend
+      const response = await axiosClient.get('/hotels/my-hotels/');
+      setHotels(response);
+    } catch (error) {
+      console.error("Lỗi kết nối Backend, đang dùng dữ liệu mẫu để hiển thị UI:", error);
+      
+      // MOCK DATA: Giúp ông vẫn thấy giao diện khi chưa bật Server Backend
+      const mockData = [
+        {
+          id_hotel: 1,
+          name: 'Vinpearl Luxury Nha Trang',
+          address: 'Đảo Hòn Tre, Nha Trang, Khánh Hòa',
+          type: 'resort',
+          status: 'approved',
+          image: 'https://img.freepik.com/free-photo/luxury-pool-villa-spectacular-contemporary-design-digital-art-real-estate-home-house-property-ge_1258-150749.jpg',
+          description: 'Khu nghỉ dưỡng cao cấp ven biển.'
+        },
+        {
+          id_hotel: 2,
+          name: 'Hôtel des Arts Saigon',
+          address: '76-78 Nguyễn Thị Minh Khai, Quận 3, TP.HCM',
+          type: 'hotel',
+          status: 'pending',
+          image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945',
+          description: 'Khách sạn phong cách nghệ thuật Indochine.'
+        }
+      ];
+      setHotels(mockData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const savedHotels = JSON.parse(localStorage.getItem('all_hotels')) || [
-      {
-        id: 'H001',
-        name: 'Vinpearl Luxury Nha Trang',
-        address: 'Nha Trang, Khánh Hòa',
-        status: 'Đã duyệt',
-        rooms: 15,
-      }
-    ];
-    setHotels(savedHotels);
+    fetchMyHotels();
   }, []);
 
+  // 2. Mở Modal Sửa
+  const handleEdit = (record) => {
+    setEditingId(record.id_hotel);
+    form.setFieldsValue({
+      name: record.name,
+      type: record.type || 'hotel',
+      address: record.address,
+      description: record.description,
+      image: record.image
+    });
+    setIsModalOpen(true);
+  };
+
+  // 3. Xử lý Xóa
+  const handleDelete = async (id) => {
+    try {
+      await axiosClient.delete(`/hotels/manage/${id}/`);
+      antdMessage.success('Đã xóa cơ sở thành công');
+      fetchMyHotels();
+    } catch (error) {
+      antdMessage.error('Không thể xóa (Lỗi kết nối server)');
+    }
+  };
+
+  // 4. Xử lý Submit (Thêm/Sửa)
+  const onFinish = async (values) => {
+    setLoading(true);
+    try {
+      if (editingId) {
+        await axiosClient.put(`/hotels/manage/${editingId}/`, values);
+        antdMessage.success('Cập nhật thành công!');
+      } else {
+        await axiosClient.post('/hotels/manage/', { ...values, status: 'pending' });
+        antdMessage.success('Đã gửi yêu cầu đăng ký mới!');
+      }
+      setIsModalOpen(false);
+      setEditingId(null);
+      form.resetFields();
+      fetchMyHotels();
+    } catch (error) {
+      antdMessage.error('Thao tác thất bại (Vui lòng kiểm tra Backend)');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns = [
-    { title: 'Mã HS', dataIndex: 'id', key: 'id' },
-    { title: 'Tên khách sạn', dataIndex: 'name', key: 'name' },
-    { title: 'Địa chỉ', dataIndex: 'address', key: 'address' },
-    { title: 'Số phòng', dataIndex: 'rooms', key: 'rooms' },
+    { 
+      title: 'Hình ảnh', 
+      dataIndex: 'image', 
+      key: 'image',
+      width: 100,
+      render: (src) => <Avatar shape="square" size={64} src={src} icon={<ShopOutlined />} />
+    },
+    { 
+      title: 'Thông tin cơ sở', 
+      key: 'hotel_info',
+      render: (_, record) => (
+        <div>
+          <Text strong style={{ fontSize: 15, display: 'block' }}>{record.name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            <EnvironmentOutlined /> {record.address}
+          </Text>
+        </div>
+      )
+    },
+    { 
+      title: 'Loại', 
+      dataIndex: 'type', 
+      key: 'type',
+      render: (type) => <Tag color="blue">{type?.toUpperCase()}</Tag>
+    },
     { 
       title: 'Trạng thái', 
       dataIndex: 'status', 
       key: 'status',
-      render: (status) => (
-        // Đồng bộ màu sắc: Đã duyệt (green), Đang chờ (orange)
-        <Tag color={status === 'Đã duyệt' ? 'green' : 'orange'}>
-          {status.toUpperCase()}
-        </Tag>
-      )
+      render: (status) => {
+        const configs = {
+          approved: { color: 'success', text: 'ĐÃ DUYỆT' },
+          pending: { color: 'warning', text: 'ĐANG CHỜ' },
+          rejected: { color: 'error', text: 'BỊ TỪ CHỐI' }
+        };
+        const config = configs[status] || configs.pending;
+        return <Tag color={config.color}>{config.text}</Tag>;
+      }
     },
     {
-      title: 'Thao tác',
+      title: 'Quản lý',
       key: 'action',
+      align: 'right',
       render: (_, record) => (
-        <Space size="middle">
-          <Button icon={<EditOutlined />} />
-          <Button danger icon={<DeleteOutlined />} />
+        <Space>
+          <Button 
+            type="primary" ghost size="small"
+            icon={<ShopOutlined />} 
+            onClick={() => navigate(`/partner/hotels/${record.id_hotel}/rooms`)}
+          >
+            Phòng
+          </Button>
+          <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+          <Popconfirm title="Xóa khách sạn?" onConfirm={() => handleDelete(record.id_hotel)}>
+            <Button danger size="small" icon={<DeleteOutlined />} />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
-  // 2. Hàm xử lý nạp dữ liệu tự động
-  const onFinish = (values) => {
-    const newHotel = {
-      id: `REQ${Date.now()}`, // Tạo mã yêu cầu duy nhất
-      ...values,
-      status: 'Đang chờ', // Trạng thái để Admin nhận thông báo
-      rooms: 0,
-      date: new Date().toLocaleDateString('vi-VN')
-    };
-
-    const updatedHotels = [...hotels, newHotel];
-    
-    // Lưu vào State để hiển thị ngay
-    setHotels(updatedHotels);
-    
-    // Lưu vào LocalStorage để Admin có thể đọc được
-    localStorage.setItem('all_hotels', JSON.stringify(updatedHotels));
-    
-    message.success('Đã gửi yêu cầu đăng ký khách sạn tới Admin!');
-    setIsModalOpen(false);
-    form.resetFields();
-  };
-
   return (
-    <div style={{ padding: '24px' }}>
-      <Card 
-        title={<Title level={3} style={{margin:0}}>Quản lý Khách sạn của bạn</Title>}
+    <div style={{ padding: '0px' }}>
+      <Card
+        bordered={false}
+        title={<Title level={4} style={{ margin: 0 }}>Cơ sở lưu trú của tôi</Title>}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-            Thêm khách sạn mới
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />} 
+            onClick={() => { setEditingId(null); form.resetFields(); setIsModalOpen(true); }}
+          >
+            Đăng ký thêm
           </Button>
         }
       >
-        <Table columns={columns} dataSource={hotels} rowKey="id" />
+        <Table 
+          columns={columns} 
+          dataSource={hotels} 
+          rowKey="id_hotel" 
+          loading={loading}
+          pagination={{ pageSize: 5 }}
+        />
       </Card>
 
-      <Modal 
-        title="Đăng ký khách sạn mới" 
-        open={isModalOpen} 
+      <Modal
+        title={editingId ? 'Cập nhật thông tin' : 'Đăng ký cơ sở mới'}
+        open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        width={800}
-        okText="Gửi yêu cầu"
+        confirmLoading={loading}
+        okText="Xác nhận"
         cancelText="Hủy"
+        width={650}
       >
-        <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form form={form} layout="vertical" onFinish={onFinish} style={{ marginTop: 20 }}>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="name" label="Tên khách sạn" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
-                <Input placeholder="Ví dụ: Khách sạn Mường Thanh" />
+            <Col span={16}>
+              <Form.Item name="name" label="Tên khách sạn" rules={[{ required: true }]}>
+                <Input placeholder="Tên cơ sở..." />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item name="type" label="Loại hình" rules={[{ required: true }]}>
-                <Select placeholder="Chọn loại hình">
-                  <Select.Option value="hotel">Khách sạn</Select.Option>
-                  <Select.Option value="resort">Resort</Select.Option>
-                  <Select.Option value="homestay">Homestay</Select.Option>
-                </Select>
+            <Col span={8}>
+              <Form.Item name="type" label="Loại hình" initialValue="hotel">
+                <Select options={[{value:'hotel', label:'Khách sạn'}, {value:'resort', label:'Resort'}, {value:'homestay', label:'Homestay'}]} />
               </Form.Item>
             </Col>
           </Row>
-          
-          <Form.Item name="address" label="Địa chỉ chi tiết" rules={[{ required: true }]}>
-            <Input placeholder="Số nhà, tên đường, tỉnh thành..." />
+          <Form.Item name="address" label="Địa chỉ" rules={[{ required: true }]}>
+            <Input prefix={<EnvironmentOutlined />} placeholder="Địa chỉ chi tiết..." />
           </Form.Item>
-
-          <Form.Item name="description" label="Mô tả khách sạn">
-            <TextArea rows={4} placeholder="Giới thiệu ngắn gọn về khách sạn của bạn" />
+          <Form.Item name="description" label="Mô tả">
+            <TextArea rows={3} />
           </Form.Item>
-
-          <Form.Item label="Hình ảnh khách sạn">
-            <Upload listType="picture-card" beforeUpload={() => false}>
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
-              </div>
-            </Upload>
+          <Form.Item name="image" label="Link ảnh">
+            <Input placeholder="https://..." />
           </Form.Item>
+          <div style={{ background: '#fff7e6', padding: '8px', borderRadius: '4px' }}>
+            <Text type="warning" style={{ fontSize: '12px' }}>
+              <InfoCircleOutlined /> Yêu cầu mới sẽ được Admin kiểm duyệt trong 24h.
+            </Text>
+          </div>
         </Form>
       </Modal>
     </div>
