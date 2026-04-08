@@ -24,9 +24,9 @@ import PartnerLayout from './components/layouts/PartnerLayout';
 import PartnerDashboard from './pages/partner/PartnerDashboard';
 import HotelManagement from './pages/partner/HotelManagement';
 import PartnerRooms from './pages/partner/PartnerRooms';
+import RoomNumbers from './pages/partner/RoomNumbers';
 import PartnerBookings from './pages/partner/PartnerBookings';
 import PartnerMessages from './pages/partner/PartnerMessages';
-import PartnerWithdrawals from './pages/partner/PartnerWithdrawals';
 
 // 4. NHÓM QUẢN TRỊ VIÊN (ADMIN)
 import AdminLayout from './components/layouts/AdminLayout';
@@ -36,7 +36,6 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminReports from './pages/admin/AdminReports';
 import AdminRevenues from './pages/admin/AdminRevenues';
-import AdminComplaints from './pages/admin/AdminComplaints';
 
 const RootAdminRoute = () => {
   const user = JSON.parse(localStorage.getItem('user')) || {};
@@ -88,8 +87,8 @@ function App() {
                   <Route path="rooms" element={<PartnerRooms />} />
                   <Route path="hotels" element={<HotelManagement />} />
                   <Route path="bookings" element={<PartnerBookings />} />
-                  <Route path="withdraw" element={<PartnerWithdrawals />} />
                   <Route path="messages" element={<PartnerMessages />} />
+                  <Route path="roomnumbers" element={<RoomNumbers />} />
                 </Route>
               </Route>
 
@@ -105,7 +104,6 @@ function App() {
                   <Route path="partners" element={<AdminPartners />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="reports" element={<AdminReports />} />
-                  <Route path="complaints" element={<AdminComplaints />} />
 
                   {/* CHỈ ADMIN CẤP 1 (ROOT LEVEL 1) MỚI VÀO ĐƯỢC CÁC ROUTE NÀY */}
                   <Route element={<RootAdminRoute />}>

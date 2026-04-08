@@ -47,7 +47,7 @@ const Profile = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     antdMessage.success("Đã đăng xuất thành công");
-    navigate('/login');
+    navigate('/');
   };
 
   const handleCancelBooking = (bookingId) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Layout, Card, Radio, Button, Typography, Row, Col, 
-  Divider, Space, Tag, Modal, App as AntApp, DatePicker, Avatar
+  Divider, Space, Tag, Modal, App as AntApp, DatePicker, Avatar, Alert
 } from 'antd';
 import { 
   BankOutlined, WalletOutlined, LockOutlined, ArrowLeftOutlined, 
@@ -21,10 +21,15 @@ const Checkout = () => {
   const location = useLocation();
   const { message: antdMessage } = AntApp.useApp();
   
-  const { room } = location.state || {};
+  const { room, hotel } = location.state || {};
   const [currentUser, setCurrentUser] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('banking');
-  const [dates, setDates] = useState([dayjs(), dayjs().add(1, 'day')]); 
+  
+  // FIX 1: Khởi tạo ngày về đầu ngày để tính diff chính xác ngay từ đầu
+  const [dates, setDates] = useState([
+    dayjs().startOf('day'), 
+    dayjs().add(1, 'day').startOf('day')
+  ]); 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -42,13 +47,21 @@ const Checkout = () => {
     }
   }, [navigate, room]);
 
-  // Dùng useMemo để chỉ tính toán lại khi dates hoặc room thay đổi
+  // FIX 2: Cập nhật useMemo để tính số đêm dựa trên mốc 00:00:00
   const billingDetails = useMemo(() => {
-    const nights = (dates && dates[0] && dates[1]) ? dates[1].diff(dates[0], 'day') : 0;
-    const subTotal = (room?.price_per_night || 0) * nights;
+    let nights = 0;
+    if (dates && dates[0] && dates[1]) {
+      const start = dates[0].startOf('day');
+      const end = dates[1].startOf('day');
+      nights = end.diff(start, 'day');
+    }
+    
+    const actualNights = nights > 0 ? nights : 0;
+    const subTotal = (room?.price_per_night || 0) * actualNights;
     const tax = subTotal * 0.05;
     const total = subTotal + tax;
-    return { nights, subTotal, tax, total };
+    
+    return { nights: actualNights, subTotal, tax, total };
   }, [dates, room]);
 
   const handleConfirm = async () => {
@@ -106,9 +119,8 @@ const Checkout = () => {
           <Col xs={24} lg={15}>
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               
-              {/* Card 1: Thông tin khách hàng */}
-              <Card bordered={false} style={{ borderRadius: 16 }}>
-                <Title level={5}><ShieldCheckOutlined style={{ color: '#52c41a' }} /> Xác nhận thông tin người đặt</Title>
+              <Card variant={false} style={{ borderRadius: 16 }}>
+                <Title level={5}><SafetyCertificateOutlined style={{ color: '#52c41a' }} /> Xác nhận thông tin người đặt</Title>
                 <div style={{ display: 'flex', alignItems: 'center', marginTop: 16, padding: '12px', background: '#f8fafc', borderRadius: 12 }}>
                   <Avatar size={48} src={currentUser?.avatar} style={{ backgroundColor: '#1890ff' }}>
                     {currentUser?.fullName?.charAt(0)}
@@ -120,8 +132,7 @@ const Checkout = () => {
                 </div>
               </Card>
 
-              {/* Card 2: Lịch trình */}
-              <Card bordered={false} style={{ borderRadius: 16 }}>
+              <Card variant={false} style={{ borderRadius: 16 }}>
                 <Title level={5}><CalendarOutlined /> Chọn kỳ nghỉ của bạn</Title>
                 <div style={{ marginTop: 16 }}>
                   <RangePicker
@@ -143,7 +154,6 @@ const Checkout = () => {
                 </div>
               </Card>
 
-              {/* Card 3: Thanh toán */}
               <Card bordered={false} style={{ borderRadius: 16 }} title={<Title level={5} style={{margin:0}}>Hình thức thanh toán</Title>}>
                 <Radio.Group onChange={(e) => setPaymentMethod(e.target.value)} value={paymentMethod} style={{ width: '100%' }}>
                   <Row gutter={[16, 16]}>
@@ -183,7 +193,6 @@ const Checkout = () => {
             </Space>
           </Col>
 
-          {/* Cột Tóm tắt thanh toán */}
           <Col xs={24} lg={9}>
             <Card 
               sticky 
@@ -193,7 +202,7 @@ const Checkout = () => {
               <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
                 <img
                   alt="room"
-                  src={room.image || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304'}
+                  src={room.image || room.image_url || 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304'}
                   style={{ width: '100%', height: 180, objectFit: 'cover' }}
                 />
               </div>
@@ -201,8 +210,8 @@ const Checkout = () => {
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div>
                   <Tag color="blue">{room.hotel_name}</Tag>
-                  <Title level={4} style={{ margin: '8px 0 4px' }}>Phòng {room.room_number}</Title>
-                  <Text type="secondary"><EnvironmentOutlined /> {room.room_type_name}</Text>
+                  <Title level={4} style={{ margin: '8px 0 4px' }}>Phòng {room.room_number || room.id_room}</Title>
+                  <Text type="secondary"><EnvironmentOutlined /> {room.room_type_name || room.room_type}</Text>
                 </div>
                 
                 <Divider style={{ margin: '12px 0' }} />

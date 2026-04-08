@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react'; // 1. Nhớ thêm useContext ở đây
 import { Layout, Button, Dropdown, Avatar, Space, Typography, App as AntApp } from 'antd';
 import { 
   UserOutlined, 
@@ -9,6 +9,7 @@ import {
   SettingOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import AuthContext from '../../contexts/AuthContext'; // Đảm bảo đường dẫn đúng
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
@@ -17,19 +18,16 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
   
-  // 1. Lấy thông tin user hiện tại từ localStorage
-  // Key 'current_user' để đồng bộ với các trang quản trị khác
-  const user = JSON.parse(localStorage.getItem('current_user'));
+  // 2. Lấy user và hàm logout trực tiếp từ Context
+  const { user, logout } = useContext(AuthContext);
 
-  // 2. Logic: Đăng xuất
+  // 3. Logic Đăng xuất giờ cực kỳ ngắn gọn
   const handle_logout = () => {
-    localStorage.removeItem('current_user');
+    logout(); // Hàm logout trong Context của ông đã lo hết việc xóa storage và reset state rồi
     message.success('Đã đăng xuất thành công!');
-    navigate('/');
-    window.location.reload(); // Refresh để xóa sạch state cũ
+    // Không cần window.location.reload() nữa, vì logout() làm state user thành null => Navbar tự đổi!
   };
 
-  // 3. Menu thả xuống khi nhấn vào Avatar
   const user_menu_items = [
     {
       key: 'profile',
@@ -42,17 +40,11 @@ const Navbar = () => {
       label: 'Lịch sử đặt phòng',
       icon: <HistoryOutlined />,
       onClick: () => {
-        // Phân luồng điều hướng dựa trên thuộc tính 'role' trong CSDL
-        if (user?.role === 'partner') {
-          navigate('/partner/bookings');
-        } else {
-          navigate('/my-bookings');
-        }
+        if (user?.role === 'partner') navigate('/partner/bookings');
+        else navigate('/my-bookings');
       },
     },
-    {
-      type: 'divider',
-    },
+    { type: 'divider' },
     {
       key: 'logout',
       label: 'Đăng xuất',
@@ -63,52 +55,26 @@ const Navbar = () => {
   ];
 
   return (
-    <Header style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'space-between', 
-      background: '#fff',
-      padding: '0 50px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 1000,
-      width: '100%'
-    }}>
+    <Header style={headerStyle}>
       {/* Logo */}
-      <div className="logo" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => navigate('/')}>
+      <div className="logo" style={logoStyle} onClick={() => navigate('/')}>
         <HomeOutlined style={{ fontSize: '24px', color: '#1890ff', marginRight: '8px' }} />
-        <Title level={4} style={{ margin: 0, color: '#1890ff' }}>
-          HOTEL BOOKING
-        </Title>
+        <Title level={4} style={{ margin: 0, color: '#1890ff' }}>HOTEL BOOKING</Title>
       </div>
 
-      {/* Right Side: User Info / Login */}
+      {/* Right Side: Dựa vào biến 'user' từ Context để hiển thị */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {user ? (
           <Space size="middle">
-            {/* Nút dành cho Đối tác - Dựa trên trường 'role' */}
             {user.role === 'partner' && (
-              <Button 
-                type="primary" 
-                ghost 
-                icon={<DashboardOutlined />}
-                onClick={() => navigate('/partner/dashboard')}
-              >
+              <Button type="primary" ghost icon={<DashboardOutlined />} onClick={() => navigate('/partner/dashboard')}>
                 Kênh Đối Tác
               </Button>
             )}
 
-            {/* Nút dành cho Admin - Dựa trên thực thể 'admin' trong ERD */}
             {user.role === 'admin' && (
-              <Button 
-                type="primary" 
-                danger
-                ghost 
-                icon={<SettingOutlined />}
-                onClick={() => navigate('/admin/dashboard')}
-              >
-                Quản trị hệ thống
+              <Button type="primary" danger ghost icon={<SettingOutlined />} onClick={() => navigate('/admin/dashboard')}>
+                Quản trị
               </Button>
             )}
 
@@ -116,7 +82,6 @@ const Navbar = () => {
               <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
                 <Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-                  {/* Khớp với trường 'full_name' hoặc 'user_name' trong CSDL */}
                   <Text strong>{user.full_name || user.user_name}</Text>
                   <Text type="secondary" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
                     {user.role}
@@ -135,5 +100,14 @@ const Navbar = () => {
     </Header>
   );
 };
+
+// Gom style ra ngoài cho gọn code
+const headerStyle = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  background: '#fff', padding: '0 50px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+  position: 'sticky', top: 0, zIndex: 1000, width: '100%'
+};
+
+const logoStyle = { cursor: 'pointer', display: 'flex', alignItems: 'center' };
 
 export default Navbar;

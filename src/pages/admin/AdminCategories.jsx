@@ -1,67 +1,45 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, Select, message } from 'antd';
+import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 const AdminCategories = () => {
   const [is_modal_visible, setIsModalVisible] = useState(false);
+  // Thêm state để lưu key của danh mục đang được sửa (Nếu null nghĩa là đang Thêm mới)
+  const [editing_key, setEditingKey] = useState(null); 
   const [form] = Form.useForm();
 
-  // 1. Dữ liệu mẫu chuẩn snake_case (Khớp với API trả về sau này)
   const [categories_list, setCategoriesList] = useState([
     { 
       key: '1', 
       category_name: 'Khách sạn 5 sao', 
-      category_type: 'property_type', 
-      category_status: 'active', 
       description: 'Khách sạn cao cấp có đầy đủ tiện nghi' 
     },
     { 
       key: '2', 
       category_name: 'Resort', 
-      category_type: 'property_type', 
-      category_status: 'active', 
       description: 'Khu nghỉ dưỡng sinh thái, không gian xanh' 
     },
     { 
       key: '3', 
       category_name: 'Phòng Suite', 
-      category_type: 'room_type', 
-      category_status: 'active', 
       description: 'Phòng cao cấp nhất, diện tích lớn, view đẹp' 
     },
     { 
       key: '4', 
       category_name: 'Hồ bơi vô cực', 
-      category_type: 'amenity', 
-      category_status: 'active', 
       description: 'Tiện ích cao cấp cho khách lưu trú' 
     },
   ]);
 
-  // 2. Định nghĩa các cột Table
   const columns = [
     { 
-      title: 'Tên danh mục', 
+      title: 'Loại khách sạn', 
       dataIndex: 'category_name', 
       key: 'category_name', 
       width: '25%',
       render: (text) => <Text strong>{text}</Text>
-    },
-    { 
-      title: 'Phân loại', 
-      dataIndex: 'category_type', 
-      key: 'category_type', 
-      width: '20%',
-      render: (type) => {
-        const types = {
-          property_type: { label: 'Loại chỗ nghỉ', color: 'blue' },
-          room_type: { label: 'Loại phòng', color: 'purple' },
-          amenity: { label: 'Tiện ích', color: 'orange' }
-        };
-        return <Tag color={types[type]?.color}>{types[type]?.label || type}</Tag>;
-      }
     },
     { 
       title: 'Mô tả', 
@@ -71,22 +49,20 @@ const AdminCategories = () => {
       render: (desc) => <Text type="secondary">{desc}</Text>
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'category_status',
-      key: 'category_status',
-      render: (status) => (
-        <Tag color={status === 'active' ? 'green' : 'red'} variant="soft">
-          {status === 'active' ? 'HOẠT ĐỘNG' : 'NGỪNG KINH DOANH'}
-        </Tag>
-      )
-    },
-    {
       title: 'Hành động',
       key: 'action',
       align: 'center',
       render: (_, record) => (
         <Space size="middle">
-          <Button type="text" icon={<EditOutlined />} style={{ color: '#1890ff' }}>Sửa</Button>
+          {/* Gọi hàm Sửa và truyền record vào */}
+          <Button 
+            type="text" 
+            icon={<EditOutlined />} 
+            style={{ color: '#1890ff' }}
+            onClick={() => handle_edit_click(record)}
+          >
+            Sửa
+          </Button>
           <Button 
             type="text" 
             danger 
@@ -100,11 +76,10 @@ const AdminCategories = () => {
     },
   ];
 
-  // 3. Logic: Xóa danh mục
   const handle_delete_category = (key) => {
     Modal.confirm({
       title: 'Xác nhận xóa?',
-      content: 'Việc xóa danh mục có thể ảnh hưởng đến các sản phẩm/phòng đang thuộc danh mục này.',
+      content: 'Việc xóa có thể ảnh hưởng đến các sản phẩm/phòng đang thuộc loại khách sạn này.',
       okText: 'Đồng ý',
       okType: 'danger',
       onOk: () => {
@@ -114,19 +89,56 @@ const AdminCategories = () => {
     });
   };
 
-  // 4. Logic: Thêm mới
-  const handle_add_submit = (values) => {
-    const new_category = {
-      key: Date.now().toString(),
-      category_name: values.category_name,
-      category_type: values.category_type,
-      description: values.description,
-      category_status: 'active'
-    };
-    setCategoriesList([...categories_list, new_category]);
+  // Nút Mở Modal Thêm Mới
+  const open_add_modal = () => {
+    setEditingKey(null); // Reset trạng thái sửa
+    form.resetFields(); // Làm sạch form
+    setIsModalVisible(true);
+  };
+
+  // Logic: Nút Mở Modal Sửa
+  const handle_edit_click = (record) => {
+    setEditingKey(record.key); // Lưu lại id đang sửa
+    form.setFieldsValue({      // Đổ dữ liệu cũ vào Form
+      category_name: record.category_name,
+      description: record.description,
+    });
+    setIsModalVisible(true);
+  };
+
+  // Logic: Gộp chung xử lý Submit cho cả Thêm và Sửa
+  const handle_submit = (values) => {
+    if (editing_key) {
+      // TRƯỜNG HỢP SỬA
+      const updated_list = categories_list.map(item => {
+        if (item.key === editing_key) {
+          return { ...item, category_name: values.category_name, description: values.description };
+        }
+        return item;
+      });
+      setCategoriesList(updated_list);
+      message.success('Cập nhật thành công!');
+    } else {
+      // TRƯỜNG HỢP THÊM MỚI
+      const new_category = {
+        key: Date.now().toString(),
+        category_name: values.category_name,
+        description: values.description,
+      };
+      setCategoriesList([...categories_list, new_category]);
+      message.success('Thêm loại khách sạn mới thành công!');
+    }
+
+    // Đóng modal và reset
     setIsModalVisible(false);
+    setEditingKey(null);
     form.resetFields();
-    message.success('Thêm danh mục thành công!');
+  };
+
+  const handle_cancel_modal = () => {
+    setIsModalVisible(false);
+    setEditingKey(null);
+    form.resetFields();
   };
 
   return (
@@ -136,12 +148,12 @@ const AdminCategories = () => {
         style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
         title={
           <Title level={3} style={{ margin: 0 }}>
-            <ApartmentOutlined /> Quản lý Danh mục hệ thống
+            <ApartmentOutlined /> Quản lý loại khách sạn
           </Title>
         }
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)} size="large">
-            Thêm danh mục
+          <Button type="primary" icon={<PlusOutlined />} onClick={open_add_modal} size="large">
+            Thêm mới
           </Button>
         }
       >
@@ -153,39 +165,27 @@ const AdminCategories = () => {
         />
       </Card>
 
-      {/* Modal Thêm Danh Mục */}
+      {/* Modal Thêm/Sửa Danh Mục */}
       <Modal
-        title="THÊM DANH MỤC MỚI"
+        title={editing_key ? "CẬP NHẬT LOẠI KHÁCH SẠN" : "THÊM LOẠI KHÁCH SẠN MỚI"}
         open={is_modal_visible}
         onOk={() => form.submit()}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={handle_cancel_modal}
         okText="Xác nhận lưu"
         cancelText="Hủy bỏ"
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" onFinish={handle_add_submit}>
+        <Form form={form} layout="vertical" onFinish={handle_submit}>
           <Form.Item 
             name="category_name" 
-            label="Tên danh mục" 
-            rules={[{ required: true, message: 'Tên không được để trống!' }]}
+            label="Loại khách sạn" 
+            rules={[{ required: true, message: 'Loại khách sạn không được để trống!' }]}
           >
             <Input placeholder="VD: Khách sạn Boutique, View biển..." />
           </Form.Item>
 
-          <Form.Item 
-            name="category_type" 
-            label="Phân loại hệ thống" 
-            rules={[{ required: true, message: 'Vui lòng chọn loại!' }]}
-          >
-            <Select placeholder="Chọn nhóm danh mục">
-              <Select.Option value="property_type">Loại chỗ nghỉ (Hotel, Resort, Villa...)</Select.Option>
-              <Select.Option value="room_type">Loại phòng (Suite, Deluxe, Standard...)</Select.Option>
-              <Select.Option value="amenity">Tiện ích (Wifi, Bể bơi, Gym...)</Select.Option>
-            </Select>
-          </Form.Item>
-
           <Form.Item name="description" label="Mô tả chi tiết">
-            <Input.TextArea rows={4} placeholder="Nhập mô tả ý nghĩa của danh mục này..." />
+            <Input.TextArea rows={4} placeholder="Nhập mô tả của loại khách sạn này..." />
           </Form.Item>
         </Form>
       </Modal>

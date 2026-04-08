@@ -3,6 +3,9 @@ import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tool
 import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import axiosClient from '../../services/axiosClient';
 
+// --- Đừng quên import Mock Data (Tạo file mockData.js nếu chưa có nhé) ---
+import { MOCK_BOOKINGS } from '../../constants/mockData';
+
 const { Title, Text } = Typography;
 
 const PartnerBookings = () => {
@@ -15,9 +18,11 @@ const PartnerBookings = () => {
     setLoading(true);
     try {
       const response = await axiosClient.get('/hotels/partner-bookings/');
-      setBookings(response);
+      // Nếu API trả về mảng dữ liệu, dùng nó, nếu không dùng Mock
+      setBookings(Array.isArray(response) && response.length > 0 ? response : MOCK_BOOKINGS);
     } catch (error) {
-      console.error("Lỗi lấy danh sách đơn:", error);
+      console.warn("Backend chưa sẵn sàng. Đang hiển thị dữ liệu mẫu đơn hàng.");
+      setBookings(MOCK_BOOKINGS); // Hiện Mock Data khi lỗi BE
     } finally {
       setLoading(false);
     }
@@ -30,17 +35,19 @@ const PartnerBookings = () => {
   const handleUpdateStatus = async (bookingId, newStatus) => {
     try {
       setLoading(true);
+      // Giả lập gọi API
       await axiosClient.patch(`/hotels/bookings/${bookingId}/`, { status: newStatus });
       antdMessage?.success(newStatus === 'Confirmed' ? 'Đã xác nhận đơn hàng thành công!' : 'Đã từ chối đơn hàng.');
       fetchBookings();
     } catch (error) {
-      antdMessage?.error("Cập nhật trạng thái thất bại.");
+      // Nếu lỗi (do chưa có BE), mình vẫn cập nhật local để demo cho mượt
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
+      antdMessage?.info(`[Demo] Cập nhật trạng thái thành: ${newStatus}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Lọc dữ liệu dựa trên Tab đang chọn
   const filteredBookings = activeTab === 'all' 
     ? bookings 
     : bookings.filter(b => b.status === activeTab);
@@ -157,14 +164,16 @@ const PartnerBookings = () => {
               <DollarOutlined style={{color: '#1890ff', marginRight: 10}} />
               Quản lý đặt phòng
             </Title>
-            <Text type="secondary">Tổng số đơn hàng: {bookings.length}</Text>
+            <div style={{ textAlign: 'right' }}>
+               <Text type="secondary">Cập nhật lúc: {new Date().toLocaleTimeString()}</Text>
+            </div>
           </div>
 
           <Tabs 
             activeKey={activeTab} 
             onChange={setActiveTab}
             items={[
-              { label: `Tất cả đơn`, key: 'all' },
+              { label: `Tất cả (${bookings.length})`, key: 'all' },
               { label: `Chờ duyệt`, key: 'Pending' },
               { label: `Đã xác nhận`, key: 'Confirmed' },
               { label: `Đã hoàn thành`, key: 'Completed' },
@@ -177,7 +186,7 @@ const PartnerBookings = () => {
             dataSource={filteredBookings} 
             rowKey="id"
             loading={loading}
-            pagination={{ pageSize: 8 }}
+            pagination={{ pageSize: 8, showTotal: (total) => `Tổng cộng ${total} đơn hàng` }}
             scroll={{ x: 1000 }}
             locale={{ emptyText: <Empty description="Không có đơn đặt phòng nào" /> }}
           />

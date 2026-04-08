@@ -1,56 +1,68 @@
 import axiosClient from './axiosClient';
 
 /**
- * QUẢN LÝ CÁC API DÀNH RIÊNG CHO CHỦ KHÁCH SẠN / ĐỐI TÁC
+ * QUẢN LÝ CÁC API DÀNH RIÊNG CHO CHỦ KHÁCH SẠN / ĐỐI TÁC (PARTNER)
  */
 export const partnerApi = {
-    // --- 1. QUẢN LÝ PHÒNG (ROOM MANAGEMENT) ---
+    // --- 1. QUẢN LÝ KHÁCH SẠN (HOTEL MANAGEMENT) ---
     
-    // Lấy danh sách phòng thuộc quyền quản lý của Partner này
-    getMyRooms: () => {
-        return axiosClient.get('/partner/rooms/');
+    // Lấy danh sách các khách sạn mà đối tác này sở hữu
+    getMyHotels: () => {
+        return axiosClient.get('/partner/hotels/');
     },
 
-    // Thêm một phòng mới (Gửi FormData nếu có ảnh, hoặc Object JSON)
-    createRoom: (roomData) => {
-        return axiosClient.post('/partner/rooms/', roomData);
+    // --- 2. QUẢN LÝ LOẠI PHÒNG (ROOM TYPES) ---
+    // Ví dụ: Phòng Deluxe, Phòng Suite... (Dùng cho PartnerRooms.jsx)
+    
+    getRoomTypes: (hotelId) => {
+        return axiosClient.get('/partner/room-types/', { params: { hotel_id: hotelId } });
     },
 
-    // Cập nhật thông tin phòng (Sửa giá, đổi mô tả, đổi trạng thái trống/hết)
-    updateRoom: (id, roomData) => {
-        return axiosClient.patch(`/partner/rooms/${id}/`, roomData);
+    createRoomType: (data) => {
+        return axiosClient.post('/partner/room-types/', data);
     },
 
-    // Xóa phòng khỏi hệ thống
-    deleteRoom: (id) => {
-        return axiosClient.delete(`/partner/rooms/${id}/`);
+    // --- 3. QUẢN LÝ SỐ PHÒNG CHI TIẾT (ROOM INSTANCES / ROOM NUMBERS) ---
+    // Đây là phần dùng cho file RoomNumber.jsx ông vừa tạo
+    
+    // Lấy danh sách các số phòng cụ thể (101, 102...) theo khách sạn
+    getRoomNumbers: (hotelId) => {
+        return axiosClient.get('/partner/room-numbers/', { params: { hotel_id: hotelId } });
     },
 
+    // Thêm một số phòng mới (Gán vào một loại phòng cụ thể)
+    createRoomNumber: (roomData) => {
+        return axiosClient.post('/partner/room-numbers/', roomData);
+    },
 
-    // --- 2. QUẢN LÝ ĐƠN ĐẶT PHÒNG (BOOKING MANAGEMENT) ---
+    // Cập nhật trạng thái phòng (Trống / Đang ở / Bảo trì)
+    updateRoomNumber: (id, roomData) => {
+        return axiosClient.patch(`/partner/room-numbers/${id}/`, roomData);
+    },
 
-    // Xem danh sách khách đã đặt phòng của khách sạn mình
+    // Xóa số phòng
+    deleteRoomNumber: (id) => {
+        return axiosClient.delete(`/partner/room-numbers/${id}/`);
+    },
+
+    // --- 4. QUẢN LÝ ĐƠN ĐẶT PHÒNG (BOOKING MANAGEMENT) ---
+
+    // Xem danh sách đơn đặt phòng của các khách sạn thuộc sở hữu
     getIncomingBookings: (params) => {
-        // params có thể là { status: 'Pending' } để lọc đơn mới
         return axiosClient.get('/partner/bookings/', { params });
     },
 
-    // Xác nhận đơn đặt phòng của khách (Chuyển từ Pending -> Confirmed)
-    confirmBooking: (bookingId) => {
-        return axiosClient.post(`/partner/bookings/${bookingId}/confirm/`);
+    // Cập nhật trạng thái đơn hàng (Xác nhận/Từ chối/Check-in/Check-out)
+    updateBookingStatus: (bookingId, status) => {
+        return axiosClient.patch(`/partner/bookings/${bookingId}/status/`, { status });
     },
 
-    // Từ chối đơn đặt phòng (Ví dụ: do phòng gặp sự cố đột xuất)
-    rejectBooking: (bookingId, reason) => {
-        return axiosClient.post(`/partner/bookings/${bookingId}/reject/`, { reason });
-    },
+    // --- 5. THỐNG KÊ & BÁO CÁO (DASHBOARD METRICS) ---
 
-
-    // --- 3. THỐNG KÊ (DASHBOARD METRICS) ---
-
-    // Lấy số liệu doanh thu, số đơn hàng trong tháng
-    getStatistics: () => {
-        return axiosClient.get('/partner/statistics/');
+    // Dữ liệu cho biểu đồ và các ô Statistic ở Dashboard
+    getStatistics: (params) => {
+        // params có thể là { hotel_id: 101, year: 2026 }
+        return axiosClient.get('/partner/statistics/', { params });
     }
 };
 

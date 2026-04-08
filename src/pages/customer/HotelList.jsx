@@ -5,45 +5,11 @@ import { EnvironmentOutlined, CalendarOutlined, RocketOutlined, RightOutlined, C
 import axiosClient from '../../services/axiosClient';
 import Navbar from '../../components/common/Navbar';
 
+// --- QUAN TRỌNG: Import Mock Data vào đây ---
+import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData';
+
 const { Content } = Layout;
 const { Title, Text } = Typography;
-
-// DỮ LIỆU MẪU (MOCK DATA) - Tự động hiển thị khi Backend chưa chạy
-const MOCK_ROOMS = [
-  {
-    id_room: 1,
-    hotel_name: "Khách Sạn Grand Plaza",
-    room_number: "P.501",
-    room_type_name: "Phòng Suite Hướng Biển",
-    price_per_night: 2500000,
-    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500",
-    is_available: true,
-    location_city: "Đà Nẵng",
-    rating: 5
-  },
-  {
-    id_room: 2,
-    hotel_name: "Silk Path Boutique",
-    room_number: "P.302",
-    room_type_name: "Phòng Deluxe Đôi",
-    price_per_night: 1200000,
-    image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=500",
-    is_available: true,
-    location_city: "Hà Nội",
-    rating: 4.5
-  },
-  {
-    id_room: 3,
-    hotel_name: "Hải Sản Hotel & Spa",
-    room_number: "P.105",
-    room_type_name: "Phòng Tiêu Chuẩn",
-    price_per_night: 850000,
-    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500",
-    is_available: true,
-    location_city: "Nha Trang",
-    rating: 4
-  }
-];
 
 const HotelList = () => {
   const navigate = useNavigate();
@@ -61,6 +27,33 @@ const HotelList = () => {
   useEffect(() => {
     const fetchRooms = async () => {
       setLoading(true);
+      
+      // Hàm xử lý Mock Data thông minh (Map hotel + Filter)
+      const loadMockData = () => {
+        // 1. Gộp thông tin Khách sạn vào Phòng
+        let mappedRooms = MOCK_ROOMS.map(room => {
+          const hotel = MOCK_HOTELS.find(h => h.id_hotel === room.id_hotel);
+          return {
+            ...room,
+            hotel_name: hotel?.hotel_name,
+            location_city: hotel?.location_city,
+            rating: hotel?.rate_star,
+            room_type_name: room.room_type,
+            room_number: room.id_room,
+            image: room.image_url
+          };
+        });
+
+        // 2. Lọc theo địa điểm nếu user có gõ tìm kiếm
+        if (searchLocation) {
+          mappedRooms = mappedRooms.filter(r => 
+            r.location_city?.toLowerCase().includes(searchLocation.toLowerCase())
+          );
+        }
+        
+        setRooms(mappedRooms);
+      };
+
       try {
         const response = await axiosClient.get('/hotels/rooms/', {
           params: { 
@@ -69,16 +62,22 @@ const HotelList = () => {
             check_out: checkOut 
           }
         });
-        // Nếu API trả về thành công
+        
         const data = Array.isArray(response) ? response : response.data || [];
-        setRooms(data.length > 0 ? data : MOCK_ROOMS); // Nếu API trống thì dùng Mock cho đẹp giao diện
+        
+        if (data.length > 0) {
+          setRooms(data); // API trả về có dữ liệu
+        } else {
+          loadMockData(); // API trả về rỗng -> Dùng Mock cho đẹp
+        }
       } catch (error) {
         console.warn("Backend chưa kết nối. Đang hiển thị dữ liệu mẫu.");
-        setRooms(MOCK_ROOMS); // Gán dữ liệu mẫu khi lỗi BE
+        loadMockData(); // Lỗi BE -> Dùng Mock
       } finally {
         setLoading(false);
       }
     };
+    
     fetchRooms();
   }, [searchLocation, checkIn, checkOut]);
 
@@ -127,7 +126,7 @@ const HotelList = () => {
                   className="hotel-list-card"
                   onClick={() => navigate(`/hotel/${room.id_room}`)}
                   style={{ borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
-                  bodyStyle={{ padding: 0 }}
+                  styles={{ body: { padding: 0 } }} // Update: AntD v5 khuyến nghị dùng styles.body thay vì bodyStyle
                 >
                   <Row>
                     {/* KHỐI ẢNH */}
@@ -190,7 +189,7 @@ const HotelList = () => {
                           size="large" 
                           shape="round" 
                           icon={<RightOutlined />} 
-                          iconPosition="right"
+                          iconPosition="end" // Update: AntD v5 đổi iconPosition="right" thành "end"
                           style={{ padding: '0 30px', height: 45, fontWeight: 600, boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}
                         >
                           Xem chi tiết

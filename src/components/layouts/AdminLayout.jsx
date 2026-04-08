@@ -81,7 +81,7 @@ const AdminLayout = () => {
       icon: <SolutionOutlined />,
       label: (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Phê duyệt đối tác</span>
+          <span>Phê duyệt khách sạn đối tác</span>
           {pending_count > 0 && <Badge count={pending_count} size="small" offset={[10, 0]} />}
         </div>
       )
@@ -92,7 +92,7 @@ const AdminLayout = () => {
       label: 'Quản lý người dùng',
       level_required: 1
     },
-    { key: '/admin/categories', icon: <AppstoreOutlined />, label: 'Quản lý danh mục' },
+    { key: '/admin/categories', icon: <AppstoreOutlined />, label: 'Quản lý loại khách sạn' },
     { key: '/admin/reports', icon: <FileTextOutlined />, label: 'Quản lý báo cáo' },
     {
       key: '/admin/discounts',
@@ -100,7 +100,6 @@ const AdminLayout = () => {
       label: 'Quản lý chiết khấu',
       level_required: 1
     },
-    { key: '/admin/complaints', icon: <WarningOutlined />, label: 'Quản lý khiếu nại' },
   ];
 
   // Lọc menu theo level (số càng nhỏ quyền càng cao)

@@ -68,14 +68,14 @@ const Home = () => {
         <div style={{
           background: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.3)), url(${beachh}) no-repeat center/cover`,
           color: '#fff',
-          padding: '120px 20px',
+          padding: '10px 20px',
           textAlign: 'center',
         }}>
-          <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 800, marginBottom: '15px' }}>
-            Khám phá thiên đường nghỉ dưỡng
+          <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 400, marginBottom: '15px' }}>
+            Tận hưởng kỳ nghỉ tuyệt vời
           </Title>
           <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', display: 'block', marginBottom: '50px' }}>
-            Hơn 5000+ khách sạn đang chờ đón bạn với mức giá tốt nhất
+            Với hàng nghìn khách sạn đang chờ đón bạn
           </Text>
 
           {/* Thanh Search - Thay đổi bordered thành variant cho chuẩn AntD 5 */}
@@ -182,10 +182,10 @@ const Home = () => {
         </div>
       </Content>
 
-      <Footer style={{ textAlign: 'center', padding: '60px 0', background: '#1a1a1a', color: 'rgba(255,255,255,0.6)' }}>
+      <Footer style={{ textAlign: 'center', padding: '20px 0', background: '#1a1a1a', color: 'rgba(255,255,255,0.6)' }}>
         <Title level={4} style={{ color: '#fff', marginBottom: 20 }}>HOTEL BOOKING SYSTEM</Title>
         <Text style={{ color: 'rgba(255,255,255,0.4)' }}>
-          © 2026 - Phát triển bởi Sơn & Team. All Rights Reserved.
+          © 2026 - Phát triển bởi HOTEL BOOKING GROUP
         </Text>
       </Footer>
 

@@ -13,7 +13,8 @@ import {
   ShopOutlined,
   WalletOutlined,
   MessageOutlined,
-  ExclamationCircleFilled
+  ExclamationCircleFilled,
+  UnorderedListOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 // import axiosClient from '../../services/axiosClient'; // Mở ra khi kết nối BE thật
@@ -93,9 +94,9 @@ const PartnerLayout = () => {
   const menu_items = [
     { key: '/partner/dashboard', icon: <BarChartOutlined />, label: 'Báo cáo doanh thu' },
     { key: '/partner/hotels', icon: <ShopOutlined />, label: 'Quản lý khách sạn' },
-    { key: '/partner/rooms', icon: <HomeOutlined />, label: 'Quản lý phòng' },
+    { key: '/partner/rooms', icon: <HomeOutlined />, label: 'Quản lý loại phòng' },
+    { key: '/partner/roomnumbers', icon: <UnorderedListOutlined />, label: 'Quản lý phòng' },
     { key: '/partner/bookings', icon: <CalendarOutlined />, label: 'Đơn đặt phòng' },
-    { key: '/partner/withdraw', icon: <WalletOutlined />, label: 'Quản lý rút tiền' },
     { key: '/partner/messages', icon: <MessageOutlined />, label: 'Nhắn tin' },
   ];
 
@@ -178,7 +179,7 @@ const PartnerLayout = () => {
           padding: 24, 
           background: colorBgContainer, 
           borderRadius: borderRadiusLG,
-          minHeight: 280,
+          minHeight: 'calc(100vh - 112px)',
           overflow: 'auto'
         }}>
           <Outlet />

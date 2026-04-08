@@ -188,7 +188,7 @@ const PartnerRooms = () => {
           </Button>
         </div>
 
-        <Card bordered={false} style={{ marginBottom: 24, borderRadius: 16 }}>
+        <Card variant={false} style={{ marginBottom: 24, borderRadius: 16 }}>
           <Space size="middle">
             <Avatar style={{ backgroundColor: '#1890ff' }} icon={<HomeOutlined />} />
             <Text strong>Khách sạn:</Text>
@@ -201,7 +201,7 @@ const PartnerRooms = () => {
           </Space>
         </Card>
 
-        <Card bordered={false} style={{ borderRadius: 16 }}>
+        <Card variant={false} style={{ borderRadius: 16 }}>
           <Table 
             columns={columns} dataSource={room_list} rowKey="_id" 
             loading={is_loading} pagination={{ pageSize: 6 }}
