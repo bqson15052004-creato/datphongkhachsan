@@ -1,6 +1,6 @@
 const mogoose = require('mongoose');
 
-const accountSchema = new mogoose.Schema({
+const userSchema = new mogoose.Schema({
     full_name: {
         type: String,   
         required: true,
@@ -15,9 +15,6 @@ const accountSchema = new mogoose.Schema({
         type: String,       
         required: true,
     },
-    level: {
-        type: Number,   
-    },
     phone: {
         type: String,
     },
@@ -31,6 +28,6 @@ const accountSchema = new mogoose.Schema({
 
 });
 
-const account = mogoose.model('accounts', accountSchema);
+const user = mogoose.model('users', userSchema);
 
-module.exports = account;
+module.exports = user;
