@@ -91,15 +91,15 @@ const AdminCategories = () => {
 
   // Nút Mở Modal Thêm Mới
   const open_add_modal = () => {
-    setEditingKey(null); // Reset trạng thái sửa
-    form.resetFields(); // Làm sạch form
+    setEditingKey(null);
+    form.resetFields();
     setIsModalVisible(true);
   };
 
   // Logic: Nút Mở Modal Sửa
   const handle_edit_click = (record) => {
-    setEditingKey(record.key); // Lưu lại id đang sửa
-    form.setFieldsValue({      // Đổ dữ liệu cũ vào Form
+    setEditingKey(record.key);
+    form.setFieldsValue({
       category_name: record.category_name,
       description: record.description,
     });
@@ -153,7 +153,7 @@ const AdminCategories = () => {
         }
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={open_add_modal} size="large">
-            Thêm mới
+            Thêm loại khách sạn mới
           </Button>
         }
       >
@@ -171,15 +171,15 @@ const AdminCategories = () => {
         open={is_modal_visible}
         onOk={() => form.submit()}
         onCancel={handle_cancel_modal}
-        okText="Xác nhận lưu"
-        cancelText="Hủy bỏ"
+        okText="Xác nhận"
+        cancelText="Huỷ"
         destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handle_submit}>
           <Form.Item 
             name="category_name" 
             label="Loại khách sạn" 
-            rules={[{ required: true, message: 'Loại khách sạn không được để trống!' }]}
+            rules={[{ required: true, message: 'Vui lòng nhập tên loại khách sạn!' }]}
           >
             <Input placeholder="VD: Khách sạn Boutique, View biển..." />
           </Form.Item>

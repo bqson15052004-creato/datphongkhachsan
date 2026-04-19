@@ -10,12 +10,9 @@ import {
   BarChartOutlined,
   SolutionOutlined,
   AppstoreOutlined,
-  FileTextOutlined,
   PercentageOutlined,
-  WarningOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-// import axiosClient from '../../services/axiosClient'; // Mở ra khi kết nối BE thật
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -32,83 +29,78 @@ const AdminLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 1. LẤY THÔNG TIN USER (Đồng bộ với key 'user' từ Login.jsx)
-  const userData = localStorage.getItem('user');
+  // 1. LẤY THÔNG TIN USER
+  const userData = sessionStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;
 
-  // 2. KIỂM TRA QUYỀN TRUY CẬP NHANH
+  // 2. KIỂM TRA QUYỀN TRUY CẬP
   useEffect(() => {
-    // Nếu không có user hoặc role không phải admin thì đá ra ngoài trang chủ
     if (!user || user.role !== 'admin') {
       message.error('Bạn không có quyền truy cập vùng này!');
       navigate('/');
     }
   }, [user, navigate, message]);
 
-  // 3. LOGIC ĐẾM SỐ LƯỢNG CHỜ DUYỆT
-  useEffect(() => {
-    const fetchPendingCount = async () => {
-      try {
-        /* KẾT NỐI BE THẬT */
-        // const res = await axiosClient.get('/admin/hotels/pending-count/');
-        // set_pending_count(res.count);
+  // 3. LOGIC ĐẾM SỐ LƯỢNG CHỜ DUYỆT (Real-time từ localStorage)
+  const fetchPendingCount = () => {
+    try {
+      // Đọc từ key ALL_HOTELS đã thống nhất với trang Partner và AdminPartners
+      const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
+      const count = all_hotels.filter(h => h.status === 'pending').length;
+      set_pending_count(count);
+    } catch (error) {
+      console.error("Lỗi cập nhật số lượng chờ duyệt:", error);
+    }
+  };
 
-        /* LOGIC MOCK DATA */
-        const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-        const count = all_hotels.filter(h => h.status === 'pending').length;
-        set_pending_count(count);
-      } catch (error) {
-        console.error("Lỗi cập nhật số lượng chờ duyệt:", error);
-      }
-    };
+  useEffect(() => {
     fetchPendingCount();
+
+    // Lắng nghe thay đổi khi tab Partner nhấn Lưu/Gửi đơn
+    window.addEventListener('storage', fetchPendingCount);
+    
+    // Check định kỳ mỗi 3s để đảm bảo UI luôn khớp dữ liệu mới nhất
+    const interval = setInterval(fetchPendingCount, 3000);
+
+    return () => {
+      window.removeEventListener('storage', fetchPendingCount);
+      clearInterval(interval);
+    };
   }, []);
 
-  // Giả lập level cho Mock User (Nếu user chưa có level thì mặc định là 1 - Sếp)
   const userLevel = user?.level || 1;
 
-  // 4. CẤU HÌNH MENU NỘI BỘ
+  // 4. CẤU HÌNH MENU ITEMS (Tích hợp Badge)
   const menu_config = [
-    { key: '/admin/dashboard', icon: <DashboardOutlined />, label: 'Tổng quan' },
-    {
-      key: '/admin/revenues',
-      icon: <BarChartOutlined />,
-      label: 'Báo cáo doanh thu',
-      level_required: 1 // Chỉ level 1 (Sếp) mới thấy
-    },
-    {
-      key: '/admin/partners',
-      icon: <SolutionOutlined />,
+    { key: '/admin/dashboard',  icon: <DashboardOutlined />,  label: 'Tổng quan' },
+    { key: '/admin/profile',    icon: <ProfileOutlined />,    label: 'Hồ sơ cá nhân' },
+    { key: '/admin/revenues',   icon: <BarChartOutlined />,   label: 'Báo cáo doanh thu',  level_required: 1 },
+    { 
+      key: '/admin/partners',   
+      icon: <SolutionOutlined />,   
       label: (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Phê duyệt khách sạn đối tác</span>
-          {pending_count > 0 && <Badge count={pending_count} size="small" offset={[10, 0]} />}
+          <span>Phê duyệt khách sạn</span>
+          {pending_count > 0 && (
+            <Badge 
+              count={pending_count} 
+              size="small" 
+              style={{ backgroundColor: '#f5222d', boxShadow: 'none', marginLeft: 8 }} 
+            />
+          )}
         </div>
-      )
+      ) 
     },
-    {
-      key: '/admin/users',
-      icon: <UserOutlined />,
-      label: 'Quản lý người dùng',
-      level_required: 1
-    },
-    { key: '/admin/categories', icon: <AppstoreOutlined />, label: 'Quản lý loại khách sạn' },
-    { key: '/admin/reports', icon: <FileTextOutlined />, label: 'Quản lý báo cáo' },
-    {
-      key: '/admin/discounts',
-      icon: <PercentageOutlined />,
-      label: 'Quản lý chiết khấu',
-      level_required: 1
-    },
+    { key: '/admin/users',      icon: <UserOutlined />,       label: 'Quản lý người dùng', level_required: 1 },
+    { key: '/admin/categories', icon: <AppstoreOutlined />,   label: 'Quản lý loại khách sạn' },
+    { key: '/admin/discounts',  icon: <PercentageOutlined />, label: 'Quản lý chiết khấu', level_required: 1 },
   ];
 
-  // Lọc menu theo level (số càng nhỏ quyền càng cao)
   const side_menu_items = menu_config.filter(item => 
     !item.level_required || userLevel <= item.level_required
   );
 
   const user_menu_items = [
-    { key: 'profile', label: 'Hồ sơ cá nhân', icon: <ProfileOutlined />, onClick: () => navigate('/profile') },
     { type: 'divider' },
     {
       key: 'logout',
@@ -119,27 +111,21 @@ const AdminLayout = () => {
         confirm({
           title: 'Xác nhận đăng xuất',
           content: 'Thoát khỏi hệ thống quản trị?',
-          async onOk() {
-            /* --- GỌI API LOGOUT BE --- */
-            // try { await axiosClient.post('/accounts/logout/'); } catch(e) {}
-
-            localStorage.removeItem('user');
-            localStorage.removeItem('role');
-            localStorage.removeItem('token');
-            message.success('Đã đăng xuất!');
-            navigate('/');
+          onOk() {
+            sessionStorage.clear();
+            message.success('Đã đăng xuất thành công!');
+            window.location.href = '/'; 
           },
         });
       },
     },
   ];
 
-  // Chặn render nếu không phải admin để tránh lộ UI trước khi chuyển hướng
   if (!user || user.role !== 'admin') return null;
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} theme="dark" width={250}>
+      <Sider trigger={null} collapsible collapsed={collapsed} theme="dark" width={260}>
         <div style={{ height: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#002140' }}>
           <div style={{ color: '#fff', fontWeight: 'bold', fontSize: collapsed ? 14 : 18 }}>
             {collapsed ? 'AD' : 'HOTEL ADMIN'}

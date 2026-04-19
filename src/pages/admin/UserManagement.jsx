@@ -17,7 +17,7 @@ const UserManagement = () => {
   const [selected_user, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    const data = JSON.parse(localStorage.getItem('users_list')) || [];
+    const data = JSON.parse(sessionStorage.getItem('users_list')) || [];
     if (data.length === 0) {
       const demo_data = [
         {
@@ -49,7 +49,7 @@ const UserManagement = () => {
           created_at: new Date().toISOString()
         },
       ];
-      localStorage.setItem('users_list', JSON.stringify(demo_data));
+      sessionStorage.setItem('users_list', JSON.stringify(demo_data));
       setUsers(demo_data);
     } else {
       setUsers(data);
@@ -57,17 +57,17 @@ const UserManagement = () => {
   }, []);
 
   const save_users_data = (new_users) => {
-    localStorage.setItem('users_list', JSON.stringify(new_users));
+    sessionStorage.setItem('users_list', JSON.stringify(new_users));
     setUsers(new_users);
-    window.dispatchEvent(new Event('storage')); // Đồng bộ các tab khác
+    window.dispatchEvent(new Event('storage'));
   };
-
+/*
   const handle_delete_user = (email) => {
     Modal.confirm({
-      title: 'Xóa tài khoản vĩnh viễn?',
+      title: 'Xoá tài khoản vĩnh viễn?',
       icon: <DeleteOutlined style={{ color: 'red' }} />,
       content: `Dữ liệu của tài khoản ${email} sẽ bị gỡ bỏ hoàn toàn.`,
-      okText: 'Xác nhận xóa',
+      okText: 'Xác nhận xoá',
       okType: 'danger',
       onOk: () => {
         const new_users = users.filter(u => u.email_address !== email);
@@ -76,7 +76,7 @@ const UserManagement = () => {
       }
     });
   };
-
+*/
   const handle_toggle_status = (user) => {
     const action = user.account_status === 'active' ? 'KHÓA' : 'MỞ KHÓA';
     Modal.confirm({
@@ -119,7 +119,7 @@ const UserManagement = () => {
       key: 'email_address',
     },
     {
-      title: 'Cấp bậc / Vai trò',
+      title: 'Vai trò',
       dataIndex: 'user_role',
       key: 'user_role',
       render: (role, record) => {
@@ -174,9 +174,11 @@ const UserManagement = () => {
                   onClick={() => handle_toggle_status(record)}
                 />
               </Tooltip>
-              <Tooltip title="Xóa tài khoản">
+              {/*
+              <Tooltip title="Xoá tài khoản">
                 <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handle_delete_user(record.email_address)} />
               </Tooltip>
+              */}
             </>
           )}
         </Space>
@@ -185,7 +187,7 @@ const UserManagement = () => {
   ];
 
   return (
-    <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+    <Card variant={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         <Title level={4} style={{ margin: 0 }}><UserOutlined /> Quản lý danh sách tài khoản</Title>
         <Input

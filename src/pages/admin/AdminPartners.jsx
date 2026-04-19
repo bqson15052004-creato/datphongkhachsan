@@ -15,49 +15,58 @@ const AdminPartners = () => {
   const [selected_partner, set_selected_partner] = useState(null);
   const [partner_list, set_partner_list] = useState([]);
 
-  // 1. Đồng bộ dữ liệu từ LocalStorage
+  // 1. Đồng bộ dữ liệu từ localStorage (Dùng chung key 'ALL_HOTELS' với trang Partner)
   const load_partners_data = () => {
-    const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
+    // Đọc từ localStorage để lấy dữ liệu mới nhất mà Partner vừa đăng ký
+    const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
     set_partner_list(all_hotels);
+    
+    // Cập nhật lại thông tin trong Modal nếu đang mở để tránh lệch data
+    if (selected_partner) {
+      const updated_selected = all_hotels.find(h => h.id_hotel === selected_partner.id_hotel);
+      if (updated_selected) set_selected_partner(updated_selected);
+    }
   };
 
   useEffect(() => {
     load_partners_data();
-    // Lắng nghe thay đổi từ các tab khác (nếu có)
+    // Lắng nghe sự kiện storage để cập nhật UI ngay lập tức khi tab khác (Partner) thêm data
     window.addEventListener('storage', load_partners_data);
     return () => window.removeEventListener('storage', load_partners_data);
-  }, []);
+  }, [selected_partner]);
 
-  // 2. Logic: Phê duyệt (Cập nhật status sang 'approved')
-  const handle_approve_partner = (partner_id) => {
+  // 2. Logic: Phê duyệt (Cập nhật status sang 'active')
+  const handle_approve_partner = (hotel_id) => {
     Modal.confirm({
       title: 'Xác nhận phê duyệt đối tác?',
-      content: 'Sau khi duyệt, khách sạn này sẽ chính thức hoạt động trên hệ thống.',
+      content: 'Sau khi duyệt, khách sạn này sẽ chính thức hiển thị và hoạt động trên hệ thống.',
       okText: 'Phê duyệt',
       cancelText: 'Hủy',
+      centered: true,
       onOk: () => {
-        const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
+        const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
         const updated_data = all_hotels.map(item =>
-          item.id === partner_id ? { ...item, status: 'approved' } : item
+          item.id_hotel === hotel_id ? { ...item, status: 'active' } : item
         );
         
-        save_and_sync(updated_data, 'Đã kích hoạt trạng thái hoạt động cho đối tác!');
+        save_and_sync(updated_data, 'Đã phê duyệt và kích hoạt khách sạn thành công!');
       }
     });
   };
 
-  // 3. Logic: Từ chối (Cập nhật status sang 'rejected' hoặc xóa)
-  const handle_reject_partner = (partner_id) => {
+  // 3. Logic: Từ chối
+  const handle_reject_partner = (hotel_id) => {
     Modal.confirm({
       title: 'Từ chối hồ sơ?',
       content: 'Bạn có chắc chắn muốn từ chối yêu cầu đăng ký này?',
       okText: 'Từ chối',
       okType: 'danger',
+      cancelText: 'Hủy',
+      centered: true,
       onOk: () => {
-        const all_hotels = JSON.parse(localStorage.getItem('all_hotels')) || [];
-        // Thay vì xóa hẳn, ta nên chuyển status sang 'rejected' để lưu vết
+        const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
         const updated_data = all_hotels.map(item => 
-          item.id === partner_id ? { ...item, status: 'rejected' } : item
+          item.id_hotel === hotel_id ? { ...item, status: 'rejected' } : item
         );
         
         save_and_sync(updated_data, 'Đã từ chối hồ sơ đối tác.');
@@ -66,33 +75,38 @@ const AdminPartners = () => {
   };
 
   const save_and_sync = (data, success_msg) => {
-    localStorage.setItem('all_hotels', JSON.stringify(data));
+    localStorage.setItem('ALL_HOTELS', JSON.stringify(data));
     set_partner_list(data);
     set_is_modal_open(false);
     antd_message.success(success_msg);
-    // Bắn event để Header (AdminLayout) cập nhật lại số lượng badge
+    // Tạo trigger để các tab khác biết mà cập nhật theo
     window.dispatchEvent(new Event('storage'));
   };
 
   const columns = [
     { 
-      title: 'Mã đối tác', 
-      dataIndex: 'id', 
-      key: 'id',
+      title: 'Mã khách sạn', 
+      dataIndex: 'id_hotel', 
+      key: 'id_hotel',
       render: (id) => <Text code>{id}</Text>
     },
     { 
       title: 'Tên cơ sở', 
-      dataIndex: 'name', 
-      key: 'name',
+      dataIndex: 'hotel_name', 
+      key: 'hotel_name',
       render: (text) => <Text strong>{text}</Text>
     },
-    { title: 'Chủ sở hữu', dataIndex: 'owner', key: 'owner' },
     { 
-      title: 'Ngày đăng ký', 
-      dataIndex: 'date', 
-      key: 'date',
-      render: (date) => date || 'N/A'
+      title: 'Loại hình', 
+      dataIndex: 'type', 
+      key: 'type',
+      render: (type) => <Tag color="blue">{type?.toUpperCase()}</Tag>
+    },
+    { 
+      title: 'Ngày gửi đơn', 
+      dataIndex: 'created_at', 
+      key: 'created_at',
+      render: (date) => date || '12/04/2026'
     },
     {
       title: 'Trạng thái',
@@ -100,12 +114,12 @@ const AdminPartners = () => {
       key: 'status',
       render: (status) => {
         const config = {
-          'approved': { color: 'green', text: 'HOẠT ĐỘNG' },
+          'active': { color: 'green', text: 'ĐANG HOẠT ĐỘNG' }, 
           'pending': { color: 'orange', text: 'CHỜ DUYỆT' },
           'rejected': { color: 'red', text: 'TỪ CHỐI' },
         };
-        const current = config[status] || { color: 'default', text: status };
-        return <Tag color={current.color} style={{fontWeight: 500}}>{current.text}</Tag>;
+        const current = config[status] || { color: 'default', text: 'CHỜ DUYỆT' };
+        return <Tag color={current.color} style={{fontWeight: 600}}>{current.text}</Tag>;
       }
     },
     {
@@ -126,7 +140,7 @@ const AdminPartners = () => {
               size="small"
               type="primary"
               icon={<CheckCircleOutlined />}
-              onClick={() => handle_approve_partner(record.id)}
+              onClick={() => handle_approve_partner(record.id_hotel)}
             >
               Duyệt
             </Button>
@@ -139,9 +153,9 @@ const AdminPartners = () => {
   return (
     <div style={{ padding: '24px' }}>
       <Card 
-        variant={false}
+        bordered={false}
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
-        title={<Title level={4} style={{margin:0}}><SafetyOutlined /> Quản lý Đối tác & Khách sạn</Title>}
+        title={<Title level={4} style={{margin:0}}><SafetyOutlined /> Phê duyệt yêu cầu đối tác</Title>}
       >
         <Tabs 
           defaultActiveKey="1" 
@@ -157,51 +171,52 @@ const AdminPartners = () => {
                   />
                 </span>
               ),
-              children: <Table columns={columns} dataSource={partner_list.filter(p => p.status === 'pending')} rowKey="id" />
+              children: <Table columns={columns} dataSource={partner_list.filter(p => p.status === 'pending')} rowKey="id_hotel" />
             },
             {
               key: '2',
               label: 'Tất cả đối tác',
-              children: <Table columns={columns} dataSource={partner_list} rowKey="id" />
+              children: <Table columns={columns} dataSource={partner_list} rowKey="id_hotel" />
             },
           ]} 
         />
       </Card>
 
       <Modal
-        title={<Space><EyeOutlined /> Chi tiết hồ sơ đối tác</Space>}
+        title={<Space><EyeOutlined /> Chi tiết hồ sơ đăng ký</Space>}
         open={is_modal_open}
         onCancel={() => set_is_modal_open(false)}
         width={700}
+        centered
         footer={[
           <Button key="close" onClick={() => set_is_modal_open(false)}>Đóng</Button>,
           selected_partner?.status === 'pending' && (
-            <Button key="reject" danger icon={<CloseCircleOutlined />} onClick={() => handle_reject_partner(selected_partner.id)}>
-              Từ chối hồ sơ
+            <Button key="reject" danger icon={<CloseCircleOutlined />} onClick={() => handle_reject_partner(selected_partner.id_hotel)}>
+              Từ chối
             </Button>
           ),
           selected_partner?.status === 'pending' && (
-            <Button key="approve" type="primary" icon={<CheckCircleOutlined />} onClick={() => handle_approve_partner(selected_partner.id)}>
-              Phê duyệt ngay
+            <Button key="approve" type="primary" icon={<CheckCircleOutlined />} onClick={() => handle_approve_partner(selected_partner.id_hotel)}>
+              Duyệt yêu cầu
             </Button>
           ),
         ]}
       >
         {selected_partner ? (
           <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
-            <Descriptions.Item label="Tên cơ sở" span={2}>{selected_partner.name}</Descriptions.Item>
-            <Descriptions.Item label="Mã đối tác">{selected_partner.id}</Descriptions.Item>
-            <Descriptions.Item label="Chủ sở hữu">{selected_partner.owner}</Descriptions.Item>
+            <Descriptions.Item label="Tên khách sạn" span={2}>{selected_partner.hotel_name}</Descriptions.Item>
+            <Descriptions.Item label="Mã định danh">{selected_partner.id_hotel}</Descriptions.Item>
+            <Descriptions.Item label="Hạng sao">{selected_partner.rate_star} ⭐</Descriptions.Item>
             <Descriptions.Item label="Địa chỉ" span={2}>{selected_partner.address}</Descriptions.Item>
-            <Descriptions.Item label="Mô tả" span={2}>{selected_partner.description || 'Chưa có mô tả'}</Descriptions.Item>
+            <Descriptions.Item label="Mô tả" span={2}>{selected_partner.description || 'Không có mô tả chi tiết.'}</Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
               <Badge 
-                status={selected_partner.status === 'approved' ? 'success' : (selected_partner.status === 'rejected' ? 'error' : 'warning')} 
-                text={selected_partner.status === 'approved' ? 'Đã kích hoạt' : (selected_partner.status === 'rejected' ? 'Đã từ chối' : 'Đang chờ')} 
+                status={selected_partner.status === 'active' ? 'success' : (selected_partner.status === 'rejected' ? 'error' : 'warning')} 
+                text={selected_partner.status === 'active' ? 'Đã hoạt động' : (selected_partner.status === 'rejected' ? 'Đã từ chối' : 'Chờ phê duyệt')} 
               />
             </Descriptions.Item>
-            <Descriptions.Item label="Hồ sơ pháp lý">
-              <Tag color="cyan">HỢP LỆ</Tag>
+            <Descriptions.Item label="Xác minh">
+              <Tag color="cyan">Hồ sơ hợp lệ</Tag>
             </Descriptions.Item>
           </Descriptions>
         ) : <Empty />}

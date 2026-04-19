@@ -33,9 +33,9 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(sessionStorage.getItem('user'));
     if (!user) {
-      antdMessage?.warning('Vui lòng đăng nhập để tiếp tục thanh toán!');
+      antdMessage?.warning('Vui lòng đăng nhập để tiếp tục đặt phòng!');
       navigate('/login');
     } else {
       setCurrentUser(user);
@@ -117,7 +117,7 @@ const Checkout = () => {
 
         <Row gutter={[32, 32]}>
           <Col xs={24} lg={15}>
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Space orientation="vertical" size="large" style={{ width: '100%' }}>
               
               <Card variant={false} style={{ borderRadius: 16 }}>
                 <Title level={5}><SafetyCertificateOutlined style={{ color: '#52c41a' }} /> Xác nhận thông tin người đặt</Title>
@@ -153,50 +153,13 @@ const Checkout = () => {
                   )}
                 </div>
               </Card>
-
-              <Card bordered={false} style={{ borderRadius: 16 }} title={<Title level={5} style={{margin:0}}>Hình thức thanh toán</Title>}>
-                <Radio.Group onChange={(e) => setPaymentMethod(e.target.value)} value={paymentMethod} style={{ width: '100%' }}>
-                  <Row gutter={[16, 16]}>
-                    <Col span={12}>
-                      <div 
-                        onClick={() => setPaymentMethod('banking')}
-                        style={{ 
-                          padding: '16px', 
-                          borderRadius: 12, 
-                          border: `2px solid ${paymentMethod === 'banking' ? '#1890ff' : '#f0f0f0'}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.3s'
-                        }}
-                      >
-                        <Radio value="banking"><Text strong>Chuyển khoản</Text></Radio>
-                        <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>QR Code hoặc Internet Banking</div>
-                      </div>
-                    </Col>
-                    <Col span={12}>
-                      <div 
-                        onClick={() => setPaymentMethod('momo')}
-                        style={{ 
-                          padding: '16px', 
-                          borderRadius: 12, 
-                          border: `2px solid ${paymentMethod === 'momo' ? '#1890ff' : '#f0f0f0'}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.3s'
-                        }}
-                      >
-                        <Radio value="momo"><Text strong>Ví điện tử</Text></Radio>
-                        <div style={{ marginTop: 8, fontSize: 12, color: '#94a3b8' }}>Momo, ZaloPay, ShopeePay</div>
-                      </div>
-                    </Col>
-                  </Row>
-                </Radio.Group>
-              </Card>
             </Space>
           </Col>
 
           <Col xs={24} lg={9}>
             <Card 
               sticky 
-              bordered={false} 
+              variant={false} 
               style={{ borderRadius: 20, boxShadow: '0 10px 25px rgba(0,0,0,0.05)', position: 'sticky', top: 20 }}
             >
               <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
@@ -207,7 +170,7 @@ const Checkout = () => {
                 />
               </div>
               
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }}>
                 <div>
                   <Tag color="blue">{room.hotel_name}</Tag>
                   <Title level={4} style={{ margin: '8px 0 4px' }}>Phòng {room.room_number || room.id_room}</Title>
@@ -247,7 +210,7 @@ const Checkout = () => {
                     boxShadow: '0 4px 14px 0 rgba(24, 144, 255, 0.39)'
                   }}
                 >
-                  THANH TOÁN NGAY
+                  ĐẶT PHÒNG
                 </Button>
                 
                 <Text type="secondary" style={{ textAlign: 'center', display: 'block', fontSize: 12, marginTop: 12 }}>

@@ -65,7 +65,7 @@ const PartnerMessages = () => {
           {/* SIDEBAR - Danh sách hội thoại */}
           <Sider width={350} theme="light" style={{ borderRight: '1px solid #f0f0f0' }}>
             <div style={{ padding: '24px', background: '#fff' }}>
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }}>
                 <Title level={4} style={{ margin: 0, color: '#1a3353' }}>
                   <MessageOutlined /> Tin nhắn
                 </Title>

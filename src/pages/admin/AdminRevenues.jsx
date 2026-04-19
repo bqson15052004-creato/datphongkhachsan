@@ -90,20 +90,6 @@ const AdminRevenues = () => {
         return <Text strong style={{ color: '#52c41a' }}>+{format_currency(profit)}</Text>
       }
     },
-    { 
-      title: 'Thanh toán', 
-      dataIndex: 'payment_method', 
-      key: 'payment_method',
-      render: (method) => {
-        const methods = {
-          'banking': { icon: <BankOutlined />, color: 'blue', text: 'Chuyển khoản' },
-          'e-wallet': { icon: <WalletOutlined />, color: 'purple', text: 'Ví điện tử' },
-          'card': { icon: <CreditCardOutlined />, color: 'orange', text: 'Thẻ quốc tế' },
-        };
-        const m = methods[method] || { icon: null, color: 'default', text: method };
-        return <Tag icon={m.icon} color={m.color}>{m.text}</Tag>;
-      }
-    },
     {
       title: 'Trạng thái',
       dataIndex: 'payment_status',
@@ -123,7 +109,7 @@ const AdminRevenues = () => {
         title={
           <Space>
             <DollarTwoTone twoToneColor="#52c41a" style={{ fontSize: '24px' }} />
-            <Title level={4} style={{ margin: 0 }}>Quản lý Doanh thu & Đối soát</Title>
+            <Title level={4} style={{ margin: 0 }}>Báo cáo doanh thu</Title>
           </Space>
         }
       >
@@ -139,13 +125,6 @@ const AdminRevenues = () => {
                 <Select placeholder="Chọn khách sạn" style={{ width: '100%', marginTop: 8 }} allowClear>
                   <Select.Option value="1">Vinpearl Luxury</Select.Option>
                   <Select.Option value="2">InterContinental</Select.Option>
-                </Select>
-              </Col>
-              <Col span={7}>
-                <Text strong>Hình thức:</Text>
-                <Select placeholder="Phương thức" style={{ width: '100%', marginTop: 8 }} allowClear>
-                  <Select.Option value="banking">Ngân hàng</Select.Option>
-                  <Select.Option value="e-wallet">Ví điện tử</Select.Option>
                 </Select>
               </Col>
             </Row>

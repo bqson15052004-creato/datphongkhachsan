@@ -3,7 +3,6 @@ import { Layout, Menu, Button, theme, Avatar, Dropdown, App as AntApp, Modal, Ty
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  DashboardOutlined,
   HomeOutlined,
   CalendarOutlined,
   BarChartOutlined,
@@ -11,13 +10,12 @@ import {
   LogoutOutlined,
   ProfileOutlined,
   ShopOutlined,
-  WalletOutlined,
   MessageOutlined,
   ExclamationCircleFilled,
-  UnorderedListOutlined
+  UnorderedListOutlined,
+  TagOutlined // Thêm icon cho mã giảm giá
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-// import axiosClient from '../../services/axiosClient'; // Mở ra khi kết nối BE thật
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -33,19 +31,19 @@ const PartnerLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 1. ĐỒNG BỘ DỮ LIỆU: Lấy đúng key 'user' từ Login.jsx
-  const userData = localStorage.getItem('user');
+  // 1. LẤY THÔNG TIN USER
+  const userData = sessionStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;
 
-  // 2. KIỂM TRA QUYỀN TRUY CẬP: Chỉ cho phép role 'partner' vào đây
+  // 2. KIỂM TRA QUYỀN TRUY CẬP
   useEffect(() => {
     if (!user || user.role !== 'partner') {
       message.error('Bạn không có quyền truy cập vùng đối tác!');
-      navigate('/'); // Đá về trang chủ nếu sai quyền
+      navigate('/'); 
     }
   }, [user, navigate, message]);
 
-  // 3. LOGIC ĐĂNG XUẤT (Giữ chỗ cho BE)
+  // 3. LOGIC ĐĂNG XUẤT
   const handle_logout = () => {
     confirm({
       title: 'Xác nhận đăng xuất',
@@ -55,31 +53,21 @@ const PartnerLayout = () => {
       okType: 'danger',
       cancelText: 'Hủy',
       async onOk() {
-        try {
-          /* --- GỌI API LOGOUT BE (NẾU CẦN) --- */
-          // await axiosClient.post('/accounts/logout/');
-        } catch (e) { console.log(e) }
-
-        // Clear sạch LocalStorage để đảm bảo an toàn
-        localStorage.removeItem('user');
-        localStorage.removeItem('role');
-        localStorage.removeItem('token');
-        localStorage.removeItem('access_token');
-        
+        sessionStorage.clear();
         message.success('Đã đăng xuất thành công!');
-        navigate('/');
+        window.location.href = '/'; 
       },
     });
   };
 
-  // 4. Menu người dùng (Avatar Dropdown)
+  // 4. Menu người dùng
   const user_menu_items = [
-    {
+    /*{
       key: 'profile',
       label: 'Hồ sơ cá nhân',
       icon: <ProfileOutlined />,
-      onClick: () => navigate('/profile'),
-    },
+      onClick: () => navigate('/partner/profile'),
+    },*/
     { type: 'divider' },
     {
       key: 'logout',
@@ -90,17 +78,18 @@ const PartnerLayout = () => {
     },
   ];
 
-  // 5. Sidebar Menu (Khớp với ERD khách sạn, phòng, booking)
+  // 5. Sidebar Menu - ĐÃ CẬP NHẬT THÊM MỤC GIẢM GIÁ
   const menu_items = [
     { key: '/partner/dashboard', icon: <BarChartOutlined />, label: 'Báo cáo doanh thu' },
+    { key: '/partner/profile', icon: <ProfileOutlined />, label: 'Hồ sơ cá nhân' },
     { key: '/partner/hotels', icon: <ShopOutlined />, label: 'Quản lý khách sạn' },
     { key: '/partner/rooms', icon: <HomeOutlined />, label: 'Quản lý loại phòng' },
     { key: '/partner/roomnumbers', icon: <UnorderedListOutlined />, label: 'Quản lý phòng' },
     { key: '/partner/bookings', icon: <CalendarOutlined />, label: 'Đơn đặt phòng' },
+    { key: '/partner/discounts', icon: <TagOutlined />, label: 'Mã giảm giá' }, 
     { key: '/partner/messages', icon: <MessageOutlined />, label: 'Nhắn tin' },
   ];
 
-  // Nếu không phải partner thì không render giao diện để tránh "nháy" UI
   if (!user || user.role !== 'partner') return null;
 
   return (
@@ -167,7 +156,7 @@ const PartnerLayout = () => {
               </div>
               <Avatar 
                 style={{ backgroundColor: '#1890ff' }} 
-                src={user.avatar} // Hiện avatar từ Mock Data
+                src={user.avatar} 
                 icon={<UserOutlined />} 
               />
             </div>

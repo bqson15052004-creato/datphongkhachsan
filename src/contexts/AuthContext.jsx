@@ -10,7 +10,7 @@ export const AuthContext = createContext({
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const raw = localStorage.getItem('user');
+      const raw = sessionStorage.getItem('user');
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
@@ -28,20 +28,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userObj, tokens = {}) => {
-    if (tokens.access) localStorage.setItem('access_token', tokens.access);
-    if (tokens.refresh) localStorage.setItem('refresh_token', tokens.refresh);
+    if (tokens.access) sessionStorage.setItem('access_token', tokens.access);
+    if (tokens.refresh) sessionStorage.setItem('refresh_token', tokens.refresh);
     if (userObj) {
-      localStorage.setItem('user', JSON.stringify(userObj));
-      if (userObj.role) localStorage.setItem('role', userObj.role);
+      sessionStorage.setItem('user', JSON.stringify(userObj));
+      if (userObj.role) sessionStorage.setItem('role', userObj.role);
     }
     setUser(userObj);
   };
 
   const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('role');
     setUser(null);
     window.location.href = '/';
   };

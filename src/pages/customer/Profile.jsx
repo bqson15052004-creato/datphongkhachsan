@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Layout, Menu, Card, Avatar, Button, Typography, Tag,
-  Modal, Form, Input, Row, Col, Table, Space, Rate, Empty, App as AntApp, Descriptions, Badge
+  Modal, Form, Input, Row, Col, Table, Space, Rate, App as AntApp, Descriptions, Badge
 } from 'antd';
 import {
   UserOutlined, HistoryOutlined,
   ArrowLeftOutlined, StarOutlined, DeleteOutlined, 
-  LogoutOutlined, VerifiedOutlined, CarryOutOutlined
+  LogoutOutlined, VerifiedOutlined, CarryOutOutlined,
+  LockOutlined, EditOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import axiosClient from '../../services/axiosClient';
+import { MOCK_BOOKINGS, MOCK_USERS } from '../../constants/mockData';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -20,88 +21,85 @@ const Profile = () => {
   
   const [activeTab, setActiveTab] = useState('info');
   const [formReview] = Form.useForm();
+  const [formUpdate] = Form.useForm();
+  const [formPassword] = Form.useForm();
   
-  const [userData] = useState(JSON.parse(localStorage.getItem('user')) || {});
+  const [userData, setUserData] = useState(
+    JSON.parse(sessionStorage.getItem('user')) || MOCK_USERS[2] 
+  );
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  const fetchBookings = async () => {
+  const fetchUserProfile = () => {
+    const sessionUser = JSON.parse(sessionStorage.getItem('user'));
+    if (sessionUser) setUserData(sessionUser);
+  };
+
+  const fetchUserBookings = () => {
     setLoading(true);
-    try {
-      const response = await axiosClient.get('/hotels/bookings/');
-      setBookings(Array.isArray(response) ? response : response.data || []);
-    } catch (error) {
-      antdMessage?.error("Không thể tải lịch sử đặt phòng.");
-    } finally {
+    setTimeout(() => {
+      const myBookings = MOCK_BOOKINGS.filter(b => b.id_user === userData.id);
+      setBookings(myBookings);
       setLoading(false);
-    }
+    }, 500);
   };
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    fetchUserProfile();
+    fetchUserBookings();
+  }, [userData.id]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    sessionStorage.clear();
     antdMessage.success("Đã đăng xuất thành công");
     navigate('/');
   };
 
-  const handleCancelBooking = (bookingId) => {
-    antdModal?.confirm({
-      title: 'Xác nhận hủy đơn đặt phòng?',
-      icon: <DeleteOutlined style={{ color: 'red' }} />,
-      content: 'Lưu ý: Hành động này không thể hoàn tác. Bạn chỉ có thể hủy đơn ở trạng thái "Chờ xác nhận".',
-      okText: 'Xác nhận hủy',
-      okType: 'danger',
-      cancelText: 'Quay lại',
-      async onOk() {
-        try {
-          await axiosClient.delete(`/hotels/bookings/${bookingId}/`);
-          antdMessage?.success('Đã hủy đơn thành công!');
-          fetchBookings();
-        } catch (error) {
-          antdMessage?.error("Hủy đơn thất bại. Vui lòng liên hệ hỗ trợ.");
-        }
-      },
-    });
+  const handleUpdateProfile = (values) => {
+    setLoading(true);
+    setTimeout(() => {
+      const newData = { ...userData, ...values };
+      setUserData(newData);
+      sessionStorage.setItem('user', JSON.stringify(newData));
+      antdMessage.success("Cập nhật thông tin thành công!");
+      setIsUpdateModalOpen(false);
+      setLoading(false);
+    }, 800);
   };
 
-  const handleReviewSubmit = async (values) => {
-    try {
-      const reviewData = {
-        room_id: selectedBooking.room_id,
-        rating: values.rating,
-        comment: values.comment
-      };
-      await axiosClient.post('/hotels/reviews/', reviewData);
-      antdMessage?.success('Cảm ơn bạn đã đóng góp ý kiến!');
-      setIsReviewModalOpen(false);
-      formReview.resetFields();
-    } catch (error) {
-      antdMessage?.error("Không thể gửi đánh giá lúc này.");
-    }
+  const handleChangePassword = (values) => {
+    setLoading(true);
+    setTimeout(() => {
+      antdMessage.success("Đổi mật khẩu thành công!");
+      setIsPasswordModalOpen(false);
+      formPassword.resetFields();
+      setLoading(false);
+    }, 800);
   };
 
   const columns = [
-    { 
-      title: 'Mã đơn', 
-      dataIndex: 'id', 
-      key: 'id', 
-      render: (id) => <Text code>#{id}</Text> 
-    },
+    { title: 'Mã đơn', dataIndex: 'id', key: 'id', render: (id) => <Text code>{id}</Text> },
+    { title: 'Khách sạn', dataIndex: 'hotel_name', key: 'hotel_name', render: (name) => <Text strong>{name}</Text> },
     {
-      title: 'Thông tin phòng',
-      key: 'hotel',
-      render: (record) => (
+      title: 'Thời gian',
+      key: 'dates',
+      render: (_, record) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{record.hotel_name}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>Phòng: {record.room_number} ({record.room_type_name})</Text>
+          <Text style={{ fontSize: 13 }}><Badge status="processing" /> Vào: <b>{record.check_in}</b></Text>
+          <Text style={{ fontSize: 13 }}><Badge status="warning" /> Ra: <b>{record.check_out}</b></Text>
         </Space>
       )
+    },
+    {
+      title: 'Giá tiền',
+      dataIndex: 'total_price',
+      key: 'total_price',
+      align: 'right',
+      render: (total) => <Text strong style={{ color: '#ff4d4f' }}>{total?.toLocaleString()}₫</Text>
     },
     {
       title: 'Trạng thái',
@@ -111,54 +109,53 @@ const Profile = () => {
         const statusMap = {
           'Confirmed': { color: 'success', text: 'Đã xác nhận' },
           'Cancelled': { color: 'error', text: 'Đã hủy' },
-          'Pending': { color: 'processing', text: 'Đang chờ' }
+          'Pending': { color: 'processing', text: 'Chưa xác nhận' }
         };
         const current = statusMap[status] || { color: 'default', text: status };
         return <Badge status={current.color} text={current.text} />;
       }
     },
     {
-      title: 'Thanh toán',
-      dataIndex: 'total_price',
-      align: 'right',
-      render: (total) => <Text strong style={{ color: '#ff4d4f' }}>{parseFloat(total).toLocaleString()}₫</Text>
-    },
-    {
-      title: 'Hành động',
-      key: 'action',
-      align: 'center',
-      render: (_, record) => (
-        <Space>
-          {record.status === 'Pending' && (
-            <Button size="small" danger ghost icon={<DeleteOutlined />} onClick={() => handleCancelBooking(record.id)}>Hủy đơn</Button>
-          )}
-          {record.status === 'Confirmed' && (
-            <Button size="small" type="primary" ghost icon={<StarOutlined />} onClick={() => { setSelectedBooking(record); setIsReviewModalOpen(true); }}>Đánh giá</Button>
-          )}
-        </Space>
-      )
-    },
+        title: 'Hành động',
+        key: 'action',
+        align: 'center',
+        render: (_, record) => (
+          <Space>
+            {record.status === 'Pending' && (
+              <Button size="small" danger ghost onClick={() => {
+                antdModal.confirm({
+                    title: 'Xác nhận hủy đơn?',
+                    content: 'Hành động này không thể hoàn tác.',
+                    okText: 'Hủy đơn',
+                    okType: 'danger',
+                    onOk: () => {
+                        setBookings(prev => prev.map(b => b.id === record.id ? {...b, status: 'Cancelled'} : b));
+                        antdMessage.success('Đã hủy đơn');
+                    }
+                })
+              }}>Hủy đơn</Button>
+            )}
+            {record.status === 'Confirmed' && <Tag color="default">Chờ trả phòng</Tag>}
+          </Space>
+        )
+    }
   ];
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#f4f7fe' }}>
       <Row gutter={0} style={{ minHeight: '100vh', width: '100%' }}>
-        {/* SIDEBAR TỐI ƯU CHO MOBILE */}
-        <Col xs={24} lg={5} style={{ background: '#001529', boxShadow: '4px 0 10px rgba(0,0,0,0.1)' }}>
+        {/* SIDEBAR */}
+        <Col xs={24} lg={5} style={{ background: '#001529' }}>
           <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-            <Badge count={<VerifiedOutlined style={{ color: '#52c41a', fontSize: 20 }} />} offset={[-10, 80]}>
-              <Avatar size={90} icon={<UserOutlined />} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.full_name}`} style={{ backgroundColor: '#1890ff', border: '2px solid #fff' }} />
+            <Badge count={<VerifiedOutlined style={{ color: '#52c41a' }} />} offset={[-10, 80]}>
+              <Avatar size={90} src={userData.avatar} icon={<UserOutlined />} />
             </Badge>
-            <Title level={4} style={{ color: '#fff', marginTop: 15, marginBottom: 5 }}>{userData.full_name}</Title>
-            <Text style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{userData.email}</Text>
-            <div style={{ marginTop: 15 }}><Tag color="gold">THÀNH VIÊN BẠC</Tag></div>
+            <Title level={4} style={{ color: '#fff', marginTop: 15 }}>{userData.full_name}</Title>
+            <Text style={{ color: 'rgba(255,255,255,0.45)' }}>{userData.email}</Text>
           </div>
           
           <Menu
-            theme="dark"
-            mode="inline"
-            selectedKeys={[activeTab]}
-            style={{ borderRight: 0 }}
+            theme="dark" mode="inline" selectedKeys={[activeTab]}
             onClick={({ key }) => {
               if (key === 'back') navigate('/');
               else if (key === 'logout') handleLogout();
@@ -174,78 +171,96 @@ const Profile = () => {
           />
         </Col>
 
-        {/* MAIN CONTENT */}
+        {/* CONTENT */}
         <Col xs={24} lg={19} style={{ padding: '40px' }}>
-          <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-            {activeTab === 'info' && (
-              <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                <Title level={3} style={{ marginBottom: 30 }}>Thông tin cá nhân</Title>
-                <Descriptions bordered column={1}>
-                  <Descriptions.Item label="Họ và tên" labelStyle={{ width: 200 }}>{userData.full_name}</Descriptions.Item>
-                  <Descriptions.Item label="Địa chỉ Email">{userData.email}</Descriptions.Item>
-                  <Descriptions.Item label="Số điện thoại">{userData.phone || 'Chưa cập nhật'}</Descriptions.Item>
-                  <Descriptions.Item label="Ngày tham gia">15/03/2026</Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái tài khoản">
-                    <Tag color="green">Đã xác thực</Tag>
-                  </Descriptions.Item>
-                </Descriptions>
-                <Button type="primary" style={{ marginTop: 24, borderRadius: 8 }}>Cập nhật thông tin</Button>
-              </Card>
-            )}
+          {activeTab === 'info' ? (
+            <Card variant={false} style={{ borderRadius: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <Title level={3} style={{ margin: 0 }}>Thông tin cá nhân</Title>
+                {/* ĐÂY RỒI ÔNG SƠN ƠI: 2 NÚT NẰM CẠNH NHAU */}
+                <Space>
+                  <Button type="primary" icon={<EditOutlined />} onClick={() => {
+                    formUpdate.setFieldsValue(userData);
+                    setIsUpdateModalOpen(true);
+                  }}>
+                    Cập nhật thông tin
+                  </Button>
+                  <Button icon={<LockOutlined />} onClick={() => setIsPasswordModalOpen(true)}>
+                    Đổi mật khẩu
+                  </Button>
+                </Space>
+              </div>
 
-            {activeTab === 'history' && (
-              <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                  <Title level={3} style={{ margin: 0 }}>Lịch sử chuyến đi</Title>
-                  <Button icon={<CarryOutOutlined />} onClick={fetchBookings}>Làm mới</Button>
-                </div>
-                <Table
-                  columns={columns}
-                  dataSource={bookings}
-                  rowKey="id"
-                  loading={loading}
-                  pagination={{ pageSize: 5 }}
-                  locale={{ 
-                    emptyText: (
-                      <Empty 
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        description="Bạn chưa có kế hoạch vi vu nào"
-                      >
-                        <Button type="primary" onClick={() => navigate('/')}>Khám phá ngay</Button>
-                      </Empty>
-                    ) 
-                  }}
-                />
-              </Card>
-            )}
-          </div>
+              <Descriptions bordered column={1}>
+                <Descriptions.Item label="Họ và tên">{userData.full_name}</Descriptions.Item>
+                <Descriptions.Item label="Địa chỉ Email">{userData.email}</Descriptions.Item>
+                <Descriptions.Item label="Số điện thoại">{userData.phone || 'Chưa cập nhật'}</Descriptions.Item>
+                <Descriptions.Item label="Vai trò"><Tag color="gold">{userData.role?.toUpperCase()}</Tag></Descriptions.Item>
+              </Descriptions>
+            </Card>
+          ) : (
+            <Card bordered={false} style={{ borderRadius: 16 }}>
+              <Title level={3}>Lịch sử đặt phòng</Title>
+              <Table columns={columns} dataSource={bookings} rowKey="id" loading={loading} pagination={{ pageSize: 5 }} />
+            </Card>
+          )}
         </Col>
       </Row>
 
+      {/* MODAL CẬP NHẬT THÔNG TIN */}
       <Modal
-        title={
-          <div style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: 10 }}>
-            <Title level={4} style={{ margin: 0 }}>Đánh giá dịch vụ</Title>
-            {selectedBooking && <Text type="secondary" style={{ fontSize: 13 }}>{selectedBooking.hotel_name} - Phòng {selectedBooking.room_number}</Text>}
-          </div>
-        }
-        open={isReviewModalOpen}
-        onCancel={() => setIsReviewModalOpen(false)}
-        footer={null}
+        title="Cập nhật hồ sơ cá nhân"
+        open={isUpdateModalOpen}
+        onCancel={() => setIsUpdateModalOpen(false)}
+        onOk={() => formUpdate.submit()}
+        confirmLoading={loading}
         centered
-        borderRadius={12}
       >
-        <Form form={formReview} layout="vertical" onFinish={handleReviewSubmit} style={{ marginTop: 20 }}>
-          <Form.Item name="rating" label="Chất lượng phòng & dịch vụ" rules={[{ required: true, message: 'Vui lòng chọn số sao' }]}>
-            <Rate allowHalf style={{ fontSize: 32 }} />
+        <Form form={formUpdate} layout="vertical" onFinish={handleUpdateProfile} style={{ marginTop: 20 }}>
+          <Form.Item name="full_name" label="Họ và tên" rules={[{ required: true, message: 'Không được để trống tên!' }]}>
+            <Input />
           </Form.Item>
-          <Form.Item name="comment" label="Ý kiến đóng góp của bạn" rules={[{ required: true, message: 'Hãy chia sẻ một chút về cảm nhận của bạn' }]}>
-            <TextArea rows={5} placeholder="Ví dụ: Phòng sạch sẽ, nhân viên hỗ trợ nhiệt tình, view rất đẹp..." style={{ borderRadius: 8 }} />
+          <Form.Item name="phone" label="Số điện thoại">
+            <Input placeholder="Nhập số điện thoại..." />
           </Form.Item>
-          <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-            <Button block size="large" onClick={() => setIsReviewModalOpen(false)}>Bỏ qua</Button>
-            <Button type="primary" block size="large" htmlType="submit">Gửi phản hồi</Button>
-          </div>
+          <Form.Item name="avatar" label="Link ảnh đại diện">
+            <Input placeholder="https://..." />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* MODAL ĐỔI MẬT KHẨU */}
+      <Modal
+        title="Đổi mật khẩu bảo mật"
+        open={isPasswordModalOpen}
+        onCancel={() => setIsPasswordModalOpen(false)}
+        onOk={() => formPassword.submit()}
+        confirmLoading={loading}
+        centered
+      >
+        <Form form={formPassword} layout="vertical" onFinish={handleChangePassword} style={{ marginTop: 20 }}>
+          <Form.Item name="oldPassword" label="Mật khẩu hiện tại" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu cũ!' }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item name="newPassword" label="Mật khẩu mới" rules={[{ required: true, min: 6, message: 'Tối thiểu 6 ký tự!' }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item 
+            name="confirmPassword" 
+            label="Xác nhận mật khẩu mới" 
+            dependencies={['newPassword']}
+            rules={[
+              { required: true },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) return Promise.resolve();
+                  return Promise.reject(new Error('Mật khẩu xác nhận không khớp!'));
+                },
+              })
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
         </Form>
       </Modal>
     </Layout>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tooltip, Empty, Tabs } from 'antd';
-import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, InfoCircleOutlined, BankOutlined } from '@ant-design/icons';
 import axiosClient from '../../services/axiosClient';
 
 // --- Đừng quên import Mock Data (Tạo file mockData.js nếu chưa có nhé) ---
@@ -64,21 +64,33 @@ const PartnerBookings = () => {
       title: 'Khách hàng', 
       key: 'customer',
       render: (record) => (
-        <Space direction="vertical" size={0}>
+        <Space orientation="vertical" size={0}>
           <Text strong><UserOutlined /> {record.customer_name || 'Khách vãng lai'}</Text>
           <Text type="secondary" style={{fontSize: 12}}>{record.customer_phone || 'N/A'}</Text>
         </Space>
       )
     },
+    // --- Đã tách cột Khách sạn riêng ---
     { 
-      title: 'Phòng & Khách sạn', 
+      title: 'Khách sạn', 
+      dataIndex: 'hotel_name',
+      key: 'hotel_name',
+      render: (hotelName) => (
+        <Space>
+          <BankOutlined style={{ color: '#8c8c8c' }} />
+          <Text strong>{hotelName}</Text>
+        </Space>
+      )
+    },
+    // --- Đã tách cột Thông tin phòng riêng ---
+    { 
+      title: 'Thông tin phòng', 
       key: 'room_info',
       render: (record) => (
-        <div>
-          <Text strong>{record.hotel_name}</Text> <br/>
+        <Space orientation="vertical" size={0}>
           <Tag color="cyan">Phòng {record.room_number}</Tag>
           <Text type="secondary" style={{fontSize: 12}}>{record.room_type_name}</Text>
-        </div>
+        </Space>
       )
     },
     { 
@@ -86,7 +98,7 @@ const PartnerBookings = () => {
       key: 'dates',
       render: (record) => (
         <div style={{minWidth: 160}}>
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Text style={{fontSize: 13}}><CalendarOutlined /> <Text type="success">Vào: {record.check_in}</Text></Text>
             <Text style={{fontSize: 13}}><CalendarOutlined /> <Text type="danger">Ra: {record.check_out}</Text></Text>
           </Space>
@@ -94,7 +106,7 @@ const PartnerBookings = () => {
       )
     },
     {
-      title: 'Thanh toán',
+      title: 'Thành tiền',
       dataIndex: 'total_price',
       key: 'total_price',
       render: (price) => (

@@ -9,7 +9,7 @@ import {
   SettingOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../../contexts/AuthContext'; // Đảm bảo đường dẫn đúng
+import AuthContext from '../../contexts/AuthContext';
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
@@ -35,15 +35,6 @@ const Navbar = () => {
       icon: <UserOutlined />,
       onClick: () => navigate('/profile'),
     },
-    {
-      key: 'history',
-      label: 'Lịch sử đặt phòng',
-      icon: <HistoryOutlined />,
-      onClick: () => {
-        if (user?.role === 'partner') navigate('/partner/bookings');
-        else navigate('/my-bookings');
-      },
-    },
     { type: 'divider' },
     {
       key: 'logout',
@@ -66,18 +57,6 @@ const Navbar = () => {
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {user ? (
           <Space size="middle">
-            {user.role === 'partner' && (
-              <Button type="primary" ghost icon={<DashboardOutlined />} onClick={() => navigate('/partner/dashboard')}>
-                Kênh Đối Tác
-              </Button>
-            )}
-
-            {user.role === 'admin' && (
-              <Button type="primary" danger ghost icon={<SettingOutlined />} onClick={() => navigate('/admin/dashboard')}>
-                Quản trị
-              </Button>
-            )}
-
             <Dropdown menu={{ items: user_menu_items }} placement="bottomRight" arrow>
               <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
                 <Avatar style={{ backgroundColor: '#1890ff' }} icon={<UserOutlined />} />

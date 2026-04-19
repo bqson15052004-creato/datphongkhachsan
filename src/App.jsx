@@ -7,19 +7,19 @@ import './App.css';
 // 1. NHÓM XÁC THỰC & HỆ THỐNG
 import ProtectedRoute from './pages/auth/ProtectedRoute';
 import Login from './pages/auth/Login';
-import AdminLogin from './pages/admin/AdminLogin';
 import RoleSelection from './pages/auth/RoleSelection';
 import RegisterForm from './pages/auth/RegisterForm';
-import Profile from './pages/customer/Profile';
 
-// 2. NHÓM KHÁCH HÀNG
+// 2. NHÓM KHÁCH HÀNG (CUSTOMER)
 import Home from './pages/customer/Home';
 import HotelList from './pages/customer/HotelList';
 import HotelDetail from './pages/customer/HotelDetail';
 import Checkout from './pages/customer/Checkout';
 import CustomerBookings from './pages/customer/CustomerBookings';
+import Profile from './pages/customer/Profile'; // Hồ sơ customer sẵn có
 
 // 3. NHÓM ĐỐI TÁC (PARTNER)
+import PartnerLogin from './pages/partner/PartnerLogin';
 import PartnerLayout from './components/layouts/PartnerLayout';
 import PartnerDashboard from './pages/partner/PartnerDashboard';
 import HotelManagement from './pages/partner/HotelManagement';
@@ -27,22 +27,23 @@ import PartnerRooms from './pages/partner/PartnerRooms';
 import RoomNumbers from './pages/partner/RoomNumbers';
 import PartnerBookings from './pages/partner/PartnerBookings';
 import PartnerMessages from './pages/partner/PartnerMessages';
+import PartnerDiscounts from './pages/partner/PartnerDiscounts';
+import PartnerProfile from './pages/partner/PartnerProfile'; // HỒ SƠ PARTNER MỚI
 
 // 4. NHÓM QUẢN TRỊ VIÊN (ADMIN)
+import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './components/layouts/AdminLayout';
 import AdminPartners from './pages/admin/AdminPartners';
 import UserManagement from './pages/admin/UserManagement';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
-import AdminReports from './pages/admin/AdminReports';
 import AdminRevenues from './pages/admin/AdminRevenues';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminProfile from './pages/admin/AdminProfile'; // HỒ SƠ ADMIN MỚI
 
 const RootAdminRoute = () => {
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  
-  // Kiểm tra: Phải là admin VÀ phải là Level 1
-  const is_authorized = user.role === 'admin';// && user.level === 1;
-  
+  const user = JSON.parse(sessionStorage.getItem('user')) || {};
+  const is_authorized = user.role === 'admin';
   return is_authorized ? <Outlet /> : <Navigate to="/admin/dashboard" replace />;
 };
 
@@ -66,46 +67,45 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<RoleSelection />} />
               <Route path="/register/form" element={<RegisterForm />} />
+              
               <Route path="/login" element={<Login />} />
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/partner/login" element={<PartnerLogin />} />
+
               <Route path="/hotels" element={<HotelList />} />
               <Route path="/hotel/:id" element={<HotelDetail />} />
 
-              {/* --- PHÂN HỆ KHÁCH HÀNG (CUSTOMER) --- */}
+              {/* PHÂN HỆ KHÁCH HÀNG (CUSTOMER) */}
               <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/my-bookings" element={<CustomerBookings />} />
+                <Route path="/bookings" element={<CustomerBookings />} />
+                <Route path="/profile" element={<Profile />} />
               </Route>
 
-              {/* --- PHÂN HỆ ĐỐI TÁC (PARTNER) --- 
-                  Khớp với thực thể partner trong ERD (business_name, id_tax...)
-              */}
+              {/* PHÂN HỆ ĐỐI TÁC (PARTNER) */}
               <Route element={<ProtectedRoute allowedRoles={['partner']} />}>
                 <Route path="/partner" element={<PartnerLayout />}>
                   <Route index element={<Navigate to="/partner/dashboard" replace />} />
                   <Route path="dashboard" element={<PartnerDashboard />} />
+                  <Route path="profile" element={<PartnerProfile />} />
                   <Route path="rooms" element={<PartnerRooms />} />
                   <Route path="hotels" element={<HotelManagement />} />
                   <Route path="bookings" element={<PartnerBookings />} />
                   <Route path="messages" element={<PartnerMessages />} />
                   <Route path="roomnumbers" element={<RoomNumbers />} />
+                  <Route path="discounts" element={<PartnerDiscounts/>} />
                 </Route>
               </Route>
 
-              {/* --- PHÂN HỆ QUẢN TRỊ (ADMIN) --- 
-                  ProtectedRoute sẽ check current_user.role === 'admin'
-              */}
+              {/* PHÂN HỆ QUẢN TRỊ (ADMIN) */}
               <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<div style={{ padding: '24px' }}><h2>Hệ thống quản trị sẵn sàng!</h2></div>} />
-                  
-                  {/* Các trang Admin Cấp 2 cũng thấy được */}
+                  <Route path="dashboard" element={<AdminDashboard/>} />
+                  <Route path="profile" element={<AdminProfile />} />
                   <Route path="partners" element={<AdminPartners />} />
                   <Route path="categories" element={<AdminCategories />} />
-                  <Route path="reports" element={<AdminReports />} />
 
-                  {/* CHỈ ADMIN CẤP 1 (ROOT LEVEL 1) MỚI VÀO ĐƯỢC CÁC ROUTE NÀY */}
                   <Route element={<RootAdminRoute />}>
                     <Route path="users" element={<UserManagement />} />
                     <Route path="revenues" element={<AdminRevenues />} />
@@ -114,12 +114,8 @@ function App() {
                 </Route>
               </Route>
 
-              {/* --- ROUTE DÙNG CHUNG (CẦN LOGIN) --- */}
-              <Route element={<ProtectedRoute allowedRoles={['customer', 'admin', 'partner']} />}>
-                <Route path="/profile" element={<Profile />} />
-              </Route>
+              {/* HẾT PHẦN ROUTE CHUNG - Đã chuyển hết vào từng phân hệ cụ thể */}
 
-              {/* 404 - QUAY VỀ TRANG CHỦ */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             </BrowserRouter>

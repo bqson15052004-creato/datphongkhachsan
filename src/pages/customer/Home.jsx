@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Input, Button, Typography, Row, Col, Card, Rate, DatePicker, Skeleton, Empty } from 'antd';
-import { SearchOutlined, EnvironmentOutlined, FireOutlined } from '@ant-design/icons';
+import { Layout, Input, Button, Typography, Row, Col, Card, Rate, DatePicker, Skeleton, Empty, Space } from 'antd';
+import { SearchOutlined, EnvironmentOutlined, FireOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import dayjs from 'dayjs';
-// import axiosClient from '../../services/axiosClient'; // Tạm thời chưa dùng đến
 import Navbar from '../../components/common/Navbar';
 import beachh from '../../assets/beachh.jpg';
 
 const { Content, Footer } = Layout;
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
 
 // DỮ LIỆU MẪU ĐỂ HIỂN THỊ GIAO DIỆN (KHI CHƯA CÓ BACKEND)
 const MOCK_FEATURED = [
@@ -30,17 +27,11 @@ const Home = () => {
     const fetchFeatured = async () => {
       setLoading(true);
       try {
-        /* --- COMMENT PHẦN BACKEND LẠI ---
-        const response = await axiosClient.get('/hotels/featured/');
-        setFeaturedHotels(response.data || response);
-        ---------------------------------- */
-        
         // GIẢ LẬP ĐỘ TRỄ MẠNG ĐỂ XEM HIỆU ỨNG SKELETON
         setTimeout(() => {
           setFeaturedHotels(MOCK_FEATURED);
           setLoading(false);
         }, 800);
-
       } catch (error) {
         setFeaturedHotels(MOCK_FEATURED);
         setLoading(false);
@@ -68,20 +59,20 @@ const Home = () => {
         <div style={{
           background: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.3)), url(${beachh}) no-repeat center/cover`,
           color: '#fff',
-          padding: '10px 20px',
+          padding: '80px 20px',
           textAlign: 'center',
         }}>
-          <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 400, marginBottom: '15px' }}>
+          <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 700, marginBottom: '15px' }}>
             Tận hưởng kỳ nghỉ tuyệt vời
           </Title>
           <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', display: 'block', marginBottom: '50px' }}>
             Với hàng nghìn khách sạn đang chờ đón bạn
           </Text>
 
-          {/* Thanh Search - Thay đổi bordered thành variant cho chuẩn AntD 5 */}
-          <Card variant="none" style={{ maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
+          {/* Thanh Search */}
+          <Card bordered={false} style={{ maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
             <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} md={10}>
+              <Col xs={24} md={20}>
                 <Input 
                   size="large" 
                   value={query} 
@@ -89,16 +80,6 @@ const Home = () => {
                   placeholder="Bạn muốn đi đâu? (Đà Nẵng, Phú Quốc...)" 
                   prefix={<EnvironmentOutlined style={{ color: '#1890ff' }} />} 
                   style={{ borderRadius: '8px' }}
-                />
-              </Col>
-              <Col xs={24} md={10}>
-                <RangePicker
-                  size="large"
-                  style={{ width: '100%', borderRadius: '8px' }}
-                  placeholder={['Ngày nhận phòng', 'Ngày trả phòng']}
-                  value={dates}
-                  disabledDate={(current) => current && current < dayjs().startOf('day')}
-                  onChange={(val) => setDates(val)}
                 />
               </Col>
               <Col xs={24} md={4}>
@@ -125,10 +106,17 @@ const Home = () => {
                 <FireOutlined style={{ color: '#ff4d4f', marginRight: 8 }} />
                 Khách sạn nổi bật
               </Title>
-              <Text type="secondary">Những địa điểm được khách hàng yêu thích nhất trong tuần qua</Text>
+              <Text type="secondary">Những địa điểm được khách hàng yêu thích nhất</Text>
             </div>
-            <Button type="link" size="large" onClick={() => navigate('/hotels')} style={{ fontWeight: 600 }}>
-              Xem tất cả ưu đãi
+            
+            {/* CẬP NHẬT: Nút Xem tất cả dẫn về HotelList */}
+            <Button 
+              type="link" 
+              size="large" 
+              onClick={() => navigate('/hotels')} 
+              style={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}
+            >
+              Xem tất cả khách sạn <RightOutlined style={{ fontSize: 12, marginLeft: 4 }} />
             </Button>
           </div>
 
@@ -136,7 +124,7 @@ const Home = () => {
             {loading ? (
               [1, 2, 3, 4].map(i => (
                 <Col xs={24} sm={12} md={6} key={i}>
-                  <Card variant="none" cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
+                  <Card bordered={false} cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
                     <Skeleton active paragraph={{ rows: 2 }} />
                   </Card>
                 </Col>
@@ -170,7 +158,19 @@ const Home = () => {
                         </Text>
                         <Text type="secondary" style={{ fontSize: '12px', marginLeft: 4 }}>/ đêm</Text>
                       </div>
-                      <Button type="primary" shape="round" size="small">Đặt ngay</Button>
+                      
+                      {/* CẬP NHẬT: Nút Đặt ngay chuyển vào HotelDetail */}
+                      <Button 
+                        type="primary" 
+                        shape="round" 
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Ngăn chặn sự kiện click lan ra Card cha
+                          navigate(`/hotel/${hotel.id_hotel}`);
+                        }}
+                      >
+                        Đặt ngay
+                      </Button>
                     </div>
                   </Card>
                 </Col>
@@ -182,7 +182,7 @@ const Home = () => {
         </div>
       </Content>
 
-      <Footer style={{ textAlign: 'center', padding: '20px 0', background: '#1a1a1a', color: 'rgba(255,255,255,0.6)' }}>
+      <Footer style={{ textAlign: 'center', padding: '40px 0', background: '#1a1a1a', color: 'rgba(255,255,255,0.6)' }}>
         <Title level={4} style={{ color: '#fff', marginBottom: 20 }}>HOTEL BOOKING SYSTEM</Title>
         <Text style={{ color: 'rgba(255,255,255,0.4)' }}>
           © 2026 - Phát triển bởi HOTEL BOOKING GROUP
@@ -192,6 +192,12 @@ const Home = () => {
       <style>{`
         .ant-card:hover .hotel-card-image {
           transform: scale(1.1);
+        }
+        .ant-card {
+          transition: all 0.3s ease;
+        }
+        .ant-card:hover {
+          box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
         }
       `}</style>
     </Layout>

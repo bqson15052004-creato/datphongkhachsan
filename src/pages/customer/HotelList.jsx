@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Row, Col, Card, Rate, Typography, Tag, Empty, Button, Space, Spin, App as AntApp, Badge } from 'antd';
 import { EnvironmentOutlined, CalendarOutlined, RocketOutlined, RightOutlined, CoffeeOutlined, WifiOutlined } from '@ant-design/icons';
-import axiosClient from '../../services/axiosClient';
+// import axiosClient from '../../services/axiosClient'; // Tạm thời có thể comment luôn dòng này nếu IDE báo warning unused
 import Navbar from '../../components/common/Navbar';
 
-// --- QUAN TRỌNG: Import Mock Data vào đây ---
 import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData';
 
 const { Content } = Layout;
@@ -28,33 +27,32 @@ const HotelList = () => {
     const fetchRooms = async () => {
       setLoading(true);
       
-      // Hàm xử lý Mock Data thông minh (Map hotel + Filter)
-      const loadMockData = () => {
-        // 1. Gộp thông tin Khách sạn vào Phòng
+      const loadMockData = (reason = "Yêu cầu") => {
+        console.log(`[Mock Mode] Đang lấy dữ liệu mẫu vì: ${reason}`);
         let mappedRooms = MOCK_ROOMS.map(room => {
           const hotel = MOCK_HOTELS.find(h => h.id_hotel === room.id_hotel);
           return {
             ...room,
-            hotel_name: hotel?.hotel_name,
-            location_city: hotel?.location_city,
-            rating: hotel?.rate_star,
+            hotel_name: hotel?.hotel_name || 'Khách sạn Partner',
+            location_city: hotel?.location_city || 'Việt Nam',
+            rating: hotel?.rate_star || 5,
             room_type_name: room.room_type,
             room_number: room.id_room,
             image: room.image_url
           };
         });
 
-        // 2. Lọc theo địa điểm nếu user có gõ tìm kiếm
         if (searchLocation) {
           mappedRooms = mappedRooms.filter(r => 
             r.location_city?.toLowerCase().includes(searchLocation.toLowerCase())
           );
         }
-        
         setRooms(mappedRooms);
       };
 
       try {
+        // 1. THỬ GỌI API THẬT (Mở comment khi ông bật Backend Django)
+        /*
         const response = await axiosClient.get('/hotels/rooms/', {
           params: { 
             location: searchLocation, 
@@ -62,19 +60,27 @@ const HotelList = () => {
             check_out: checkOut 
           }
         });
-        
-        const data = Array.isArray(response) ? response : response.data || [];
-        
+
+        const data = Array.isArray(response) ? response : (response.data || []);
+
         if (data.length > 0) {
-          setRooms(data); // API trả về có dữ liệu
+          setRooms(data);
+          console.log("=== Lấy data từ Backend thành công! ===");
         } else {
-          loadMockData(); // API trả về rỗng -> Dùng Mock cho đẹp
+          loadMockData("Backend trả về danh sách rỗng");
         }
+        */
+
+        // 2. TẠM THỜI: Mặc định dùng MockData để code giao diện cho nhanh
+        // Khi nào test BE thì comment dòng dưới này và mở block try ở trên nhé!
+        loadMockData("Đang trong quá trình phát triển UI");
+
       } catch (error) {
-        console.warn("Backend chưa kết nối. Đang hiển thị dữ liệu mẫu.");
-        loadMockData(); // Lỗi BE -> Dùng Mock
+        // 3. TRƯỜNG HỢP BE SẬP (ERR_CONNECTION_REFUSED)
+        console.warn("Backend chưa sẵn sàng, tự động dùng Mock Data để không treo app.");
+        loadMockData("Lỗi kết nối Backend");
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 500);
       }
     };
     
@@ -105,7 +111,7 @@ const HotelList = () => {
             <Spin size="large" tip="Đang tìm kiếm phòng trống tốt nhất..." />
           </div>
         ) : rooms.length === 0 ? (
-          <Card bordered={false} style={{ borderRadius: 16, textAlign: 'center', padding: '60px 0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <Card variant={false} style={{ borderRadius: 16, textAlign: 'center', padding: '60px 0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <Empty 
               description={
                 <Text type="secondary" style={{ fontSize: 16 }}>
@@ -124,9 +130,9 @@ const HotelList = () => {
                 <Card
                   hoverable
                   className="hotel-list-card"
-                  onClick={() => navigate(`/hotel/${room.id_room}`)}
+                  onClick={() => navigate(`/hotel/${room.id_hotel}`)}
                   style={{ borderRadius: 20, border: '1px solid #f1f5f9', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
-                  styles={{ body: { padding: 0 } }} // Update: AntD v5 khuyến nghị dùng styles.body thay vì bodyStyle
+                  styles={{ body: { padding: 0 } }}
                 >
                   <Row>
                     {/* KHỐI ẢNH */}
@@ -168,17 +174,7 @@ const HotelList = () => {
                             </Text>
                           </div>
                         </div>
-
-                        <div style={{ marginTop: 16, padding: '16px', background: '#f8fafc', borderRadius: 12, border: '1px solid #f1f5f9' }}>
-                          <Text strong style={{ fontSize: 15, color: '#334155' }}>{room.room_type_name} (Mã: {room.room_number})</Text>
-                          <br />
-                          <Space style={{ marginTop: 8, color: '#64748b' }} size="large">
-                             <span><WifiOutlined /> Wifi Miễn Phí</span>
-                             <span><CoffeeOutlined /> Bữa sáng nhẹ</span>
-                          </Space>
-                        </div>
                       </div>
-
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
                         <Space size="middle">
                           <Tag color="cyan" style={{ border: 'none', padding: '2px 10px' }}>Hỗ trợ 24/7</Tag>

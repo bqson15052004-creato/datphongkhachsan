@@ -6,8 +6,8 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const { message } = AntApp.useApp();
   const location = useLocation();
   
-  // 1. Lấy dữ liệu user từ localStorage
-  const userData = localStorage.getItem('user');
+  // 1. Lấy dữ liệu user từ sessionStorage
+  const userData = sessionStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;
 
   // 2. Hiệu ứng thông báo khi bị từ chối truy cập
