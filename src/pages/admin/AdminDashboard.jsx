@@ -1,46 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Table, Typography, Space, DatePicker, Tag, Progress, Tooltip } from 'antd';
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
-  DollarCircleOutlined,
   ShoppingOutlined,
   UserOutlined,
   HomeOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
 
+// Giả sử ông đã thêm REVENUE_MOCK và TOP_HOTELS_MOCK vào file này
+import { REVENUE_MOCK, TOP_HOTELS_MOCK, REPORT_SUMMARY_MOCK } from '../../constants/mockData.jsx';
+
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const AdminReports = () => {
-  // 1. Helper định dạng tiền tệ (Dùng nhiều nên tách ra cho sạch)
+  const [revenue_data, setRevenueData] = useState([]);
+  const [top_hotels, setTopHotels] = useState([]);
+  const [report_summary, setReportSummary] = useState(null);
+
+  // 1. Kết nối LocalStorage
+  useEffect(() => {
+    const saved_revenue = localStorage.getItem('REVENUE_DATA');
+    const saved_top_hotels = localStorage.getItem('TOP_HOTELS');
+    const saved_summary = localStorage.getItem('REPORT_SUMMARY');
+
+    if (saved_revenue && saved_top_hotels && saved_summary) {
+      setRevenueData(JSON.parse(saved_revenue));
+      setTopHotels(JSON.parse(saved_top_hotels));
+      setReportSummary(JSON.parse(saved_summary));
+    } else {
+      // Nếu trống, nạp từ mockData và lưu vào máy
+      setRevenueData(REVENUE_MOCK);
+      setTopHotels(TOP_HOTELS_MOCK);
+      setReportSummary(REPORT_SUMMARY_MOCK);
+      
+      localStorage.setItem('REVENUE_DATA', JSON.stringify(REVENUE_MOCK));
+      localStorage.setItem('TOP_HOTELS', JSON.stringify(TOP_HOTELS_MOCK));
+      localStorage.setItem('REPORT_SUMMARY', JSON.stringify(REPORT_SUMMARY_MOCK));
+    }
+  }, []);
+
+  // 2. Helper định dạng tiền VND (Cố định VND)
   const format_currency = (value) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
+      maximumFractionDigits: 0 
+    }).format(value);
   };
 
-  // 2. Dữ liệu doanh thu (Đồng bộ snake_case với BE)
-  const [revenue_data] = useState([
-    { key: '1', month_label: 'Tháng 1', total_revenue: 150000000, booking_count: 45, trend_status: 'up' },
-    { key: '2', month_label: 'Tháng 2', total_revenue: 120000000, booking_count: 38, trend_status: 'down' },
-    { key: '3', month_label: 'Tháng 3', total_revenue: 210000000, booking_count: 62, trend_status: 'up' },
-  ]);
-
-  const [top_hotels] = useState([
-    { hotel_name: 'Vinpearl Luxury Nha Trang', total_sales: 85, revenue_value: 212000000, occupancy_rate: 95 },
-    { hotel_name: 'InterContinental Da Nang', total_sales: 72, revenue_value: 302000000, occupancy_rate: 88 },
-    { hotel_name: 'Pullman Vũng Tàu', total_sales: 50, revenue_value: 90000000, occupancy_rate: 70 },
-  ]);
-
-  const report_summary = {
-    monthly_revenue: 480000000,
-    revenue_growth: 12.5,
-    total_bookings: 145,
-    booking_growth: 5.2,
-    new_members: 28,
-    member_growth: -2,
-    active_partners: 12
-  };
+  if (!report_summary) return null; // Chờ nạp dữ liệu
 
   return (
     <div style={{ padding: '24px' }}>
@@ -74,7 +85,7 @@ const AdminReports = () => {
               title="Tổng đơn đặt phòng"
               value={report_summary.total_bookings}
               prefix={<ShoppingOutlined />}
-              valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
+              styles={{ content: { color: '#1890ff', fontWeight: 'bold' } }}
             />
             <Text type="success"><ArrowUpOutlined /> {report_summary.booking_growth}% tăng trưởng</Text>
           </Card>
@@ -86,7 +97,7 @@ const AdminReports = () => {
               title="Thành viên mới"
               value={report_summary.new_members}
               prefix={<UserOutlined />}
-              valueStyle={{ fontWeight: 'bold' }}
+              styles={{ content: { fontWeight: 'bold' } }}
             />
             <Text type={report_summary.member_growth < 0 ? "danger" : "success"}>
               {report_summary.member_growth < 0 ? <ArrowDownOutlined /> : <ArrowUpOutlined />} 
@@ -103,7 +114,7 @@ const AdminReports = () => {
               prefix={<HomeOutlined />}
               valueStyle={{ fontWeight: 'bold', color: '#722ed1' }}
             />
-            <Tag color="purple" style={{ marginTop: 4 }}>12 Khách sạn đang online</Tag>
+            <Tag color="purple" style={{ marginTop: 4 }}>{report_summary.active_partners} Khách sạn đang online</Tag>
           </Card>
         </Col>
       </Row>
@@ -118,6 +129,7 @@ const AdminReports = () => {
           >
             <Table
               dataSource={revenue_data}
+              rowKey="key"
               pagination={false}
               size="middle"
               columns={[

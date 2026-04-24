@@ -1,37 +1,61 @@
 import React, { useState, useMemo } from 'react';
-import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, Select, DatePicker, message, InputNumber } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, TagOutlined, HomeOutlined } from '@ant-design/icons';
+import { 
+  Card, Table, Button, Space, Typography, Tag, Modal, Form, 
+  Input, Select, DatePicker, App as AntApp, InputNumber, Row, Col 
+} from 'antd';
+import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, TagOutlined, HomeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { MOCK_HOTELS, MOCK_DISCOUNTS } from '../../constants/mockData';
+import { MOCK_HOTELS, MOCK_DISCOUNTS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const PartnerDiscounts = () => {
+  const { message: antdMessage, modal: antdModal } = AntApp.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState(null); // Trạng thái đang sửa mã nào
   const [form] = Form.useForm();
-  const [discounts, setDiscounts] = useState(MOCK_DISCOUNTS);
   
-  // Quản lý trang hiện tại để tính STT chính xác
+  // Khởi tạo thêm status cho mock data nếu chưa có
+  const [discounts, setDiscounts] = useState(
+    MOCK_DISCOUNTS.map(d => ({ ...d, status: d.status || 'active' }))
+  );
+  
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // 1. LOGIC SẮP XẾP: Luôn ưu tiên mã có ngày bắt đầu gần nhất lên trước (hoặc ngược lại)
-  // Tôi dùng useMemo để danh sách tự sắp xếp lại mỗi khi discounts thay đổi
   const sortedDiscounts = useMemo(() => {
-    return [...discounts].sort((a, b) => {
-      // Sắp xếp theo ngày bắt đầu (Tăng dần: Ngày sớm nhất lên đầu)
-      return dayjs(a.start_date).unix() - dayjs(b.start_date).unix();
-    });
+    return [...discounts].sort((a, b) => dayjs(a.start_date).unix() - dayjs(b.start_date).unix());
   }, [discounts]);
+
+  // --- LOGIC KHÓA / MỞ KHÓA ---
+  const handleToggleLock = (record) => {
+    const isCurrentlyLocked = record.status === 'locked';
+    const actionText = isCurrentlyLocked ? 'mở khóa' : 'khóa';
+
+    antdModal.confirm({
+      title: `Xác nhận ${actionText} mã giảm giá?`,
+      icon: isCurrentlyLocked ? <UnlockOutlined style={{ color: '#52c41a' }} /> : <LockOutlined style={{ color: '#ff4d4f' }} />,
+      content: `Bạn chắc chắn muốn ${actionText} mã "${record.code}" chứ?`,
+      okText: `Xác nhận ${actionText}`,
+      okType: isCurrentlyLocked ? 'primary' : 'danger',
+      onOk: () => {
+        setDiscounts(prev => prev.map(item => 
+          item.id_discount === record.id_discount 
+            ? { ...item, status: isCurrentlyLocked ? 'active' : 'locked' } 
+            : item
+        ));
+        antdMessage.success(`Đã ${actionText} mã giảm giá thành công!`);
+      },
+    });
+  };
 
   const columns = [
     {
       title: 'STT',
       key: 'stt',
-      width: 70,
+      width: 60,
       align: 'center',
-      // Công thức tính STT nối tiếp khi qua trang
       render: (_, __, index) => <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>,
     },
     { 
@@ -44,7 +68,7 @@ const PartnerDiscounts = () => {
       title: 'Khách sạn áp dụng', 
       dataIndex: 'id_hotels', 
       key: 'id_hotels',
-      width: 280,
+      width: 250,
       render: (id_list) => (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
           {id_list.map(id => {
@@ -66,63 +90,92 @@ const PartnerDiscounts = () => {
       render: (p) => <Text type="danger" strong>{p}%</Text>
     },
     { 
-      title: 'Ngày bắt đầu', 
-      dataIndex: 'start_date', 
-      key: 'start_date',
-      render: (date) => dayjs(date).format('DD/MM/YYYY'),
-      sorter: (a, b) => dayjs(a.start_date).unix() - dayjs(b.start_date).unix(), // Cho phép click vào tiêu đề để sort tay
-    },
-    { 
-      title: 'Ngày kết thúc', 
-      dataIndex: 'end_date', 
-      key: 'end_date',
-      render: (date) => dayjs(date).format('DD/MM/YYYY')
+      title: 'Hiệu lực', 
+      key: 'duration',
+      render: (_, record) => (
+        <div style={{ fontSize: '12px' }}>
+          <div><Text type="secondary">Từ:</Text> {dayjs(record.start_date).format('DD/MM/YYYY')}</div>
+          <div><Text type="secondary">Đến:</Text> {dayjs(record.end_date).format('DD/MM/YYYY')}</div>
+        </div>
+      )
     },
     { 
       title: 'Trạng thái', 
       key: 'status',
       align: 'center',
       render: (_, record) => {
+        if (record.status === 'locked') return <Tag color="error">ĐÃ KHÓA</Tag>;
         const isExpired = dayjs().isAfter(dayjs(record.end_date));
-        return <Tag color={isExpired ? 'default' : 'green'}>{isExpired ? 'Hết hạn' : 'Còn hạn'}</Tag>;
+        return <Tag color={isExpired ? 'default' : 'green'}>{isExpired ? 'Hết hạn' : 'Đang chạy'}</Tag>;
       }
     },
     {
-      title: 'Hành động',
+      title: 'Thao tác',
       key: 'action',
-      align: 'center',
+      align: 'right',
+      width: 120,
       render: (_, record) => (
-        <Space size="middle">
-          <Button type="link" icon={<EditOutlined />} />
+        <Space>
+          {/* NÚT SỬA */}
           <Button 
-            type="link" 
-            danger 
-            icon={<DeleteOutlined />} 
+            type="text" 
+            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : '#1890ff' }} />} 
+            disabled={record.status === 'locked'}
             onClick={() => {
-              setDiscounts(discounts.filter(item => item.id_discount !== record.id_discount));
-              message.success('Đã xóa mã giảm giá');
+              setEditingId(record.id_discount);
+              form.setFieldsValue({
+                ...record,
+                range: [dayjs(record.start_date), dayjs(record.end_date)]
+              });
+              setIsModalVisible(true);
             }}
+          />
+          
+          {/* NÚT KHÓA / MỞ KHÓA (Update theo yêu cầu) */}
+          <Button 
+            type="text" 
+            icon={
+              record.status === 'locked' 
+                ? <LockOutlined style={{ color: '#ff4d4f' }} /> 
+                : <UnlockOutlined style={{ color: '#52c41a' }} />
+            } 
+            onClick={() => handleToggleLock(record)}
           />
         </Space>
       ),
     },
   ];
 
-  const handleAddDiscount = (values) => {
+  const handleSubmit = (values) => {
     const [startDate, endDate] = values.range;
-    const newDiscount = {
-      id_discount: `D${Date.now()}`,
+    const discountData = {
       code: values.code.toUpperCase(),
       id_hotels: values.id_hotels,
       percentage: values.percentage,
       start_date: startDate.format('YYYY-MM-DD'),
       end_date: endDate.format('YYYY-MM-DD'),
+      status: 'active'
     };
 
-    setDiscounts([newDiscount, ...discounts]);
+    if (editingId) {
+      // Logic cập nhật
+      setDiscounts(prev => prev.map(item => 
+        item.id_discount === editingId ? { ...item, ...discountData } : item
+      ));
+      antdMessage.success('Cập nhật mã thành công!');
+    } else {
+      // Logic thêm mới
+      const newDiscount = {
+        ...discountData,
+        id_discount: `D${Date.now()}`,
+      };
+      setDiscounts([newDiscount, ...discounts]);
+      antdMessage.success('Tạo mã mới thành công!');
+    }
+
     setIsModalVisible(false);
+    setEditingId(null);
     form.resetFields();
-    message.success('Tạo mã thành công!');
   };
 
   return (
@@ -131,42 +184,48 @@ const PartnerDiscounts = () => {
         title={
           <Space>
             <TagOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
-            <Title level={4} style={{ margin: 0 }}>Quản lý Mã giảm giá</Title>
+            <Title level={4} style={{ margin: 0 }}>Chương trình khuyến mãi</Title>
           </Space>
         }
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
-            Thêm mã mới
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+            setEditingId(null);
+            form.resetFields();
+            setIsModalVisible(true);
+          }}>
+            Tạo mã giảm giá mới
           </Button>
         }
       >
         <Table 
           columns={columns} 
-          dataSource={sortedDiscounts} // Sử dụng mảng đã sort
+          dataSource={sortedDiscounts}
           rowKey="id_discount" 
-          bordered 
           pagination={{ 
             current: currentPage,
             pageSize: pageSize,
             onChange: (page) => setCurrentPage(page),
             showTotal: (total) => `Tổng cộng ${total} mã`,
-            position: ['bottomRight']
           }}
         />
       </Card>
 
       <Modal
-        title="Tạo chương trình giảm giá"
+        title={editingId ? "Cập nhật mã giảm giá" : "Tạo mã giảm giá"}
         open={isModalVisible}
         onOk={() => form.submit()}
-        onCancel={() => setIsModalVisible(false)}
-        width={750}
+        onCancel={() => {
+          setIsModalVisible(false);
+          setEditingId(null);
+        }}
+        width={700}
+        centered
       >
-        <Form form={form} layout="vertical" onFinish={handleAddDiscount}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} style={{ marginTop: 16 }}>
           <Form.Item 
             name="id_hotels" 
-            label="Chọn khách sạn áp dụng" 
-            rules={[{ required: true }]}
+            label="Khách sạn áp dụng" 
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 khách sạn' }]}
           >
             <Select mode="multiple" placeholder="Chọn khách sạn" allowClear>
               {MOCK_HOTELS.map(h => (
@@ -175,17 +234,23 @@ const PartnerDiscounts = () => {
             </Select>
           </Form.Item>
 
-          <Space style={{ display: 'flex', width: '100%' }} align="baseline">
-            <Form.Item name="code" label="Mã Code" rules={[{ required: true }]} style={{ width: 220 }}>
-              <Input placeholder="KM2026" style={{ textTransform: 'uppercase' }} />
-            </Form.Item>
-            <Form.Item name="percentage" label="Giảm %" rules={[{ required: true }]} style={{ width: 120 }}>
-              <InputNumber min={1} max={100} suffix="%" style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item name="range" label="Thời gian hiệu lực" rules={[{ required: true }]} style={{ flex: 1 }}>
-              <RangePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
-            </Form.Item>
-          </Space>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="code" label="Mã Code" rules={[{ required: true }]}>
+                <Input placeholder="KM2026" style={{ textTransform: 'uppercase' }} />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item name="percentage" label="Giảm %" rules={[{ required: true }]}>
+                <InputNumber min={1} max={100} suffix="%" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={10}>
+              <Form.Item name="range" label="Thời gian hiệu lực" rules={[{ required: true }]}>
+                <RangePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>

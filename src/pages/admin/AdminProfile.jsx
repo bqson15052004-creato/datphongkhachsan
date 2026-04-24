@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Descriptions, Tag, Avatar, Typography, Divider, 
-  Button, Space, Modal, Form, Input, App as AntApp, Row, Col 
+  Button, Space, Modal, Form, Input, App as AntApp, Row, Col, Upload 
 } from 'antd';
 import { 
-  SafetyCertificateOutlined, 
-  UserOutlined, 
-  MailOutlined, 
-  EditOutlined, 
-  KeyOutlined,
-  LockOutlined,
-  ThunderboltOutlined,
-  IdcardOutlined,
-  HistoryOutlined
+  SafetyCertificateOutlined, UserOutlined, MailOutlined, EditOutlined, 
+  KeyOutlined, LockOutlined, IdcardOutlined, HistoryOutlined, UploadOutlined
 } from '@ant-design/icons';
+
+// FIX: Import đúng từ mockData.jsx
+import { MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 
@@ -26,29 +22,48 @@ const AdminProfile = () => {
   const [loading, setLoading] = useState(false);
   const [formUpdate] = Form.useForm();
   const [formPassword] = Form.useForm();
+  const [fileList, setFileList] = useState([]);
 
   useEffect(() => {
-    const sessionUser = JSON.parse(sessionStorage.getItem('user')) || {
-      id: 'ADMIN-001',
-      full_name: 'Sơn Admin',
-      email: 'admin@system.com',
-      avatar: '',
-      phone: '0988 888 888'
-    };
-    setUser(sessionUser);
-    formUpdate.setFieldsValue(sessionUser);
+    const savedUser = JSON.parse(localStorage.getItem('currentUser')) || MOCK_USERS[0];
+    
+    setUser(savedUser);
+    formUpdate.setFieldsValue(savedUser);
+    
+    if (savedUser.avatar) {
+      setFileList([{ uid: '-1', name: 'avatar.png', status: 'done', url: savedUser.avatar }]);
+    }
   }, [formUpdate]);
 
-  const handleUpdate = (values) => {
+  const getBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+
+  const handleUpdate = async (values) => {
     setLoading(true);
-    setTimeout(() => {
-      const updatedUser = { ...user, ...values };
-      sessionStorage.setItem('user', JSON.stringify(updatedUser));
+    try {
+      let avatarBase64 = user.avatar;
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        avatarBase64 = await getBase64(fileList[0].originFileObj);
+      } else if (fileList.length === 0) {
+        avatarBase64 = ''; 
+      }
+
+      const updatedUser = { ...user, ...values, avatar: avatarBase64 };
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setUser(updatedUser);
-      message.success('Cập nhật hồ sơ Admin thành công!');
+      message.success('Cập nhật thành công!');
       setIsEditModalVisible(false);
       setLoading(false);
-    }, 800);
+    } catch (error) {
+      message.error('Có lỗi xảy ra khi xử lý ảnh!');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePasswordChange = (values) => {
@@ -64,7 +79,7 @@ const AdminProfile = () => {
   return (
     <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
       <Card 
-        bordered={false}
+        variant={false}
         style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
         title={
           <Space>
@@ -74,56 +89,34 @@ const AdminProfile = () => {
         }
         extra={
           <Space>
-            <Button icon={<EditOutlined />} onClick={() => setIsEditModalVisible(true)}>
-              Sửa hồ sơ
-            </Button>
-            <Button type="primary" danger icon={<KeyOutlined />} onClick={() => setIsPasswordModalVisible(true)}>
-              Đổi mật khẩu
-            </Button>
+            <Button icon={<EditOutlined />} onClick={() => setIsEditModalVisible(true)}>Sửa hồ sơ</Button>
+            <Button type="primary" danger icon={<KeyOutlined />} onClick={() => setIsPasswordModalVisible(true)}>Đổi mật khẩu</Button>
           </Space>
         }
       >
         <Row gutter={[48, 16]}>
-          {/* CỘT TRÁI: THÔNG TIN NHÂN DIỆN */}
           <Col xs={24} md={12}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24, gap: 20 }}>
               <Avatar size={80} src={user.avatar} icon={<UserOutlined />} style={{ border: '3px solid #fff2f0' }} />
               <div>
                 <Title level={4} style={{ margin: 0 }}>{user.full_name}</Title>
-                <Text type="secondary">Quản trị viên cấp cao (Root)</Text>
-                <div style={{ marginTop: 8 }}>
-                  <Tag color="red" icon={<ThunderboltOutlined />}>Bảo mật mức 5</Tag>
-                </div>
+                <Text type="secondary">Quản trị viên cấp cao</Text>
               </div>
             </div>
 
             <Descriptions column={1} labelStyle={{ fontWeight: '500', color: '#8c8c8c' }}>
-              <Descriptions.Item label={<span><MailOutlined /> Email hệ thống</span>}>
-                {user.email}
-              </Descriptions.Item>
-              <Descriptions.Item label={<span><IdcardOutlined /> Mã nhân viên</span>}>
-                <Text code>{user.id}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<span><LockOutlined /> Trạng thái</span>}>
-                <Tag color="green">Đang hoạt động</Tag>
-              </Descriptions.Item>
+              <Descriptions.Item label={<span><MailOutlined /> Email hệ thống</span>}>{user.email}</Descriptions.Item>
+              <Descriptions.Item label={<span><IdcardOutlined /> Mã nhân viên</span>}><Text code>{user.id}</Text></Descriptions.Item>
+              <Descriptions.Item label={<span><LockOutlined /> Trạng thái</span>}><Tag color="green">Đang hoạt động</Tag></Descriptions.Item>
             </Descriptions>
           </Col>
 
-          {/* CỘT PHẢI: QUYỀN HẠN & HỆ THỐNG */}
           <Col xs={24} md={12} style={{ borderLeft: '1px solid #f0f0f0' }}>
             <Title level={5} style={{ marginBottom: 20, color: '#ff4d4f' }}>Phân quyền & Bảo mật</Title>
-            
             <Descriptions column={1} labelStyle={{ fontWeight: '500', color: '#8c8c8c' }}>
-              <Descriptions.Item label="Cấp độ truy cập">
-                <Text strong>Level 1 (Super Admin)</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label="Ngày gia nhập">
-                01/01/2026
-              </Descriptions.Item>
-              <Descriptions.Item label={<span><HistoryOutlined /> Lần đăng nhập cuối</span>}>
-                Vừa xong
-              </Descriptions.Item>
+              <Descriptions.Item label="Cấp độ truy cập"><Text strong>Level 1 (Super Admin)</Text></Descriptions.Item>
+              <Descriptions.Item label="Ngày gia nhập">01/01/2026</Descriptions.Item>
+              <Descriptions.Item label={<span><HistoryOutlined /> Lần đăng nhập cuối</span>}>Vừa xong</Descriptions.Item>
               <Descriptions.Item label="Phạm vi quản lý">
                 <Space size={[0, 4]} wrap>
                   <Tag color="volcano">Hotels</Tag>
@@ -137,7 +130,6 @@ const AdminProfile = () => {
         </Row>
       </Card>
 
-      {/* --- MODALS (GIỮ NGUYÊN LOGIC) --- */}
       <Modal
         title="Chỉnh sửa thông tin Admin"
         open={isEditModalVisible}
@@ -153,8 +145,31 @@ const AdminProfile = () => {
           <Form.Item name="email" label="Email hệ thống" rules={[{ required: true, type: 'email' }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="avatar" label="Link ảnh đại diện">
-            <Input />
+          
+          <Form.Item label="Ảnh đại diện">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Upload
+                fileList={fileList}
+                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                beforeUpload={() => false}
+                maxCount={1}
+                onRemove={() => setFileList([])}
+              >
+                <Button icon={<UploadOutlined />}>Chọn file ảnh từ máy tính</Button>
+              </Upload>
+              
+              {fileList.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Xem trước:</Text>
+                  <br />
+                  <Avatar 
+                    shape="square" 
+                    size={64} 
+                    src={fileList[0].url || (fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
+                  />
+                </div>
+              )}
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
@@ -169,16 +184,28 @@ const AdminProfile = () => {
         centered
       >
         <Form form={formPassword} layout="vertical" onFinish={handlePasswordChange} style={{ marginTop: 20 }}>
-          <Form.Item name="oldPass" label="Mật khẩu hiện tại" rules={[{ required: true }]}><Input.Password /></Form.Item>
-          <Form.Item name="newPass" label="Mật khẩu mới" rules={[{ required: true, min: 8 }]}><Input.Password /></Form.Item>
-          <Form.Item name="confirm" label="Xác nhận mật khẩu" dependencies={['newPass']}
-            rules={[{ required: true }, ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('newPass') === value) return Promise.resolve();
-                return Promise.reject(new Error('Mật khẩu không khớp!'));
-              },
-            })]}
-          ><Input.Password /></Form.Item>
+          <Form.Item name="oldPass" label="Mật khẩu hiện tại" rules={[{ required: true }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item name="newPass" label="Mật khẩu mới" rules={[{ required: true, min: 8 }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item 
+            name="confirm" 
+            label="Xác nhận mật khẩu" 
+            dependencies={['newPass']}
+            rules={[
+              { required: true },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPass') === value) return Promise.resolve();
+                  return Promise.reject(new Error('Mật khẩu không khớp!'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
         </Form>
       </Modal>
     </div>

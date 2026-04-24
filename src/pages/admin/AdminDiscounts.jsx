@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Table, Typography, Tag, Space, Select } from 'antd'; 
 import { PercentageOutlined, ShopOutlined } from '@ant-design/icons';
 // Import đúng các hằng số từ file mockData.js của ông
-import { MOCK_HOTELS, MOCK_USERS, DEFAULT_COMMISSION_RATE } from '../../constants/mockData';
+import { MOCK_HOTELS, MOCK_USERS, DEFAULT_COMMISSION_RATE } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 

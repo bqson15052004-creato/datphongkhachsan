@@ -3,8 +3,7 @@ import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tool
 import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, InfoCircleOutlined, BankOutlined } from '@ant-design/icons';
 import axiosClient from '../../services/axiosClient';
 
-// --- Đừng quên import Mock Data (Tạo file mockData.js nếu chưa có nhé) ---
-import { MOCK_BOOKINGS } from '../../constants/mockData';
+import { MOCK_BOOKINGS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 

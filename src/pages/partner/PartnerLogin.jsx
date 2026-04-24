@@ -1,8 +1,8 @@
 import React from 'react';
 import { Form, Input, Button, Card, Typography, App as AntApp } from 'antd';
-import { LockOutlined, MailOutlined, ShopOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { MOCK_USERS } from '../../constants/mockData';
+import { LockOutlined, UserOutlined, ShopOutlined } from '@ant-design/icons';
+import { useNavigate, Link } from 'react-router-dom';
+import { MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 
@@ -11,9 +11,13 @@ const PartnerLogin = () => {
   const { message } = AntApp.useApp();
 
   const onFinish = (values) => {
-    // Tìm user trong Mock Data có role là partner
+    const { account, password } = values;
+
     const user = MOCK_USERS.find(
-      (u) => u.email === values.email && u.password === values.password && u.role === 'partner'
+      (u) => 
+        (u.email === account || u.user_name === account) && 
+        u.password === password && 
+        u.role === 'partner'
     );
 
     if (user) {
@@ -21,42 +25,53 @@ const PartnerLogin = () => {
       message.success('Đăng nhập Kênh Đối Tác thành công!');
       navigate('/partner/dashboard');
     } else {
-      message.error('Tài khoản Đối Tác không chính xác!');
+      message.error('Tài khoản hoặc mật khẩu không chính xác!');
     }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#e6f7ff' }}>
-      <Card style={{ width: 420, borderTop: '4px solid #1890ff', borderRadius: '8px' }}>
+    <div style={containerStyle}>
+      <Card style={cardStyle}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <ShopOutlined style={{ fontSize: 40, color: '#1890ff' }} />
-          <Title level={3} style={{ marginTop: 12, color: '#1890ff' }}>PARTNER HUB</Title>
-          <Text strong>Dành cho các cơ sở lưu trú</Text>
+          <ShopOutlined style={{ fontSize: 40, color: '#52c41a' }} />
+          <Title level={3} style={{ marginTop: 12, color: '#52c41a' }}>PARTNER LOGIN</Title>
+          <Text strong>Quản lý cơ sở lưu trú</Text>
         </div>
 
-        <Form name="partner_login" onFinish={onFinish} layout="vertical">
-          <Form.Item name="email" label="Email đối tác" rules={[{ required: true, type: 'email' }]}>
-            <Input prefix={<MailOutlined />} placeholder="partner@hotel.com" />
+        <Form name="partner_login" onFinish={onFinish} layout="vertical" size="large">
+          <Form.Item 
+            name="account" 
+            label="Tài khoản hoặc Email" 
+            rules={[{ required: true, message: 'Vui lòng nhập tài khoản hoặc email!' }]}
+          >
+            <Input prefix={<UserOutlined />} placeholder="Username hoặc email đối tác" />
           </Form.Item>
 
-          <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }]}>
+          <Form.Item 
+            name="password" 
+            label="Mật khẩu" 
+            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+          >
             <Input.Password prefix={<LockOutlined />} placeholder="******" />
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large">
-              ĐĂNG NHẬP KÊNH ĐỐI TÁC
+            <Button type="primary" htmlType="submit" block style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}>
+              ĐĂNG NHẬP
             </Button>
           </Form.Item>
         </Form>
         
         <div style={{ textAlign: 'center' }}>
           <Text type="secondary">Bạn muốn trở thành đối tác? </Text>
-          <Button type="link" style={{ padding: 0 }}>Đăng ký ngay</Button>
+          <Link to="/partner/register" style={{ fontWeight: 'bold', color: '#52c41a' }}>Đăng ký ngay</Link>
         </div>
       </Card>
     </div>
   );
 };
+
+const containerStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f6ffed' };
+const cardStyle = { width: 420, borderTop: '4px solid #52c41a', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' };
 
 export default PartnerLogin;

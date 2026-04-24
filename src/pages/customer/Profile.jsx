@@ -10,7 +10,7 @@ import {
   LockOutlined, EditOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { MOCK_BOOKINGS, MOCK_USERS } from '../../constants/mockData';
+import { MOCK_BOOKINGS, MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;

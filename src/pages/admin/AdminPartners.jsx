@@ -49,7 +49,7 @@ const AdminPartners = () => {
           item.id_hotel === hotel_id ? { ...item, status: 'active' } : item
         );
         
-        save_and_sync(updated_data, 'Đã phê duyệt và kích hoạt khách sạn thành công!');
+        save_and_sync(updated_data, 'Đã phê duyệt khách sạn thành công!');
       }
     });
   };
@@ -79,7 +79,6 @@ const AdminPartners = () => {
     set_partner_list(data);
     set_is_modal_open(false);
     antd_message.success(success_msg);
-    // Tạo trigger để các tab khác biết mà cập nhật theo
     window.dispatchEvent(new Event('storage'));
   };
 

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Row, Col, Card, Rate, Typography, Tag, Empty, Button, Space, Spin, App as AntApp, Badge } from 'antd';
 import { EnvironmentOutlined, CalendarOutlined, RocketOutlined, RightOutlined, CoffeeOutlined, WifiOutlined } from '@ant-design/icons';
-// import axiosClient from '../../services/axiosClient'; // Tạm thời có thể comment luôn dòng này nếu IDE báo warning unused
+// import axiosClient from '../../services/axiosClient';
 import Navbar from '../../components/common/Navbar';
 
-import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData';
+import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData.jsx';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Descriptions, Tag, Avatar, Typography, Space, Button, Modal, Form, Input, App as AntApp, Row, Col, Divider } from 'antd';
+import { Card, Descriptions, Tag, Avatar, Typography, Space, Button, Modal, Form, Input, App as AntApp, Row, Col, Divider, Upload } from 'antd';
 import { 
   ShopOutlined, 
   PhoneOutlined, 
@@ -10,9 +10,10 @@ import {
   LockOutlined,
   EditOutlined,
   IdcardOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  UploadOutlined // Thêm icon Upload
 } from '@ant-design/icons';
-import { MOCK_HOTELS } from '../../constants/mockData';
+import { MOCK_HOTELS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 
@@ -25,6 +26,9 @@ const PartnerProfile = () => {
   const [passwordForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
+  // Thêm state quản lý file ảnh
+  const [fileList, setFileList] = useState([]);
+
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem('user')) || {};
     setUserData(user);
@@ -36,10 +40,34 @@ const PartnerProfile = () => {
       phone: user.phone,
       tax_id: user.tax_id,
     });
+
+    // Nếu đối tác đã có ảnh đại diện thì nạp vào ô Upload
+    if (user.avatar) {
+      setFileList([{ uid: '-1', name: 'avatar.png', status: 'done', url: user.avatar }]);
+    }
   }, [editForm]);
 
-  const handleUpdateProfile = (values) => {
-    const updatedUser = { ...userData, ...values };
+  // Hàm chuyển ảnh sang Base64
+  const getBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+
+  // Đổi thành async để đợi xử lý ảnh
+  const handleUpdateProfile = async (values) => {
+    let avatarBase64 = userData.avatar;
+
+    // Xử lý nếu có chọn ảnh mới hoặc xóa ảnh
+    if (fileList.length > 0 && fileList[0].originFileObj) {
+      avatarBase64 = await getBase64(fileList[0].originFileObj);
+    } else if (fileList.length === 0) {
+      avatarBase64 = '';
+    }
+
+    const updatedUser = { ...userData, ...values, avatar: avatarBase64 };
     sessionStorage.setItem('user', JSON.stringify(updatedUser));
     setUserData(updatedUser);
     message.success('Cập nhật thông tin doanh nghiệp thành công!');
@@ -127,7 +155,7 @@ const PartnerProfile = () => {
         </Row>
       </Card>
 
-      {/* --- CÁC MODAL GIỮ NGUYÊN LOGIC CỦA ÔNG --- */}
+      {/* --- MODAL CẬP NHẬT THÔNG TIN ĐỐI TÁC --- */}
       <Modal
         title="Cập nhật thông tin đối tác"
         open={isEditModalVisible}
@@ -145,6 +173,34 @@ const PartnerProfile = () => {
           <Form.Item name="tax_id" label="Mã số thuế">
             <Input />
           </Form.Item>
+
+          {/* PHẦN CHỌN ẢNH TỪ MÁY TÍNH */}
+          <Form.Item label="Ảnh đại diện">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Upload
+                fileList={fileList}
+                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                beforeUpload={() => false} // Chặn gửi request để mở file từ máy
+                maxCount={1}
+                onRemove={() => setFileList([])}
+              >
+                <Button icon={<UploadOutlined />}>Chọn file từ máy tính</Button>
+              </Upload>
+              
+              {fileList.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary" size="small">Xem trước:</Text>
+                  <br />
+                  <Avatar 
+                    shape="square" 
+                    size={64} 
+                    src={fileList[0].url || (fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
+                  />
+                </div>
+              )}
+            </Space>
+          </Form.Item>
+
           <div style={{ textAlign: 'right', marginTop: 16 }}>
             <Space>
               <Button onClick={() => setIsEditModalVisible(false)}>Hủy</Button>
@@ -154,6 +210,7 @@ const PartnerProfile = () => {
         </Form>
       </Modal>
 
+      {/* --- MODAL ĐỔI MẬT KHẨU --- */}
       <Modal
         title="Đổi mật khẩu tài khoản"
         open={isPasswordModalVisible}

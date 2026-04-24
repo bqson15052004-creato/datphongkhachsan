@@ -1,48 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, Table, Typography, Row, Col, Statistic, DatePicker, Select, Space, Tag, Tooltip, Badge } from 'antd';
-import { DollarTwoTone, FilterOutlined, BankOutlined, CreditCardOutlined, WalletOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { DollarTwoTone, FilterOutlined, InfoCircleOutlined } from '@ant-design/icons';
+
+// Import dữ liệu từ mockData
+import { TRANSACTION_LIST_MOCK } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const AdminRevenues = () => {
-  // 1. Dữ liệu mẫu (Bổ sung thêm commission_rate riêng cho từng hotel để thực tế hơn)
-  const transaction_list = [
-    { 
-      key: '1', 
-      transaction_id: 'HD1001', 
-      hotel_name: 'Vinpearl Luxury Nha Trang', 
-      total_amount: 5000000, 
-      commission_rate: 0.15, // 15%
-      payment_method: 'banking', 
-      transaction_date: '2026-03-20', 
-      payment_status: 'success' 
-    },
-    { 
-      key: '2', 
-      transaction_id: 'HD1002', 
-      hotel_name: 'InterContinental Da Nang', 
-      total_amount: 3200000, 
-      commission_rate: 0.10, // 10%
-      payment_method: 'e-wallet', 
-      transaction_date: '2026-03-21', 
-      payment_status: 'success' 
-    },
-    { 
-      key: '3', 
-      transaction_id: 'HD1004', 
-      hotel_name: 'Pullman Vũng Tàu', 
-      total_amount: 4500000, 
-      commission_rate: 0.12, // 12%
-      payment_method: 'card', 
-      transaction_date: '2026-03-23', 
-      payment_status: 'success' 
-    },
-  ];
+  const [transaction_list, setTransactionList] = useState([]);
 
-  const format_currency = (val) => new Intl.NumberFormat('vi-VN').format(val) + 'đ';
+  // 1. Kết nối và khởi tạo dữ liệu
+  useEffect(() => {
+    const saved_transactions = localStorage.getItem('TRANSACTION_DATA');
+    if (saved_transactions) {
+      setTransactionList(JSON.parse(saved_transactions));
+    } else {
+      // Nếu chưa có, nạp từ mockData và lưu vào máy
+      setTransactionList(TRANSACTION_LIST_MOCK);
+      localStorage.setItem('TRANSACTION_DATA', JSON.stringify(TRANSACTION_LIST_MOCK));
+    }
+  }, []);
 
-  // Logic: Tính tổng lợi nhuận thực tế của Admin
+  // 2. Định dạng tiền VND
+  const format_currency = (val) => {
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
+      maximumFractionDigits: 0 
+    }).format(val);
+  };
+
+  // 3. Tính toán tổng lợi nhuận Admin dựa trên danh sách hiện tại
   const total_admin_profit = transaction_list.reduce((acc, curr) => {
     return curr.payment_status === 'success' 
       ? acc + (curr.total_amount * curr.commission_rate) 
@@ -79,7 +69,7 @@ const AdminRevenues = () => {
       dataIndex: 'commission_rate',
       key: 'commission_rate',
       align: 'center',
-      render: (rate) => <Tag color="orange">{rate * 100}%</Tag>
+      render: (rate) => <Tag color="orange">{Math.round(rate * 100)}%</Tag>
     },
     {
       title: 'Thực thu Admin',
@@ -96,7 +86,10 @@ const AdminRevenues = () => {
       key: 'payment_status',
       align: 'center',
       render: (status) => (
-        <Badge status={status === 'success' ? 'success' : 'processing'} text={status === 'success' ? 'Thành công' : 'Chờ xử lý'} />
+        <Badge 
+          status={status === 'success' ? 'success' : 'processing'} 
+          text={status === 'success' ? 'Thành công' : 'Chờ xử lý'} 
+        />
       )
     },
   ];
@@ -116,15 +109,17 @@ const AdminRevenues = () => {
         <Row gutter={[16, 16]} style={{ marginBottom: 32 }} align="bottom">
           <Col xs={24} lg={15}>
             <Row gutter={[12, 12]}>
-              <Col span={10}>
+              <Col span={12}>
                 <Text strong><FilterOutlined /> Lọc thời gian:</Text>
-                <RangePicker style={{ width: '100%', marginTop: 8 }} />
+                <RangePicker style={{ width: '100%', marginTop: 8 }} placeholder={['Từ ngày', 'Đến ngày']} />
               </Col>
-              <Col span={7}>
+              <Col span={12}>
                 <Text strong>Đối tác:</Text>
                 <Select placeholder="Chọn khách sạn" style={{ width: '100%', marginTop: 8 }} allowClear>
-                  <Select.Option value="1">Vinpearl Luxury</Select.Option>
-                  <Select.Option value="2">InterContinental</Select.Option>
+                  {/* Map từ dữ liệu thực tế để Select luôn đúng */}
+                  {[...new Set(transaction_list.map(t => t.hotel_name))].map(name => (
+                    <Select.Option key={name} value={name}>{name}</Select.Option>
+                  ))}
                 </Select>
               </Col>
             </Row>
@@ -136,14 +131,13 @@ const AdminRevenues = () => {
                 title={
                   <Space>
                     <Text strong style={{ color: '#389e0d' }}>LỢI NHUẬN HỆ THỐNG</Text>
-                    <Tooltip title="Tổng số tiền hoa hồng thực nhận sau khi trừ các khoản giảm giá (nếu có)">
+                    <Tooltip title="Tổng tiền hoa hồng thực nhận">
                       <InfoCircleOutlined style={{ fontSize: '12px' }} />
                     </Tooltip>
                   </Space>
                 } 
                 value={total_admin_profit} 
-                content={{ color: '#3f8600', fontWeight: 'bold', fontSize: '28px' }} 
-                suffix="₫" 
+                formatter={(val) => <span style={{ color: '#3f8600', fontWeight: 'bold', fontSize: '28px' }}>{format_currency(val)}</span>}
               />
             </Card>
           </Col>
@@ -152,10 +146,8 @@ const AdminRevenues = () => {
         <Table 
           columns={columns} 
           dataSource={transaction_list} 
-          bordered={false} 
           rowKey="transaction_id"
-          pagination={{ pageSize: 8, showSizeChanger: false }}
-          className="admin-table-custom"
+          pagination={{ pageSize: 8 }}
         />
       </Card>
     </div>

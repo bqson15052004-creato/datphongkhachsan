@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Input, Button, Typography, Row, Col, Card, Rate, DatePicker, Skeleton, Empty, Space } from 'antd';
+import { Layout, Input, Button, Typography, Row, Col, Card, Rate, DatePicker, Skeleton, Empty, Space, Divider } from 'antd';
 import { SearchOutlined, EnvironmentOutlined, FireOutlined, RightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
 import beachh from '../../assets/beachh.jpg';
 
 const { Content, Footer } = Layout;
-const { Title, Text } = Typography;
+const { Title, Text, Link } = Typography;
 
 // DỮ LIỆU MẪU ĐỂ HIỂN THỊ GIAO DIỆN (KHI CHƯA CÓ BACKEND)
 const MOCK_FEATURED = [
@@ -70,7 +70,7 @@ const Home = () => {
           </Text>
 
           {/* Thanh Search */}
-          <Card bordered={false} style={{ maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
+          <Card variant={false} style={{ maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} md={20}>
                 <Input 
@@ -109,7 +109,6 @@ const Home = () => {
               <Text type="secondary">Những địa điểm được khách hàng yêu thích nhất</Text>
             </div>
             
-            {/* CẬP NHẬT: Nút Xem tất cả dẫn về HotelList */}
             <Button 
               type="link" 
               size="large" 
@@ -159,13 +158,12 @@ const Home = () => {
                         <Text type="secondary" style={{ fontSize: '12px', marginLeft: 4 }}>/ đêm</Text>
                       </div>
                       
-                      {/* CẬP NHẬT: Nút Đặt ngay chuyển vào HotelDetail */}
                       <Button 
                         type="primary" 
                         shape="round" 
                         size="small"
                         onClick={(e) => {
-                          e.stopPropagation(); // Ngăn chặn sự kiện click lan ra Card cha
+                          e.stopPropagation();
                           navigate(`/hotel/${hotel.id_hotel}`);
                         }}
                       >
@@ -182,11 +180,87 @@ const Home = () => {
         </div>
       </Content>
 
-      <Footer style={{ textAlign: 'center', padding: '40px 0', background: '#1a1a1a', color: 'rgba(255,255,255,0.6)' }}>
-        <Title level={4} style={{ color: '#fff', marginBottom: 20 }}>HOTEL BOOKING SYSTEM</Title>
-        <Text style={{ color: 'rgba(255,255,255,0.4)' }}>
-          © 2026 - Phát triển bởi HOTEL BOOKING GROUP
-        </Text>
+      {/* FOOTER MỚI ĐA DẠNG NHƯ BOOKING.COM */}
+      <Footer style={{ background: '#f5f5f5', padding: '60px 0 20px', borderTop: '1px solid #e8e8e8' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+          
+          <Row gutter={[32, 32]}>
+            {/* Cột 1: Hỗ trợ */}
+            <Col xs={24} sm={12} md={5}>
+              <Title level={5} style={{ fontSize: '15px', marginBottom: '16px' }}>Hỗ trợ</Title>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Quản lý các chuyến đi của bạn</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Liên hệ Dịch vụ Khách hàng</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Trung tâm thông tin bảo mật</Link>
+              </Space>
+            </Col>
+            
+            {/* Cột 2: Khám phá */}
+            <Col xs={24} sm={12} md={5}>
+              <Title level={5} style={{ fontSize: '15px', marginBottom: '16px' }}>Khám phá thêm</Title>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Chương trình khách hàng thân thiết</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Ưu đãi theo mùa và dịp lễ</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Bài viết về du lịch</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Dành cho Doanh Nghiệp</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Tìm chuyến bay</Link>
+              </Space>
+            </Col>
+
+            {/* Cột 3: Điều khoản */}
+            <Col xs={24} sm={12} md={5}>
+              <Title level={5} style={{ fontSize: '15px', marginBottom: '16px' }}>Điều khoản và cài đặt</Title>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Chính sách Bảo mật</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Điều khoản dịch vụ</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Tranh chấp đối tác</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Chính sách chống Nô lệ Hiện đại</Link>
+              </Space>
+            </Col>
+
+            {/* Cột 4: Đối tác */}
+            <Col xs={24} sm={12} md={5}>
+              <Title level={5} style={{ fontSize: '15px', marginBottom: '16px' }}>Dành cho đối tác</Title>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Đăng nhập vào trang Extranet</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Trợ giúp đối tác</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Đăng chỗ nghỉ của Quý vị</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Trở thành đối tác phân phối</Link>
+              </Space>
+            </Col>
+
+            {/* Cột 5: Về chúng tôi */}
+            <Col xs={24} sm={12} md={4}>
+              <Title level={5} style={{ fontSize: '15px', marginBottom: '16px' }}>Về chúng tôi</Title>
+              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Về hệ thống</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Cách chúng tôi hoạt động</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Du lịch bền vững</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Truyền thông</Link>
+                <Link href="#" style={{ color: '#006CE4', fontSize: '14px' }}>Liên hệ công ty</Link>
+              </Space>
+            </Col>
+          </Row>
+
+          <Divider style={{ borderColor: '#d9d9d9', margin: '40px 0 20px' }} />
+
+          {/* Bản quyền và các Logo dịch vụ */}
+          <div style={{ textAlign: 'center' }}>
+            <Text style={{ color: '#595959', fontSize: '12px', display: 'block', marginBottom: '20px' }}>
+              Hệ thống đặt phòng trực tuyến là một phần của dự án thực hành. <br/>
+              Bản quyền © 2026 - Phát triển bởi Nhóm 2 người.
+            </Text>
+            
+            <Space size="large" align="center" wrap style={{ opacity: 0.8, justifyContent: 'center' }}>
+               <Title level={4} style={{ margin: 0, color: '#003580', fontWeight: 800 }}>Booking.com</Title>
+               <Title level={4} style={{ margin: 0, color: '#006CE4', fontWeight: 800, fontStyle: 'italic' }}>priceline</Title>
+               <Title level={4} style={{ margin: 0, color: '#FF690F', fontWeight: 800 }}>KAYAK</Title>
+               <Title level={4} style={{ margin: 0, color: '#000', fontWeight: 800 }}>agoda</Title>
+               <Title level={4} style={{ margin: 0, color: '#DA3743', fontWeight: 800 }}>OpenTable</Title>
+            </Space>
+          </div>
+
+        </div>
       </Footer>
 
       <style>{`
@@ -198,6 +272,9 @@ const Home = () => {
         }
         .ant-card:hover {
           box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        }
+        .ant-typography a:hover {
+          text-decoration: underline;
         }
       `}</style>
     </Layout>

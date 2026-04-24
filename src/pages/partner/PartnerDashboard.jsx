@@ -96,7 +96,7 @@ const PartnerDashboard = () => {
         
         {/* Header */}
         <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <Space direction="vertical" size={0}>
+          <Space orientation="vertical" size={0}>
             <Title level={2} style={{ margin: 0 }}>Báo cáo doanh thu</Title>
             <Text type="secondary">Phân tích chi tiết theo từng tháng kinh doanh</Text>
           </Space>

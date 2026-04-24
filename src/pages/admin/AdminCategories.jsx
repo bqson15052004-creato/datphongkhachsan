@@ -1,141 +1,151 @@
-import React, { useState } from 'react';
-import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ApartmentOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, ApartmentOutlined } from '@ant-design/icons';
+
+// Đảm bảo file mockData.jsx đã được thêm status: 'active' như mình đã bàn
+import { HOTEL_TYPES } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
 
 const AdminCategories = () => {
   const [is_modal_visible, setIsModalVisible] = useState(false);
-  // Thêm state để lưu key của danh mục đang được sửa (Nếu null nghĩa là đang Thêm mới)
   const [editing_key, setEditingKey] = useState(null); 
   const [form] = Form.useForm();
+  const [categories_list, setCategoriesList] = useState([]);
 
-  const [categories_list, setCategoriesList] = useState([
-    { 
-      key: '1', 
-      category_name: 'Khách sạn 5 sao', 
-      description: 'Khách sạn cao cấp có đầy đủ tiện nghi' 
-    },
-    { 
-      key: '2', 
-      category_name: 'Resort', 
-      description: 'Khu nghỉ dưỡng sinh thái, không gian xanh' 
-    },
-    { 
-      key: '3', 
-      category_name: 'Phòng Suite', 
-      description: 'Phòng cao cấp nhất, diện tích lớn, view đẹp' 
-    },
-    { 
-      key: '4', 
-      category_name: 'Hồ bơi vô cực', 
-      description: 'Tiện ích cao cấp cho khách lưu trú' 
-    },
-  ]);
+  useEffect(() => {
+    const saved_categories = localStorage.getItem('HOTEL_CATEGORIES');
+    if (saved_categories) {
+      const parsedData = JSON.parse(saved_categories);
+      // Kiểm tra an toàn: Nếu data trong máy thiếu trường status, ép nó về 'active' luôn
+      const validatedData = parsedData.map(item => ({
+        ...item,
+        status: item.status || 'active'
+      }));
+      setCategoriesList(validatedData);
+    } else {
+      // Nạp từ mockData và ép 'active'
+      const initial_data = HOTEL_TYPES.map(item => ({
+        ...item,
+        status: 'active' 
+      }));
+      setCategoriesList(initial_data);
+      localStorage.setItem('HOTEL_CATEGORIES', JSON.stringify(initial_data));
+    }
+  }, []);
+
+  const save_to_db = (new_data) => {
+    setCategoriesList(new_data);
+    localStorage.setItem('HOTEL_CATEGORIES', JSON.stringify(new_data));
+  };
+
+  const handle_toggle_status = (record) => {
+    const is_active = record.status === 'active';
+    const action_text = is_active ? 'KHÓA' : 'MỞ KHÓA';
+
+    Modal.confirm({
+      title: `Xác nhận ${action_text} loại khách sạn?`,
+      content: `Bạn đang chuẩn bị ${action_text.toLowerCase()} loại khách sạn: ${record.category_name}`,
+      okText: action_text,
+      okType: is_active ? 'danger' : 'primary',
+      centered: true,
+      onOk: () => {
+        const new_list = categories_list.map(item => {
+          if (item.key === record.key) {
+            return { ...item, status: is_active ? 'blocked' : 'active' };
+          }
+          return item;
+        });
+        save_to_db(new_list);
+        message.success(`Đã ${action_text} thành công!`);
+      }
+    });
+  };
 
   const columns = [
     { 
       title: 'Loại khách sạn', 
       dataIndex: 'category_name', 
       key: 'category_name', 
-      width: '25%',
       render: (text) => <Text strong>{text}</Text>
     },
     { 
       title: 'Mô tả', 
       dataIndex: 'description', 
       key: 'description', 
-      width: '30%',
-      render: (desc) => <Text type="secondary">{desc}</Text>
+      render: (desc) => <Text type="secondary" italic>{desc || 'Chưa có mô tả chi tiết...'}</Text>
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      width: 150,
+      align: 'center',
+      render: (status) => {
+        // PHÒNG THỦ: Nếu status rỗng thì mặc định là active (Xanh)
+        const isActive = !status || status === 'active'; 
+        return (
+          <Tag 
+            color={isActive ? 'success' : 'error'} 
+            icon={isActive ? <UnlockOutlined /> : <LockOutlined />}
+          >
+            {isActive ? 'Đang mở' : 'Đang khóa'}
+          </Tag>
+        );
+      }
     },
     {
       title: 'Hành động',
       key: 'action',
-      align: 'center',
-      render: (_, record) => (
-        <Space size="middle">
-          {/* Gọi hàm Sửa và truyền record vào */}
-          <Button 
-            type="text" 
-            icon={<EditOutlined />} 
-            style={{ color: '#1890ff' }}
-            onClick={() => handle_edit_click(record)}
-          >
-            Sửa
-          </Button>
-          <Button 
-            type="text" 
-            danger 
-            icon={<DeleteOutlined />}
-            onClick={() => handle_delete_category(record.key)}
-          >
-            Xóa
-          </Button>
-        </Space>
-      ),
+      align: 'right',
+      width: 120,
+      render: (_, record) => {
+        const is_active = !record.status || record.status === 'active';
+        return (
+          <Space size="small">
+            <Tooltip title="Chỉnh sửa">
+              <Button type="text" icon={<EditOutlined />} onClick={() => handle_edit_click(record)} />
+            </Tooltip>
+            
+            <Tooltip title={is_active ? "Nhấn để Khóa" : "Nhấn để Mở khóa"}>
+              <Button 
+                type="text" 
+                icon={is_active 
+                  ? <UnlockOutlined style={{ color: '#52c41a' }} /> 
+                  : <LockOutlined style={{ color: '#ff4d4f' }} />
+                } 
+                onClick={() => handle_toggle_status(record)}
+              />
+            </Tooltip>
+          </Space>
+        );
+      },
     },
   ];
 
-  const handle_delete_category = (key) => {
-    Modal.confirm({
-      title: 'Xác nhận xóa?',
-      content: 'Việc xóa có thể ảnh hưởng đến các sản phẩm/phòng đang thuộc loại khách sạn này.',
-      okText: 'Đồng ý',
-      okType: 'danger',
-      onOk: () => {
-        setCategoriesList(categories_list.filter(item => item.key !== key));
-        message.success('Đã xóa danh mục thành công');
-      }
-    });
-  };
-
-  // Nút Mở Modal Thêm Mới
-  const open_add_modal = () => {
-    setEditingKey(null);
-    form.resetFields();
-    setIsModalVisible(true);
-  };
-
-  // Logic: Nút Mở Modal Sửa
   const handle_edit_click = (record) => {
     setEditingKey(record.key);
-    form.setFieldsValue({
-      category_name: record.category_name,
-      description: record.description,
-    });
+    form.setFieldsValue(record);
     setIsModalVisible(true);
   };
 
-  // Logic: Gộp chung xử lý Submit cho cả Thêm và Sửa
   const handle_submit = (values) => {
+    let new_list = [];
     if (editing_key) {
-      // TRƯỜNG HỢP SỬA
-      const updated_list = categories_list.map(item => {
-        if (item.key === editing_key) {
-          return { ...item, category_name: values.category_name, description: values.description };
-        }
-        return item;
-      });
-      setCategoriesList(updated_list);
+      new_list = categories_list.map(item => 
+        item.key === editing_key ? { ...item, ...values } : item
+      );
       message.success('Cập nhật thành công!');
     } else {
-      // TRƯỜNG HỢP THÊM MỚI
       const new_category = {
-        key: Date.now().toString(),
-        category_name: values.category_name,
-        description: values.description,
+        key: `CAT-${Date.now()}`,
+        ...values,
+        status: 'active'
       };
-      setCategoriesList([...categories_list, new_category]);
-      message.success('Thêm loại khách sạn mới thành công!');
+      new_list = [...categories_list, new_category];
+      message.success('Thêm mới thành công!');
     }
-
-    // Đóng modal và reset
-    setIsModalVisible(false);
-    setEditingKey(null);
-    form.resetFields();
-  };
-
-  const handle_cancel_modal = () => {
+    save_to_db(new_list);
     setIsModalVisible(false);
     setEditingKey(null);
     form.resetFields();
@@ -145,47 +155,37 @@ const AdminCategories = () => {
     <div style={{ padding: '24px' }}>
       <Card
         variant={false}
-        style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+        style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
         title={
-          <Title level={3} style={{ margin: 0 }}>
-            <ApartmentOutlined /> Quản lý loại khách sạn
-          </Title>
+          <Space>
+            <ApartmentOutlined style={{ fontSize: '24px', color: '#1677ff' }} />
+            <Title level={4} style={{ margin: 0 }}>Danh mục loại khách sạn</Title>
+          </Space>
         }
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={open_add_modal} size="large">
-            Thêm loại khách sạn mới
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKey(null); form.resetFields(); setIsModalVisible(true); }}>
+            Thêm loại mới
           </Button>
         }
       >
-        <Table 
-          columns={columns} 
-          dataSource={categories_list} 
-          bordered={false}
-          pagination={{ pageSize: 6 }}
-        />
+        <Table columns={columns} dataSource={categories_list} rowKey="key" pagination={{ pageSize: 7 }} />
       </Card>
 
-      {/* Modal Thêm/Sửa Danh Mục */}
       <Modal
-        title={editing_key ? "CẬP NHẬT LOẠI KHÁCH SẠN" : "THÊM LOẠI KHÁCH SẠN MỚI"}
+        title={editing_key ? "CẬP NHẬT THÔNG TIN" : "THÊM LOẠI MỚI"}
         open={is_modal_visible}
         onOk={() => form.submit()}
-        onCancel={handle_cancel_modal}
-        okText="Xác nhận"
-        cancelText="Huỷ"
-        destroyOnHidden
+        onCancel={() => setIsModalVisible(false)}
+        okText="Lưu lại"
+        cancelText="Hủy bỏ"
+        centered
       >
-        <Form form={form} layout="vertical" onFinish={handle_submit}>
-          <Form.Item 
-            name="category_name" 
-            label="Loại khách sạn" 
-            rules={[{ required: true, message: 'Vui lòng nhập tên loại khách sạn!' }]}
-          >
-            <Input placeholder="VD: Khách sạn Boutique, View biển..." />
+        <Form form={form} layout="vertical" onFinish={handle_submit} style={{ marginTop: 20 }}>
+          <Form.Item name="category_name" label="Tên loại khách sạn" rules={[{ required: true, message: 'Không được để trống!' }]}>
+            <Input />
           </Form.Item>
-
-          <Form.Item name="description" label="Mô tả chi tiết">
-            <Input.TextArea rows={4} placeholder="Nhập mô tả của loại khách sạn này..." />
+          <Form.Item name="description" label="Mô tả">
+            <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
       </Modal>

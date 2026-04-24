@@ -16,9 +16,10 @@ import HotelList from './pages/customer/HotelList';
 import HotelDetail from './pages/customer/HotelDetail';
 import Checkout from './pages/customer/Checkout';
 import CustomerBookings from './pages/customer/CustomerBookings';
-import Profile from './pages/customer/Profile'; // Hồ sơ customer sẵn có
+import Profile from './pages/customer/Profile';
 
 // 3. NHÓM ĐỐI TÁC (PARTNER)
+import PartnerRegister from './pages/partner/ParterRegister';
 import PartnerLogin from './pages/partner/PartnerLogin';
 import PartnerLayout from './components/layouts/PartnerLayout';
 import PartnerDashboard from './pages/partner/PartnerDashboard';
@@ -28,7 +29,7 @@ import RoomNumbers from './pages/partner/RoomNumbers';
 import PartnerBookings from './pages/partner/PartnerBookings';
 import PartnerMessages from './pages/partner/PartnerMessages';
 import PartnerDiscounts from './pages/partner/PartnerDiscounts';
-import PartnerProfile from './pages/partner/PartnerProfile'; // HỒ SƠ PARTNER MỚI
+import PartnerProfile from './pages/partner/PartnerProfile';
 
 // 4. NHÓM QUẢN TRỊ VIÊN (ADMIN)
 import AdminLogin from './pages/admin/AdminLogin';
@@ -36,10 +37,11 @@ import AdminLayout from './components/layouts/AdminLayout';
 import AdminPartners from './pages/admin/AdminPartners';
 import UserManagement from './pages/admin/UserManagement';
 import AdminCategories from './pages/admin/AdminCategories';
+import AdminAmenity from './pages/admin/AdminAmenity';
 import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminRevenues from './pages/admin/AdminRevenues';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProfile from './pages/admin/AdminProfile'; // HỒ SƠ ADMIN MỚI
+import AdminProfile from './pages/admin/AdminProfile';
 
 const RootAdminRoute = () => {
   const user = JSON.parse(sessionStorage.getItem('user')) || {};
@@ -64,6 +66,7 @@ function App() {
             <BrowserRouter>
             <Routes>
               {/* --- ROUTE CÔNG KHAI (PUBLIC) --- */}
+              <Route path="/partner/register" element={<PartnerRegister />} />
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<RoleSelection />} />
               <Route path="/register/form" element={<RegisterForm />} />
@@ -105,6 +108,7 @@ function App() {
                   <Route path="profile" element={<AdminProfile />} />
                   <Route path="partners" element={<AdminPartners />} />
                   <Route path="categories" element={<AdminCategories />} />
+                  <Route path="amenities" element={<AdminAmenity />} />
 
                   <Route element={<RootAdminRoute />}>
                     <Route path="users" element={<UserManagement />} />

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Layout, Row, Col, Typography, Button, Card, Tag, Table, Tabs, Image, Rate, Divider, Space, Spin, Empty, Alert, App as AntApp
 } from 'antd';
 import {
-  EnvironmentOutlined, CheckCircleOutlined,
-  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, CoffeeOutlined, WifiOutlined
+  EnvironmentOutlined,
+  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosClient from '../../services/axiosClient';
 import Navbar from '../../components/common/Navbar';
 
-// IMPORT MOCK DATA - Đã khớp với file ông gửi
-import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData';
+// IMPORT MOCK DATA
+import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData.jsx';
 
 const { Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
@@ -19,22 +19,24 @@ const { Title, Text, Paragraph } = Typography;
 const HotelDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { message: antdMessage } = AntApp.useApp();
+  
+  // 1. Lấy message và modal ở cấp cao nhất của Component để tránh lỗi Hook
+  const { message: antdMessage, modal } = AntApp.useApp(); 
   
   const [hotel, setHotel] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const roomTableRef = useRef(null);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // 1. THỬ KẾT NỐI API
         const hotelRes = await axiosClient.get(`/hotels/${id}/`);
         setHotel(hotelRes);
         setRooms(hotelRes.rooms || []); 
       } catch (error) {
-        // 2. FALLBACK SANG MOCK DATA
         const hotelId = Number(id);
         const foundHotel = MOCK_HOTELS.find(h => h.id_hotel === hotelId);
         const foundRooms = MOCK_ROOMS.filter(r => r.id_hotel === hotelId);
@@ -55,33 +57,60 @@ const HotelDetail = () => {
 
   const columns = [
     {
-      title: 'Số phòng',
-      dataIndex: 'id_room',
-      key: 'id_room',
-      width: 110,
+      title: 'Hình ảnh',
+      key: 'room_image',
+      width: 140,
       align: 'center',
-      render: (text) => <Text strong style={{ color: '#1890ff' }}>#{text}</Text>
+      render: (record) => (
+        <Image 
+          src={record.image_url} 
+          width={110} 
+          height={75}
+          style={{ borderRadius: 8, objectFit: 'cover' }} 
+          fallback="https://via.placeholder.com/120x80?text=No+Image"
+        />
+      )
+    },
+    {
+      title: 'Số phòng',
+      dataIndex: 'room_number',
+      key: 'room_number',
+      width: 100,
+      align: 'center',
+      render: (text) => <Tag color="blue" style={{ fontWeight: 'bold' }}>{text}</Tag>
     },
     {
       title: 'Hạng phòng',
       key: 'room_info',
-      width: 350,
+      width: 250, 
       render: (record) => (
-        <Space size="middle">
-          <Image 
-            src={record.image_url} 
-            width={120} 
-            height={80}
-            style={{ borderRadius: 8, objectFit: 'cover' }} 
-            fallback="https://via.placeholder.com/120x80?text=No+Image"
-          />
-          <Space direction="vertical" size={0}>
-            <Text strong style={{ fontSize: 16 }}>{record.room_type}</Text>
-            <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>Giường: {record.bed_type}</Text>
-            <Space wrap size={[4, 4]} style={{ marginTop: 4 }}>
-              {record.amenities?.map(a => <Tag key={a} color="blue" style={{ fontSize: 10 }}>{a}</Tag>)}
-            </Space>
-          </Space>
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontSize: 16 }}>{record.room_type}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>ID: #{record.id_room}</Text>
+        </Space>
+      )
+    },
+    {
+      title: 'Tiện nghi',
+      dataIndex: 'amenities',
+      key: 'amenities',
+      width: 300,
+      render: (amenities) => (
+        <Space wrap size={[4, 8]}>
+          {amenities && amenities.length > 0 ? (
+            amenities.map((item, index) => (
+              <Tag 
+                key={index} 
+                bordered={false}
+                color="blue" 
+                style={{ borderRadius: 4, textTransform: 'capitalize' }}
+              >
+                {item} 
+              </Tag>
+            ))
+          ) : (
+            <Text type="disabled" italic>Tiêu chuẩn</Text>
+          )}
         </Space>
       )
     },
@@ -97,10 +126,10 @@ const HotelDetail = () => {
       title: 'Giá/đêm',
       dataIndex: 'price_per_night',
       key: 'price_per_night',
-      width: 1000, 
+      width: 160,
       align: 'right',
       render: (price) => (
-        <Text type="danger" strong style={{ fontSize: 18 }}>
+        <Text type="danger" strong style={{ fontSize: 19, whiteSpace: 'nowrap' }}>
           {Number(price).toLocaleString()}₫
         </Text>
       )
@@ -120,13 +149,28 @@ const HotelDetail = () => {
       title: 'Thao tác',
       key: 'action',
       width: 150,
-      fixed: 'right',
+      align: 'center',
       render: (_, record) => (
         <Button
           type="primary"
           block
           disabled={record.status === 'booked'}
-          onClick={() => navigate('/checkout', { state: { room: record, hotel: hotel } })}
+          onClick={() => {
+            const token = localStorage.getItem('token');
+            if (token) {
+              navigate('/checkout', { state: { room: record, hotel: hotel } });
+            } else {
+              // 2. Sử dụng modal confirm để hỏi người dùng
+              modal.confirm({
+                title: 'Thông báo',
+                content: 'Bạn cần đăng nhập để thực hiện đặt phòng. Bạn có muốn đăng nhập ngay không?',
+                okText: 'Đăng nhập',
+                cancelText: 'Quay lại',
+                centered: true,
+                onOk: () => navigate('/login'),
+              });
+            }
+          }}
           style={{ borderRadius: 8, fontWeight: 600, height: 40 }}
         >
           {record.status === 'booked' ? 'Hết phòng' : 'ĐẶT NGAY'}
@@ -146,10 +190,10 @@ const HotelDetail = () => {
           Quay lại
         </Button>
 
-        {/* HEADER */}
+        {/* HEADER SECTION */}
         <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
           <Col span={24}>
-            <Title level={2}>{hotel.hotel_name}</Title>
+            <Title level={2} style={{ marginBottom: 8 }}>{hotel.hotel_name}</Title>
             <Space split={<Divider type="vertical" />}>
               <Rate disabled defaultValue={hotel.rate_star} style={{ fontSize: 14 }} />
               <Text type="secondary"><EnvironmentOutlined /> {hotel.location_city}</Text>
@@ -157,60 +201,80 @@ const HotelDetail = () => {
             </Space>
           </Col>
           
-          <Col xs={24} md={16}>
-            <Image src={hotel.image_url} style={{ width: '100%', height: 450, objectFit: 'cover', borderRadius: 16 }} />
-          </Col>
-          <Col xs={24} md={8}>
-            <Space direction="vertical" size={12} style={{ width: '100%' }}>
-              <Image src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400" style={{ width: '100%', height: 219, objectFit: 'cover', borderRadius: 16 }} />
-              <Image src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400" style={{ width: '100%', height: 219, objectFit: 'cover', borderRadius: 16 }} />
-            </Space>
+          <Col span={24}>
+            <Image 
+              src={hotel.image_url} 
+              style={{ width: '100%', height: 500, objectFit: 'cover', borderRadius: 16 }} 
+              placeholder={<Spin />}
+            />
           </Col>
         </Row>
 
-        <Row gutter={[40, 40]}>
+        {/* INFO & BOOKING CARD SECTION */}
+        <Row gutter={[40, 40]} style={{ marginBottom: 40 }}>
           <Col xs={24} lg={16}>
-            <Tabs defaultActiveKey="1" size="large">
-              <Tabs.TabPane tab="Tổng quan" key="1">
-                <Title level={4}>Giới thiệu</Title>
-                <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
-                  {hotel.description}
-                  <br />
-                  <br />
-                  <EnvironmentOutlined /> <b>Địa chỉ:</b> {hotel.address}
-                </Paragraph>
-                <Divider />
-                <Title level={4}>Tiện ích nổi bật</Title>
-                <Row gutter={[16, 16]}>
-                  <Col span={8}><Space><WifiOutlined style={{color: '#1890ff'}}/> Wifi miễn phí</Space></Col>
-                  <Col span={8}><Space><CoffeeOutlined style={{color: '#1890ff'}}/> Bữa sáng</Space></Col>
-                  <Col span={8}><Space><CheckCircleOutlined style={{color: '#1890ff'}}/> Hồ bơi</Space></Col>
-                </Row>
-              </Tabs.TabPane>
-            </Tabs>
-
-            <div style={{ marginTop: 40 }}>
-              <Title level={3}>Danh sách phòng</Title>
-              <Table
-                columns={columns}
-                dataSource={rooms}
-                pagination={false}
-                rowKey="id_room"
-                bordered
-              />
+            <Tabs 
+              activeKey="1" 
+              size="large" 
+              onChange={(key) => {
+                if (key === 'rooms_section') {
+                  roomTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              items={[
+                { label: 'Tổng quan', key: '1' },
+                { label: 'Tình trạng phòng trống', key: 'rooms_section' }
+              ]}
+            />
+            
+            <div style={{ marginTop: 24 }}>
+              <Title level={4}>Giới thiệu</Title>
+              <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
+                {hotel.description || "Chào mừng bạn đến với không gian nghỉ dưỡng tuyệt vời với đầy đủ tiện nghi."}
+                <br /><br />
+                <EnvironmentOutlined /> <b>Địa chỉ:</b> {hotel.address}
+              </Paragraph>
             </div>
           </Col>
 
           <Col xs={24} lg={8}>
-            <Card style={{ borderRadius: 16, position: 'sticky', top: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-              <Text type="secondary">Giá từ</Text>
-              <Title level={3} style={{ color: '#ff4d4f', marginTop: 4 }}>
+            <Card style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: 'none', position: 'sticky', top: 20 }}>
+              <Text type="secondary">Giá khởi điểm</Text>
+              <Title level={3} style={{ color: '#ff4d4f', marginTop: 4, marginBottom: 20 }}>
                 {Number(hotel.price_per_night).toLocaleString()}₫ <small style={{fontSize: 14, color: '#999'}}> /đêm</small>
               </Title>
-              <Alert message="Lưu ý" description="Vui lòng kiểm tra trạng thái còn/ hết phòng trước khi đặt phòng." type="info" showIcon />
+              <Alert 
+                message="Đảm bảo giá tốt nhất" 
+                type="success" 
+                showIcon 
+                style={{ marginBottom: 16 }}
+              />
+              <Button 
+                type="primary" 
+                block 
+                size="large" 
+                onClick={() => roomTableRef.current?.scrollIntoView({ behavior: 'smooth' })} 
+                style={{ height: 50, fontWeight: 'bold', borderRadius: 8 }}
+              >
+                XEM DANH SÁCH PHÒNG
+              </Button>
             </Card>
           </Col>
         </Row>
+
+        {/* FULL WIDTH TABLE SECTION */}
+        <div style={{ marginTop: 20, paddingTop: 40, borderTop: '1px solid #f0f0f0' }} ref={roomTableRef}>
+          <Title level={3} style={{ marginBottom: 24 }}>Danh sách phòng còn trống</Title>
+          <Table
+            columns={columns}
+            dataSource={rooms}
+            pagination={false}
+            rowKey="id_room"
+            bordered
+            scroll={{ x: 1100 }} 
+            style={{ width: '100%' }}
+          />
+        </div>
       </Content>
     </Layout>
   );

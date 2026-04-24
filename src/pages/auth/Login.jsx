@@ -1,14 +1,12 @@
 import React, { useState, useContext } from 'react';
 import axiosClient from '../../services/axiosClient';
-import { Form, Input, Button, Card, Typography, App as AntApp, Divider, Checkbox } from 'antd';
+import { Form, Input, Button, Card, Typography, App as AntApp, Divider } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/AuthContext';
+import { MOCK_USERS } from '../../constants/mockData.jsx'; 
 
-// --- QUAN TRỌNG: Thêm import MOCK_USERS vào đây ---
-import { MOCK_USERS } from '../../constants/mockData'; 
-
-const { Title, Text, Link } = Typography;
+const { Title, Text } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -24,12 +22,10 @@ const Login = () => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    const { user_name, password } = values;
-
+    const { account, password } = values;
     try {
-      // 1. THỬ ĐĂNG NHẬP THẬT
       const response = await axiosClient.post('/accounts/login/', {
-        user_name: user_name.trim(),
+        user_name: account.trim(),
         password: password
       });
 
@@ -40,14 +36,13 @@ const Login = () => {
     } catch (error) {
       console.warn("Đăng nhập BE thất bại, đang check Mock Data...");
 
-      // 2. CHECK MOCK DATA
+      // 2. CHECK MOCK DATA (Cho phép cả email và user_name)
       const mockUser = MOCK_USERS.find(
-        (u) => u.email === user_name && u.password === password
+        (u) => (u.email === account || u.user_name === account) && u.password === password
       );
 
       if (mockUser) {
         login(mockUser, { access: `mock_token_${mockUser.role}` });
-        
         message.success(`[Mock] Đăng nhập thành công với quyền ${mockUser.role}`);
         handleNavigation(mockUser.role);
       } else {
@@ -64,18 +59,18 @@ const Login = () => {
       <Card style={cardStyle} variant="none">
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <Title level={2} style={{ color: '#1890ff', margin: '8px 0 0 0' }}>HOTEL BOOKING</Title>
-          <Text type="secondary">Hệ thống đặt phòng khách sạn thông minh</Text>
+          <Text type="secondary">Đăng nhập để đặt phòng ngay</Text>
         </div>
 
         <Form name="login_form" onFinish={onFinish} size="large" layout="vertical">
           <Form.Item
-            name="user_name"
-            label={<Text strong>Tài khoản</Text>}
-            rules={[{ required: true, message: 'Vui lòng nhập email!' }]}
+            name="account"
+            label={<Text strong>Tài khoản hoặc Email</Text>}
+            rules={[{ required: true, message: 'Vui lòng nhập tài khoản hoặc email!' }]}
           >
             <Input 
               prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} 
-              placeholder="user@gmail.com / 123" 
+              placeholder="Username hoặc email của bạn" 
             />
           </Form.Item>
 
@@ -84,7 +79,7 @@ const Login = () => {
             label={<Text strong>Mật khẩu</Text>}
             rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
           >
-            <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} />
+            <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} placeholder="******" />
           </Form.Item>
 
           <Form.Item>
@@ -94,14 +89,15 @@ const Login = () => {
           </Form.Item>
 
           <Divider plain><Text type="secondary">Bạn chưa có tài khoản?</Text></Divider>
-          <Button block onClick={() => navigate('/register')}>Đăng ký ngay</Button>
+          <Button block onClick={() => navigate('/register')} style={{ borderRadius: '8px' }}>
+            Đăng ký thành viên
+          </Button>
         </Form>
       </Card>
     </div>
   );
 };
 
-// 
 const containerStyle = { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', padding: '20px' };
 const cardStyle = { maxWidth: 420, width: '100%', borderRadius: '20px', boxShadow: '0 15px 35px rgba(0,0,0,0.1)', padding: '12px' };
 

@@ -11,6 +11,7 @@ import {
   SolutionOutlined,
   AppstoreOutlined,
   PercentageOutlined,
+  CoffeeOutlined, // Icon mới cho tiện nghi
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -29,11 +30,9 @@ const AdminLayout = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  // 1. LẤY THÔNG TIN USER
   const userData = sessionStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;
 
-  // 2. KIỂM TRA QUYỀN TRUY CẬP
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       message.error('Bạn không có quyền truy cập vùng này!');
@@ -41,10 +40,8 @@ const AdminLayout = () => {
     }
   }, [user, navigate, message]);
 
-  // 3. LOGIC ĐẾM SỐ LƯỢNG CHỜ DUYỆT (Real-time từ localStorage)
   const fetchPendingCount = () => {
     try {
-      // Đọc từ key ALL_HOTELS đã thống nhất với trang Partner và AdminPartners
       const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
       const count = all_hotels.filter(h => h.status === 'pending').length;
       set_pending_count(count);
@@ -55,13 +52,8 @@ const AdminLayout = () => {
 
   useEffect(() => {
     fetchPendingCount();
-
-    // Lắng nghe thay đổi khi tab Partner nhấn Lưu/Gửi đơn
     window.addEventListener('storage', fetchPendingCount);
-    
-    // Check định kỳ mỗi 3s để đảm bảo UI luôn khớp dữ liệu mới nhất
     const interval = setInterval(fetchPendingCount, 3000);
-
     return () => {
       window.removeEventListener('storage', fetchPendingCount);
       clearInterval(interval);
@@ -70,29 +62,34 @@ const AdminLayout = () => {
 
   const userLevel = user?.level || 1;
 
-  // 4. CẤU HÌNH MENU ITEMS (Tích hợp Badge)
+  // CẤU HÌNH MENU ITEMS (ĐÃ CẬP NHẬT BADGE VÀ ICON)
   const menu_config = [
-    { key: '/admin/dashboard',  icon: <DashboardOutlined />,  label: 'Tổng quan' },
-    { key: '/admin/profile',    icon: <ProfileOutlined />,    label: 'Hồ sơ cá nhân' },
-    { key: '/admin/revenues',   icon: <BarChartOutlined />,   label: 'Báo cáo doanh thu',  level_required: 1 },
+    { key: '/admin/dashboard',   icon: <DashboardOutlined />,   label: 'Tổng quan' },
+    { key: '/admin/profile',     icon: <ProfileOutlined />,     label: 'Hồ sơ cá nhân' },
+    { key: '/admin/revenues',    icon: <BarChartOutlined />,    label: 'Báo cáo doanh thu',  level_required: 1 },
     { 
       key: '/admin/partners',   
-      icon: <SolutionOutlined />,   
+      icon: (
+        <Badge dot={pending_count > 0} offset={[5, 0]}>
+          <SolutionOutlined />
+        </Badge>
+      ),   
       label: (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>Phê duyệt khách sạn</span>
-          {pending_count > 0 && (
+          {pending_count > 0 && !collapsed && (
             <Badge 
               count={pending_count} 
               size="small" 
-              style={{ backgroundColor: '#f5222d', boxShadow: 'none', marginLeft: 8 }} 
+              style={{ backgroundColor: '#f5222d', boxShadow: 'none' }} 
             />
           )}
         </div>
       ) 
     },
     { key: '/admin/users',      icon: <UserOutlined />,       label: 'Quản lý người dùng', level_required: 1 },
-    { key: '/admin/categories', icon: <AppstoreOutlined />,   label: 'Quản lý loại khách sạn' },
+    { key: '/admin/categories', icon: <AppstoreOutlined />,   label: 'Loại khách sạn' },
+    { key: '/admin/amenities',  icon: <CoffeeOutlined />,     label: 'Quản lý tiện nghi' },
     { key: '/admin/discounts',  icon: <PercentageOutlined />, label: 'Quản lý chiết khấu', level_required: 1 },
   ];
 
