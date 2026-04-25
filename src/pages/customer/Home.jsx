@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Input, Button, Typography, Row, Col, Card, Rate, DatePicker, Skeleton, Empty, Space, Divider } from 'antd';
-import { SearchOutlined, EnvironmentOutlined, FireOutlined, RightOutlined } from '@ant-design/icons';
+import { Layout, Input, Button, Typography, Row, Col, Card, Rate, Skeleton, Empty, Space, Divider, FloatButton } from 'antd';
+import { SearchOutlined, EnvironmentOutlined, FireOutlined, RightOutlined, MessageOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/common/Navbar';
 import beachh from '../../assets/beachh.jpg';
@@ -8,7 +8,7 @@ import beachh from '../../assets/beachh.jpg';
 const { Content, Footer } = Layout;
 const { Title, Text, Link } = Typography;
 
-// DỮ LIỆU MẪU ĐỂ HIỂN THỊ GIAO DIỆN (KHI CHƯA CÓ BACKEND)
+// DỮ LIỆU MẪU ĐỂ HIỂN THỊ
 const MOCK_FEATURED = [
   { id_hotel: 1, hotel_name: 'Vinpearl Luxury Nha Trang', price_per_night: 2500000, rate_star: 5, image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500', location_city: 'Nha Trang' },
   { id_hotel: 2, hotel_name: 'InterContinental Da Nang', price_per_night: 4200000, rate_star: 5, image_url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=500', location_city: 'Đà Nẵng' },
@@ -19,7 +19,6 @@ const MOCK_FEATURED = [
 const Home = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [dates, setDates] = useState([]);
   const [featuredHotels, setFeaturedHotels] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +26,7 @@ const Home = () => {
     const fetchFeatured = async () => {
       setLoading(true);
       try {
-        // GIẢ LẬP ĐỘ TRỄ MẠNG ĐỂ XEM HIỆU ỨNG SKELETON
+        // Giả lập load dữ liệu
         setTimeout(() => {
           setFeaturedHotels(MOCK_FEATURED);
           setLoading(false);
@@ -43,10 +42,6 @@ const Home = () => {
   const handleSearch = () => {
     const params = new URLSearchParams();
     if (query) params.set('location', query);
-    if (dates && dates.length === 2) {
-      params.set('check_in', dates[0].format('YYYY-MM-DD'));
-      params.set('check_out', dates[1].format('YYYY-MM-DD'));
-    }
     navigate(`/hotels?${params.toString()}`);
   };
 
@@ -59,18 +54,18 @@ const Home = () => {
         <div style={{
           background: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.3)), url(${beachh}) no-repeat center/cover`,
           color: '#fff',
-          padding: '10px 20px',
+          padding: '80px 20px',
           textAlign: 'center',
         }}>
           <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 700, marginBottom: '0px' }}>
             Tận hưởng kỳ nghỉ tuyệt vời
           </Title>
-          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', display: 'block', marginBottom: '0px' }}>
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', display: 'block', marginBottom: '40px' }}>
             Với hàng nghìn khách sạn đang chờ đón bạn
           </Text>
 
           {/* Thanh Search */}
-          <Card variant={false} style={{ maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
+          <Card bordered={false} style={{ maxWidth: '1000px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.2)' }}>
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} md={20}>
                 <Input 
@@ -123,12 +118,12 @@ const Home = () => {
             {loading ? (
               [1, 2, 3, 4].map(i => (
                 <Col xs={24} sm={12} md={6} key={i}>
-                  <Card variant={false} cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
+                  <Card bordered={false} cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
                     <Skeleton active paragraph={{ rows: 2 }} />
                   </Card>
                 </Col>
               ))
-            ) : featuredHotels.length > 0 ? (
+            ) : (
               featuredHotels.map((hotel) => (
                 <Col xs={24} sm={12} md={6} key={hotel.id_hotel}>
                   <Card
@@ -158,23 +153,35 @@ const Home = () => {
                         <Text type="secondary" style={{ fontSize: '12px', marginLeft: 4 }}>/ đêm</Text>
                       </div>
                       
-                      <Button 
-                        type="primary" 
-                        shape="round" 
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/hotel/${hotel.id_hotel}`);
-                        }}
-                      >
-                        Xem chi tiết
-                      </Button>
+                      <Space>
+                        <Button 
+                          icon={<MessageOutlined />} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/messages', { 
+                              state: { 
+                                hotelId: hotel.id_hotel, 
+                                hotelName: hotel.hotel_name 
+                              } 
+                            });
+                          }}
+                        />
+                        <Button 
+                          type="primary" 
+                          shape="round" 
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/hotel/${hotel.id_hotel}`);
+                          }}
+                        >
+                          Xem chi tiết
+                        </Button>
+                      </Space>
                     </div>
                   </Card>
                 </Col>
               ))
-            ) : (
-              <Col span={24}><Empty description="Chưa có khách sạn nào được cập nhật." /></Col>
             )}
           </Row>
         </div>
@@ -250,18 +257,20 @@ const Home = () => {
               Hệ thống đặt phòng trực tuyến là một phần của dự án thực hành. <br/>
               Bản quyền © 2026 - Phát triển bởi Nhóm 2 người.
             </Text>
-            
-            <Space size="large" align="center" wrap style={{ opacity: 0.8, justifyContent: 'center' }}>
-               <Title level={4} style={{ margin: 0, color: '#003580', fontWeight: 800 }}>Booking.com</Title>
-               <Title level={4} style={{ margin: 0, color: '#006CE4', fontWeight: 800, fontStyle: 'italic' }}>priceline</Title>
-               <Title level={4} style={{ margin: 0, color: '#FF690F', fontWeight: 800 }}>KAYAK</Title>
-               <Title level={4} style={{ margin: 0, color: '#000', fontWeight: 800 }}>agoda</Title>
-               <Title level={4} style={{ margin: 0, color: '#DA3743', fontWeight: 800 }}>OpenTable</Title>
-            </Space>
           </div>
 
         </div>
       </Footer>
+
+      {/* NÚT NHẮN TIN NỔI TOÀN TRANG */}
+      <FloatButton
+        icon={<MessageOutlined />}
+        type="primary"
+        badge={{ count: 3 }}
+        tooltip={<div>Tin nhắn hỗ trợ</div>}
+        onClick={() => navigate('/messages')}
+        style={{ right: 40, bottom: 40, width: 56, height: 56 }}
+      />
 
       <style>{`
         .ant-card:hover .hotel-card-image {

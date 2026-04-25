@@ -17,6 +17,7 @@ import HotelDetail from './pages/customer/HotelDetail';
 import Checkout from './pages/customer/Checkout';
 import CustomerBookings from './pages/customer/CustomerBookings';
 import Profile from './pages/customer/Profile';
+import Messages from './pages/customer/Messages';
 
 // 3. NHÓM ĐỐI TÁC (PARTNER)
 import PartnerRegister from './pages/partner/ParterRegister';
@@ -83,6 +84,7 @@ function App() {
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/bookings" element={<CustomerBookings />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/messages" element={<Messages />} />
               </Route>
 
               {/* PHÂN HỆ ĐỐI TÁC (PARTNER) */}

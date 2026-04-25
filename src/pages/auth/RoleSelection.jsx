@@ -43,7 +43,7 @@ const RoleSelection = () => {
               <ul style={featureListStyle}>
                 <li><CheckCircleFilled style={{color: '#52c41a'}} /> Tìm phòng giá tốt nhất</li>
                 <li><CheckCircleFilled style={{color: '#52c41a'}} /> Đặt phòng trong 30 giây</li>
-                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Tích điểm đổi quà tặng</li>
+                <li><CheckCircleFilled style={{color: '#52c41a'}} /> Đánh giá và chia sẻ trải nghiệm</li>
               </ul>
               <Divider />
               <Button 
