@@ -36,7 +36,7 @@ const AdminLogin = () => {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <SafetyCertificateOutlined style={{ fontSize: 40, color: '#ff4d4f' }} />
           <Title level={3} style={{ marginTop: 12 }}>ADMIN LOGIN</Title>
-          <Text type="secondary">Hệ thống quản trị tối cao</Text>
+          <Text type="secondary">Hệ thống quản trị</Text>
         </div>
 
         <Form name="admin_login" onFinish={onFinish} layout="vertical" size="large">
@@ -66,7 +66,7 @@ const AdminLogin = () => {
               danger // Giữ màu đỏ cho Admin
               style={{ height: 45, fontWeight: 'bold' }}
             >
-              ĐĂNG NHẬP HỆ THỐNG
+              ĐĂNG NHẬP
             </Button>
           </Form.Item>
         </Form>

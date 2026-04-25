@@ -59,13 +59,13 @@ const Home = () => {
         <div style={{
           background: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.3)), url(${beachh}) no-repeat center/cover`,
           color: '#fff',
-          padding: '80px 20px',
+          padding: '10px 20px',
           textAlign: 'center',
         }}>
-          <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 700, marginBottom: '15px' }}>
+          <Title style={{ color: '#fff', fontSize: '48px', fontWeight: 700, marginBottom: '0px' }}>
             Tận hưởng kỳ nghỉ tuyệt vời
           </Title>
-          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', display: 'block', marginBottom: '50px' }}>
+          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '20px', display: 'block', marginBottom: '0px' }}>
             Với hàng nghìn khách sạn đang chờ đón bạn
           </Text>
 
@@ -123,7 +123,7 @@ const Home = () => {
             {loading ? (
               [1, 2, 3, 4].map(i => (
                 <Col xs={24} sm={12} md={6} key={i}>
-                  <Card bordered={false} cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
+                  <Card variant={false} cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
                     <Skeleton active paragraph={{ rows: 2 }} />
                   </Card>
                 </Col>
@@ -167,7 +167,7 @@ const Home = () => {
                           navigate(`/hotel/${hotel.id_hotel}`);
                         }}
                       >
-                        Đặt ngay
+                        Xem chi tiết
                       </Button>
                     </div>
                   </Card>

@@ -13,7 +13,7 @@ import {
   MessageOutlined,
   ExclamationCircleFilled,
   UnorderedListOutlined,
-  TagOutlined // Thêm icon cho mã giảm giá
+  TagOutlined 
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -62,12 +62,6 @@ const PartnerLayout = () => {
 
   // 4. Menu người dùng
   const user_menu_items = [
-    /*{
-      key: 'profile',
-      label: 'Hồ sơ cá nhân',
-      icon: <ProfileOutlined />,
-      onClick: () => navigate('/partner/profile'),
-    },*/
     { type: 'divider' },
     {
       key: 'logout',
@@ -78,7 +72,7 @@ const PartnerLayout = () => {
     },
   ];
 
-  // 5. Sidebar Menu - ĐÃ CẬP NHẬT THÊM MỤC GIẢM GIÁ
+  // 5. Sidebar Menu
   const menu_items = [
     { key: '/partner/dashboard', icon: <BarChartOutlined />, label: 'Báo cáo doanh thu' },
     { key: '/partner/profile', icon: <ProfileOutlined />, label: 'Hồ sơ cá nhân' },
@@ -93,12 +87,13 @@ const PartnerLayout = () => {
   if (!user || user.role !== 'partner') return null;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
         theme="dark"
+        width={250}
         style={{ boxShadow: '2px 0 8px 0 rgba(29,35,41,.05)' }}
       >
         <div style={{
@@ -128,14 +123,16 @@ const PartnerLayout = () => {
         />
       </Sider>
 
-      <Layout>
+      <Layout style={{ height: '100vh' }}>
         <Header style={{
           padding: 0,
           background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingRight: 24
+          paddingRight: 24,
+          zIndex: 10,
+          boxShadow: '0 1px 4px rgba(0,21,41,.08)'
         }}>
           <Button
             type="text"
@@ -168,8 +165,8 @@ const PartnerLayout = () => {
           padding: 24, 
           background: colorBgContainer, 
           borderRadius: borderRadiusLG,
-          minHeight: 'calc(100vh - 112px)',
-          overflow: 'auto'
+          flex: 1,
+          overflowY: 'auto'
         }}>
           <Outlet />
         </Content>

@@ -15,7 +15,7 @@ const PartnerDiscounts = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); // Trạng thái đang sửa mã nào
   const [form] = Form.useForm();
-  
+
   // Khởi tạo thêm status cho mock data nếu chưa có
   const [discounts, setDiscounts] = useState(
     MOCK_DISCOUNTS.map(d => ({ ...d, status: d.status || 'active' }))
@@ -71,7 +71,8 @@ const PartnerDiscounts = () => {
       width: 250,
       render: (id_list) => (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {id_list.map(id => {
+          {/* THÊM CHECK MẢNG TẠI ĐÂY */}
+          {Array.isArray(id_list) && id_list.map(id => {
             const hotel = MOCK_HOTELS.find(h => h.id_hotel === id);
             return (
               <Tag icon={<HomeOutlined />} key={id} color="cyan">
@@ -79,6 +80,7 @@ const PartnerDiscounts = () => {
               </Tag>
             );
           })}
+          {!id_list || id_list.length === 0 ? <Text type="secondary">Tất cả</Text> : null}
         </div>
       )
     },

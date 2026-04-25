@@ -30,7 +30,8 @@ const HotelManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [fileList, setFileList] = useState([]);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const fetchMyHotels = () => {
     setLoading(true);
     setTimeout(() => {
@@ -142,6 +143,15 @@ const HotelManagement = () => {
   };
 
   const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
     { 
       title: 'Hình ảnh', 
       dataIndex: 'image_url', 
@@ -225,119 +235,137 @@ const HotelManagement = () => {
   ];
 
   return (
-    <Card
-      variant={false}
-      title={<Title level={4} style={{ margin: 0 }}>Quản lý hệ thống khách sạn</Title>}
-      extra={
-        <Button 
-          type="primary" icon={<PlusOutlined />} 
-          onClick={() => { 
-            setEditingId(null); 
-            form.resetFields(); 
-            setFileList([]); 
-            setIsModalOpen(true); 
-          }}
-        >
-          Đăng ký khách sạn mới
-        </Button>
-      }
-    >
-      <Table 
-        columns={columns} 
-        dataSource={hotels} 
-        rowKey="id_hotel" 
-        loading={loading} 
-        pagination={{ pageSize: 5 }} 
-      />
-
-      <Modal
-        title={editingId ? 'Cập nhật thông tin khách sạn' : 'Đăng ký khách sạn mới'}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={() => form.submit()}
-        confirmLoading={loading}
-        width={700}
-        centered
-      >
-        <Form 
-          form={form} 
-          layout="vertical" 
-          onFinish={onFinish} 
-          style={{ marginTop: 20 }}
-        >
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item name="hotel_name" label="Tên khách sạn" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
-                <Input placeholder="Ví dụ: Vinpearl Luxury..." />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="type" label="Loại hình" rules={[{ required: true }]}>
-                <Select 
-                  placeholder="Chọn loại hình"
-                  options={categories.map(cat => ({ value: cat.category_name, label: cat.category_name }))} 
-                />
-              </Form.Item>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: '24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        
+        {/* Frame trên: Tiêu đề */}
+        <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Title level={4} style={{ margin: 0 }}>
+                <ShopOutlined /> Quản lý khách sạn
+              </Title>
+              <Text type="secondary">Quản lý thông tin và trạng thái các khách sạn</Text>
             </Col>
           </Row>
-          
-          <Form.Item name="address" label="Địa chỉ" rules={[{ required: true }]}>
-            <Input prefix={<EnvironmentOutlined />} placeholder="Số nhà, đường, thành phố..." />
-          </Form.Item>
-          
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="rate_star" label="Hạng sao" initialValue={5}>
-                <Select options={[1, 2, 3, 4, 5].map(s => ({ value: s, label: `${s} Sao` }))} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="discount" label="Chiết khấu (%)" initialValue={0}>
-                <InputNumber 
-                  min={0} max={100} 
-                  formatter={value => `${value}%`}
-                  parser={value => value.replace('%', '')}
-                  style={{ width: '100%' }} 
-                  disabled={!!editingId}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+        </Card>
 
-          {/* ĐÃ XÓA: Form.Item cho Amenities */}
+        {/* Frame dưới: Nút thêm mới nằm TRONG Card của bảng */}
+        <Card 
+          variant={false} 
+          style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+          title={<Text strong>Danh sách khách sạn</Text>}
+          extra={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => { 
+                setEditingId(null); 
+                form.resetFields(); 
+                setFileList([]); 
+                setIsModalOpen(true); 
+              }}
+              style={{ borderRadius: 8, height: 40 }}
+            >
+              Đăng ký khách sạn mới
+            </Button>
+          }
+        >
+          <Table 
+            columns={columns} 
+            dataSource={hotels}
+            rowKey="id_hotel" 
+            pagination={{ 
+              current: currentPage,
+              pageSize: pageSize,
+              onChange: (page) => setCurrentPage(page),
+              showTotal: (total) => `Tổng cộng ${total} khách sạn`,
+            }}
+          />
+        </Card>
 
-          <Form.Item label="Hình ảnh khách sạn">
-            <Space direction="vertical" style={{ width: '100%' }}>
+        {/* Modal Thêm/Sửa */}
+        <Modal
+          title={editingId ? 'Cập nhật thông tin khách sạn' : 'Đăng ký khách sạn mới'}
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          onOk={() => form.submit()}
+          confirmLoading={loading}
+          okText={editingId ? "Cập nhật" : "Đăng ký"}
+          cancelText="Hủy"
+          width={700}
+          centered
+        >
+          <Form 
+            form={form} 
+            layout="vertical" 
+            onFinish={onFinish} 
+            style={{ marginTop: 20 }}
+          >
+            <Row gutter={16}>
+              <Col span={16}>
+                <Form.Item name="hotel_name" label="Tên khách sạn" rules={[{ required: true, message: 'Vui lòng nhập tên!' }]}>
+                  <Input placeholder="Ví dụ: Vinpearl Luxury..." />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="type" label="Loại hình" rules={[{ required: true }]}>
+                  <Select 
+                    placeholder="Chọn loại hình"
+                    options={categories.map(cat => ({ value: cat.category_name, label: cat.category_name }))} 
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            
+            <Form.Item name="address" label="Địa chỉ" rules={[{ required: true }]}>
+              <Input prefix={<EnvironmentOutlined />} placeholder="Số nhà, đường, thành phố..." />
+            </Form.Item>
+            
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="rate_star" label="Hạng sao" initialValue={5}>
+                  <Select options={[1, 2, 3, 4, 5].map(s => ({ value: s, label: `${s} Sao` }))} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="discount" label="Chiết khấu (%)" initialValue={0}>
+                  <InputNumber 
+                    min={0} max={100} 
+                    formatter={value => `${value}%`}
+                    parser={value => value.replace('%', '')}
+                    style={{ width: '100%' }} 
+                    disabled={!!editingId}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item label="Hình ảnh khách sạn">
               <Upload
+                listType="picture-card"
                 fileList={fileList}
                 onChange={({ fileList: newFileList }) => setFileList(newFileList)}
                 beforeUpload={() => false} 
                 maxCount={1}
                 accept="image/*"
               >
-                <Button icon={<UploadOutlined />}>Chọn ảnh từ máy tính</Button>
+                {fileList.length < 1 && (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                  </div>
+                )}
               </Upload>
-              
-              {fileList.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <Text type="secondary" size="small">Xem trước:</Text>
-                  <br />
-                  <Avatar 
-                    shape="square" 
-                    size={100} 
-                    src={fileList[0].url || (fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
-                  />
-                </div>
-              )}
-            </Space>
-          </Form.Item>
+            </Form.Item>
 
-          <Form.Item name="description" label="Mô tả">
-            <TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Card>
+            <Form.Item name="description" label="Mô tả">
+              <Input.TextArea rows={3} placeholder="Mô tả ngắn gọn về khách sạn..." />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </div>
   );
 };
 

@@ -167,7 +167,11 @@ const HotelDetail = () => {
                 okText: 'Đăng nhập',
                 cancelText: 'Quay lại',
                 centered: true,
-                onOk: () => navigate('/login'),
+                onOk: () => {
+                  navigate('/login', { 
+                    state: { from: window.location.pathname }
+                  });
+                },
               });
             }
           }}

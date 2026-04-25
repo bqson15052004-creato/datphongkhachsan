@@ -11,7 +11,7 @@ import {
   SolutionOutlined,
   AppstoreOutlined,
   PercentageOutlined,
-  CoffeeOutlined, // Icon mới cho tiện nghi
+  CoffeeOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -62,7 +62,6 @@ const AdminLayout = () => {
 
   const userLevel = user?.level || 1;
 
-  // CẤU HÌNH MENU ITEMS (ĐÃ CẬP NHẬT BADGE VÀ ICON)
   const menu_config = [
     { key: '/admin/dashboard',   icon: <DashboardOutlined />,   label: 'Tổng quan' },
     { key: '/admin/profile',     icon: <ProfileOutlined />,     label: 'Hồ sơ cá nhân' },
@@ -87,7 +86,7 @@ const AdminLayout = () => {
         </div>
       ) 
     },
-    { key: '/admin/users',      icon: <UserOutlined />,       label: 'Quản lý người dùng', level_required: 1 },
+    { key: '/admin/users',       icon: <UserOutlined />,       label: 'Quản lý người dùng', level_required: 1 },
     { key: '/admin/categories', icon: <AppstoreOutlined />,   label: 'Loại khách sạn' },
     { key: '/admin/amenities',  icon: <CoffeeOutlined />,     label: 'Quản lý tiện nghi' },
     { key: '/admin/discounts',  icon: <PercentageOutlined />, label: 'Quản lý chiết khấu', level_required: 1 },
@@ -121,7 +120,10 @@ const AdminLayout = () => {
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    // 1. Khóa chiều cao toàn trang ở 100vh và ẩn scrollbar tổng
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+      
+      {/* Sidebar giờ sẽ tự động chiếm 100% chiều cao của cha */}
       <Sider trigger={null} collapsible collapsed={collapsed} theme="dark" width={260}>
         <div style={{ height: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#002140' }}>
           <div style={{ color: '#fff', fontWeight: 'bold', fontSize: collapsed ? 14 : 18 }}>
@@ -142,8 +144,8 @@ const AdminLayout = () => {
         />
       </Sider>
 
-      <Layout>
-        <Header style={{ padding: '0 24px 0 0', background: colorBgContainer, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Layout style={{ height: '100vh' }}>
+        <Header style={{ padding: '0 24px 0 0', background: colorBgContainer, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1, boxShadow: '0 2px 8px #f0f1f2' }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -168,7 +170,17 @@ const AdminLayout = () => {
           </Dropdown>
         </Header>
 
-        <Content style={{ margin: '24px 16px', padding: 24, background: colorBgContainer, borderRadius: borderRadiusLG, minHeight: 280 }}>
+        {/* 2. Điều chỉnh nội dung chính */}
+        <Content 
+          style={{ 
+            margin: '24px 16px', 
+            padding: 24, 
+            background: colorBgContainer, 
+            borderRadius: borderRadiusLG,
+            overflowY: 'auto',
+            flex: 1
+          }}
+        >
           <Outlet />
         </Content>
       </Layout>

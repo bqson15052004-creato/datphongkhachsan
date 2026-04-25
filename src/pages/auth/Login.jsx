@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import axiosClient from '../../services/axiosClient';
 import { Form, Input, Button, Card, Typography, App as AntApp, Divider } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Thêm useLocation
 import AuthContext from '../../contexts/AuthContext';
 import { MOCK_USERS } from '../../constants/mockData.jsx'; 
 
@@ -10,14 +10,25 @@ const { Title, Text } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // Khởi tạo location để lấy state từ HotelDetail gửi sang
   const { login } = useContext(AuthContext); 
   const { message } = AntApp.useApp();
   const [loading, setLoading] = useState(false);
 
+  // Cập nhật hàm điều hướng thông minh
   const handleNavigation = (role) => {
-    if (role === 'admin') navigate('/admin/dashboard');
-    else if (role === 'partner') navigate('/partner/dashboard');
-    else navigate('/'); 
+    // Lấy đường dẫn cũ từ state (nếu có), ví dụ: "/hotel/1"
+    const prevPath = location.state?.from;
+
+    if (prevPath) {
+      // Nếu có trang cũ đang xem dở, quay lại đó ngay
+      navigate(prevPath, { replace: true });
+    } else {
+      // Nếu không có (đăng nhập chủ động), thì phân quyền như cũ
+      if (role === 'admin') navigate('/admin/dashboard');
+      else if (role === 'partner') navigate('/partner/dashboard');
+      else navigate('/'); 
+    }
   };
 
   const onFinish = async (values) => {
@@ -36,7 +47,6 @@ const Login = () => {
     } catch (error) {
       console.warn("Đăng nhập BE thất bại, đang check Mock Data...");
 
-      // 2. CHECK MOCK DATA (Cho phép cả email và user_name)
       const mockUser = MOCK_USERS.find(
         (u) => (u.email === account || u.user_name === account) && u.password === password
       );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tooltip, Empty, Tabs } from 'antd';
+import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tooltip, Empty, Tabs, Row, Col } from 'antd';
 import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, InfoCircleOutlined, BankOutlined } from '@ant-design/icons';
 import axiosClient from '../../services/axiosClient';
 
@@ -12,7 +12,8 @@ const PartnerBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const fetchBookings = async () => {
     setLoading(true);
     try {
@@ -164,25 +165,34 @@ const PartnerBookings = () => {
   ];
 
   return (
-    <div style={{ background: '#f5f7fa', minHeight: '100vh' }}>
-      <div style={{ padding: '30px', maxWidth: 1400, margin: '0 auto' }}>
-        <Card 
-          bordered={false}
-          style={{ borderRadius: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.05)' }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <Title level={3} style={{ margin: 0 }}>
-              <DollarOutlined style={{color: '#1890ff', marginRight: 10}} />
-              Quản lý đặt phòng
-            </Title>
-            <div style={{ textAlign: 'right' }}>
-               <Text type="secondary">Cập nhật lúc: {new Date().toLocaleTimeString()}</Text>
-            </div>
-          </div>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: '24px' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+        
+        {/* Frame trên: Tiêu đề */}
+        <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Title level={4} style={{ margin: 0 }}>
+                <DollarOutlined style={{ color: '#1890ff', marginRight: 10 }} />
+                Quản lý đặt phòng
+              </Title>
+              <Text type="secondary">Theo dõi và cập nhật trạng thái các đơn đặt phòng của khách hàng</Text>
+            </Col>
+            <Col style={{ textAlign: 'right' }}>
+              <Text type="secondary">Cập nhật lúc: {new Date().toLocaleTimeString()}</Text>
+            </Col>
+          </Row>
+        </Card>
 
+        {/* Frame dưới: Tabs và Bảng dữ liệu */}
+        <Card 
+          variant={false} 
+          style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+        >
           <Tabs 
             activeKey={activeTab} 
             onChange={setActiveTab}
+            style={{ marginBottom: 16 }}
             items={[
               { label: `Tất cả (${bookings.length})`, key: 'all' },
               { label: `Chờ duyệt`, key: 'Pending' },
@@ -197,7 +207,12 @@ const PartnerBookings = () => {
             dataSource={filteredBookings} 
             rowKey="id"
             loading={loading}
-            pagination={{ pageSize: 8, showTotal: (total) => `Tổng cộng ${total} đơn hàng` }}
+            pagination={{ 
+              pageSize: 8, 
+              showTotal: (total) => `Tổng cộng ${total} đơn hàng`,
+              current: currentPage, // Nếu ông có quản lý state cho trang
+              onChange: (page) => setCurrentPage?.(page)
+            }}
             scroll={{ x: 1000 }}
             locale={{ emptyText: <Empty description="Không có đơn đặt phòng nào" /> }}
           />

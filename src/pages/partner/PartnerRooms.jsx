@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Card, Space, Modal, 
   Form, Input, Typography, Row, Col, 
-  App as AntApp, Empty, Tag 
+  App as AntApp, Empty, Tag, Upload, Switch 
 } from 'antd';
 import { 
+  HomeOutlined,
   PlusOutlined, 
   EditOutlined, 
   LockOutlined, 
@@ -24,7 +25,9 @@ const PartnerRooms = () => {
   const [selected_hotel_id, set_selected_hotel_id] = useState('H001');
   const [room_list, set_room_list] = useState([]);
   const [is_loading, set_is_loading] = useState(false);
-
+  const [fileList, setFileList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const fetch_rooms = async (hotel_id) => {
     set_is_loading(true);
     try {
@@ -86,6 +89,15 @@ const PartnerRooms = () => {
   };
 
   const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
     { 
       title: 'Loại Phòng', 
       dataIndex: 'room_type', 
@@ -163,54 +175,72 @@ const PartnerRooms = () => {
   };
 
   return (
-    <div style={{ background: '#f5f7fa', minHeight: '100vh' }}>
-      <div style={{ padding: '32px 5%', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-          <div>
-            <Title level={2} style={{ margin: 0 }}>Quản lý loại phòng</Title>
-            <Text type="secondary">Cập nhật danh mục và mô tả chi tiết các loại phòng hiện có</Text>
-          </div>
-          <Button 
-            type="primary" icon={<PlusOutlined />} 
-            onClick={() => { set_editing_room(null); form.resetFields(); set_is_modal_open(true); }}
-            style={{ borderRadius: 8, height: 40 }}
-          >
-            Thêm loại phòng mới
-          </Button>
-        </div>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: '24px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        
+        {/* Card Tiêu đề chỉ để hiện tên trang */}
+        <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+          <Row justify="space-between" align="middle">
+            <Col>
+              <Title level={4} style={{ margin: 0 }}>
+                <HomeOutlined /> Quản lý loại phòng
+              </Title>
+              <Text type="secondary">Cập nhật danh mục và mô tả chi tiết các loại phòng hiện có</Text>
+            </Col>
+          </Row>
+        </Card>
 
-        <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        {/* Card Bảng - Nút thêm phòng nằm ở ĐÂY (Frame dưới) */}
+        <Card 
+          variant={false} 
+          style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+          title={<Text strong style={{ fontSize: 16 }}>Danh sách loại phòng</Text>}
+          extra={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => { 
+                set_editing_room(null); 
+                form.resetFields(); 
+                if(setFileList) setFileList([]); 
+                set_is_modal_open(true); 
+              }}
+              style={{ borderRadius: 8 }}
+            >
+              Thêm loại phòng mới
+            </Button>
+          }
+        >
           <Table 
-            columns={columns} dataSource={room_list} rowKey="_id" 
-            loading={is_loading} pagination={{ pageSize: 8 }}
-            locale={{ emptyText: <Empty description="Chưa có dữ liệu phòng" /> }}
+            columns={columns} 
+            dataSource={room_list}
+            loading={is_loading}
+            rowKey="_id" 
+            pagination={{ 
+              current: currentPage,
+              pageSize: pageSize,
+              onChange: (page) => setCurrentPage(page),
+              showTotal: (total) => `Tổng cộng ${total} loại phòng`,
+            }}
           />
         </Card>
 
+        {/* Modal giữ nguyên */}
         <Modal 
           title={editing_room ? "Cập nhật loại phòng" : "Tạo loại phòng mới"}
-          open={is_modal_open} onCancel={() => set_is_modal_open(false)}
-          onOk={() => form.submit()} confirmLoading={is_loading}
-          width={500} centered
+          open={is_modal_open} 
+          onCancel={() => set_is_modal_open(false)}
+          onOk={() => form.submit()} 
+          confirmLoading={is_loading}
+          width={600} 
+          centered
         >
-          <Form form={form} layout="vertical" onFinish={on_finish} style={{ marginTop: 20 }}>
-            <Form.Item 
-              name="room_type" 
-              label="Tên loại phòng" 
-              rules={[{ required: true, message: 'Vui lòng nhập tên loại phòng!' }]}
-            >
+          <Form form={form} layout="vertical" onFinish={on_finish} style={{ marginTop: 16 }}>
+            <Form.Item name="room_type" label="Tên loại phòng" rules={[{ required: true, message: 'Nhập tên!' }]}>
               <Input placeholder="Ví dụ: Deluxe King Room" prefix={<FileTextOutlined />} />
             </Form.Item>
-
-            <Form.Item 
-              name="description" 
-              label="Mô tả"
-              rules={[{ required: true, message: 'Vui lòng nhập mô tả!' }]}
-            >
-              <Input.TextArea 
-                rows={6} 
-                placeholder="Mô tả chi tiết về tiện ích, hướng nhìn, diện tích..." 
-              />
+            <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Nhập mô tả!' }]}>
+              <Input.TextArea rows={4} placeholder="Mô tả chi tiết..." />
             </Form.Item>
           </Form>
         </Modal>

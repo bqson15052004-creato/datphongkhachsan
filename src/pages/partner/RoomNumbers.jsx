@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { 
   Table, Card, Select, Button, Tag, Space, 
   Typography, Input, Modal, Form, InputNumber, 
-  Switch, message, Row, Col, Upload, Avatar, Tooltip
+  Switch, message, Row, Col, Upload, Avatar
 } from 'antd';
 import { 
   PlusOutlined, SearchOutlined, HomeOutlined, 
   EditOutlined, LockOutlined, UnlockOutlined,
-  PictureOutlined
+  PictureOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons';
 
-// ĐÃ CẬP NHẬT: Bỏ import iconMap vì data mới không dùng nữa
+// Data mẫu
 import { MOCK_HOTELS, MOCK_ROOMS, ALL_AMENITIES } from '../../constants/mockData.jsx'; 
 
 const { Title, Text } = Typography;
@@ -24,7 +24,10 @@ const RoomNumbers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [fileList, setFileList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
+  // --- HELPER BIẾN FILE THÀNH BASE64 ---
   const getBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -33,6 +36,31 @@ const RoomNumbers = () => {
       reader.onerror = (error) => reject(error);
     });
 
+  // --- LOGIC XỬ LÝ KHÓA / MỞ KHÓA (CÓ ALERT) ---
+  const handleToggleStatus = (record) => {
+    const isAvailable = record.status === 'available';
+    const actionText = isAvailable ? 'KHÓA' : 'MỞ KHÓA';
+    const color = isAvailable ? '#ff4d4f' : '#52c41a';
+
+    Modal.confirm({
+      title: `Xác nhận ${actionText} phòng?`,
+      icon: <ExclamationCircleOutlined style={{ color }} />,
+      content: `Bạn có chắc chắn muốn ${actionText} phòng số ${record.room_number} không?`,
+      okText: 'Đồng ý',
+      okType: isAvailable ? 'danger' : 'primary',
+      cancelText: 'Hủy bỏ',
+      centered: true,
+      onOk() {
+        const nextStatus = isAvailable ? 'booked' : 'available';
+        setRooms(prev => prev.map(r => 
+          r.id_room === record.id_room ? { ...r, status: nextStatus } : r
+        ));
+        message.success(`Đã ${actionText} phòng ${record.room_number} thành công!`);
+      },
+    });
+  };
+
+  // --- XỬ LÝ FORM SUBMIT ---
   const handleSubmit = async (values) => {
     let finalImage = values.image_url;
     if (fileList.length > 0 && fileList[0].originFileObj) {
@@ -79,6 +107,15 @@ const RoomNumbers = () => {
   );
 
   const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
     { 
       title: 'Hình ảnh', 
       dataIndex: 'image_url', 
@@ -97,7 +134,6 @@ const RoomNumbers = () => {
       dataIndex: 'amenities',
       key: 'amenities',
       width: 200,
-      // ĐÃ CẬP NHẬT: Hiển thị dạng Tag chữ, không dùng iconMap
       render: (amenityIds) => (
         <Space size={[0, 4]} wrap>
           {amenityIds?.map(id => {
@@ -122,8 +158,9 @@ const RoomNumbers = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      align: 'center',
       render: (status) => (
-        <Tag color={status === 'available' ? 'green' : 'red'}>
+        <Tag color={status === 'available' ? 'green' : 'red'} style={{ borderRadius: '10px' }}>
           {status === 'available' ? 'SẴN SÀNG' : 'ĐÃ KHÓA'}
         </Tag>
       ),
@@ -133,17 +170,23 @@ const RoomNumbers = () => {
       key: 'action',
       align: 'center',
       render: (_, record) => (
-        <Space size="small">
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+        <Space size="middle">
+          {/* NÚT SỬA */}
           <Button 
-            type="link" 
-            danger={record.status === 'available'}
-            icon={record.status === 'available' ? <UnlockOutlined /> : <LockOutlined />} 
-            onClick={() => {
-              const nextStatus = record.status === 'available' ? 'booked' : 'available';
-              setRooms(prev => prev.map(r => r.id_room === record.id_room ? { ...r, status: nextStatus } : r));
-              message.info(`Đã đổi trạng thái phòng ${record.room_number}`);
-            }} 
+            type="text" 
+            icon={<EditOutlined style={{ color: '#1890ff', fontSize: '18px' }} />} 
+            onClick={() => handleEdit(record)} 
+          />
+          
+          {/* NÚT KHÓA/MỞ */}
+          <Button 
+            type="text" 
+            icon={
+              record.status === 'available' 
+                ? <UnlockOutlined style={{ color: '#1890ff', fontSize: '18px' }} />
+                : <LockOutlined style={{ color: '#ff4d4f', fontSize: '18px' }} />
+            } 
+            onClick={() => handleToggleStatus(record)} 
           />
         </Space>
       ),
@@ -176,25 +219,38 @@ const RoomNumbers = () => {
           </Col>
         </Row>
 
-        <Table columns={columns} dataSource={filteredRooms} rowKey="id_room" pagination={{ pageSize: 8 }} />
+        <Table 
+          columns={columns} 
+          dataSource={filteredRooms} 
+          rowKey="id_room" 
+          pagination={{ 
+            current: currentPage,
+            pageSize: pageSize,
+            onChange: (page) => setCurrentPage(page),
+            showTotal: (total) => `Tổng cộng ${total} phòng`,
+          }}
+        />
       </Card>
 
       <Modal 
-        title={editingId ? "Cập nhật phòng" : "Thêm phòng mới"} 
+        title={editingId ? "Cập nhật thông tin phòng" : "Thêm phòng mới"} 
         open={isModalOpen} 
         onCancel={handleCancel}
         onOk={() => form.submit()}
+        okText={editingId ? "Cập nhật" : "Thêm mới"}
+        cancelText="Hủy"
         centered
+        width={600}
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ status: true, amenities: [] }}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ status: true, amenities: [] }} style={{ marginTop: 16 }}>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="room_number" label="Số phòng" rules={[{ required: true }]}>
+              <Form.Item name="room_number" label="Số phòng" rules={[{ required: true, message: 'Nhập số phòng!' }]}>
                 <Input placeholder="VD: 101" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="room_type" label="Loại phòng" rules={[{ required: true }]}>
+              <Form.Item name="room_type" label="Loại phòng" rules={[{ required: true, message: 'Chọn loại phòng!' }]}>
                 <Select placeholder="Chọn loại">
                   <Option value="Deluxe Ocean View">Deluxe Ocean View</Option>
                   <Option value="Suite Family">Suite Family</Option>
@@ -204,7 +260,7 @@ const RoomNumbers = () => {
             </Col>
           </Row>
 
-          <Form.Item name="price_per_night" label="Giá mỗi đêm (VNĐ)" rules={[{ required: true }]}>
+          <Form.Item name="price_per_night" label="Giá mỗi đêm (VNĐ)" rules={[{ required: true, message: 'Nhập giá phòng!' }]}>
             <InputNumber 
               style={{ width: '100%' }} 
               formatter={v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -212,13 +268,10 @@ const RoomNumbers = () => {
             />
           </Form.Item>
 
-          {/* ĐÃ CẬP NHẬT: Select chỉ hiển thị text, không cần iconMap */}
           <Form.Item name="amenities" label="Tiện nghi phòng">
-            <Select mode="multiple" placeholder="Chọn tiện nghi">
+            <Select mode="multiple" placeholder="Chọn tiện nghi" allowClear>
               {ALL_AMENITIES.map(opt => (
-                <Option key={opt.id} value={opt.id}>
-                  {opt.name}
-                </Option>
+                <Option key={opt.id} value={opt.id}>{opt.name}</Option>
               ))}
             </Select>
           </Form.Item>
@@ -234,13 +287,13 @@ const RoomNumbers = () => {
               {fileList.length < 1 && (
                 <div>
                   <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
+                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
                 </div>
               )}
             </Upload>
           </Form.Item>
 
-          <Form.Item name="status" label="Sẵn sàng đón khách" valuePropName="checked">
+          <Form.Item name="status" label="Trạng thái sẵn sàng" valuePropName="checked">
             <Switch checkedChildren="Bật" unCheckedChildren="Khóa" />
           </Form.Item>
         </Form>
