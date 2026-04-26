@@ -13,7 +13,7 @@ export const MOCK_USERS = [
   },
   { 
     id: 2, 
-    full_name: "Nguyễn Văn Đối Tác", 
+    full_name: "Đối Tác", 
     user_name: "partner", 
     email: "partner@gmail.com", 
     password: "123", 
@@ -29,7 +29,7 @@ export const MOCK_USERS = [
   },
   { 
     id: 4, 
-    full_name: "Trần Thị Chủ Thầu", 
+    full_name: "Đối tác Đà Nẵng", 
     user_name: "partner2", 
     email: "partner_2@gmail.com", 
     password: "123", 
@@ -45,7 +45,7 @@ export const MOCK_USERS = [
   },
   { 
     id: 5, 
-    full_name: "Lê Minh Partner", 
+    full_name: "Partner", 
     user_name: "partner3", 
     email: "partner_3@gmail.com", 
     password: "123", 
@@ -61,7 +61,7 @@ export const MOCK_USERS = [
   },
   { 
     id: 3, 
-    full_name: "Nguyễn Hoàng Khách", 
+    full_name: "Khách hàng Một", 
     user_name: "user", 
     email: "user@gmail.com", 
     password: "123", 
@@ -70,9 +70,18 @@ export const MOCK_USERS = [
   },
   { 
     id: 6, 
-    full_name: "Minh Anh", 
-    user_name: "minhanh", 
-    email: "minhanh@gmail.com", 
+    full_name: "Khách hàng Hai", 
+    user_name: "hai", 
+    email: "hai@gmail.com", 
+    password: "123", 
+    role: "customer", 
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Customer2" 
+  },
+  { 
+    id: 7, 
+    full_name: "Khách hàng Ba", 
+    user_name: "ba", 
+    email: "ba@gmail.com", 
     password: "123", 
     role: "customer", 
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Customer2" 
@@ -293,6 +302,117 @@ export const REPORT_SUMMARY_MOCK = {
   active_partners: [...new Set(TRANSACTION_LIST_MOCK.map(t => t.hotel_name))].length
 };
 
+// MOCK BOOKINGS
 export const MOCK_BOOKINGS = [
-  { id: "BK001", customer_name: "Nguyễn Văn Khách", hotel_name: "Vinpearl Luxury Nha Trang", room_number: "V01", check_in: "2026-04-10", check_out: "2026-04-12", total_price: 5000000, status: "Pending" }
+  { 
+    id: "BK001", 
+    id_user: 3, 
+    id_hotel: 1,
+    customer_name: "Khách hàng Một", 
+    email: "user@gmail.com", 
+    hotel_name: "Vinpearl Luxury Nha Trang", 
+    room_number: "V01", 
+    check_in: "2026-04-10", 
+    check_out: "2026-04-12", 
+    total_price: 5000000, 
+    status: "Confirmed" 
+  },
+  { 
+    id: "BK002", 
+    id_user: 6, 
+    id_hotel: 2,
+    customer_name: "Khách hàng Hai", 
+    email: "hai@gmail.com",
+    hotel_name: "InterContinental Da Nang", 
+    room_number: "D05", 
+    check_in: "2026-05-15", 
+    check_out: "2026-05-17", 
+    total_price: 12000000, 
+    status: "Confirmed" 
+  },
+  { 
+    id: "BK003", 
+    id_user: 7, 
+    id_hotel: 3,
+    customer_name: "Khách hàng Ba", 
+    email: "ba@gmail.com",
+    hotel_name: "Pullman Vung Tau", 
+    room_number: "P102", 
+    check_in: "2026-03-01", 
+    check_out: "2026-03-03", 
+    total_price: 3500000, 
+    status: "Cancelled" 
+  },
+  { 
+    id: "BK004", 
+    id_user: 3, 
+    id_hotel: 4,
+    customer_name: "Khách hàng Một", 
+    email: "user@gmail.com",
+    hotel_name: "Muong Thanh Luxury", 
+    room_number: "M708", 
+    check_in: "2026-06-20", 
+    check_out: "2026-06-22", 
+    total_price: 2800000, 
+    status: "Confirmed" 
+  },
+  { 
+    id: "BK005", 
+    id_user: 1, 
+    id_hotel: 1, 
+    customer_name: "Khách hàng Một", 
+    email: "khachhang1@gmail.com", 
+    hotel_name: "Vinpearl Luxury Nha Trang", 
+    room_number: "V102", 
+    check_in: "2026-04-01", 
+    check_out: "2026-04-03", 
+    total_price: 4500000, 
+    status: "Confirmed"
+  },
+  { 
+    id: "BK006", 
+    id_user: 1, 
+    id_hotel: 2, 
+    customer_name: "Khách hàng Một", 
+    email: "khachhang1@gmail.com", 
+    hotel_name: "InterContinental Da Nang", 
+    room_number: "D205", 
+    check_in: "2026-05-10", 
+    check_out: "2026-05-12", 
+    total_price: 11000000, 
+    status: "Pending"
+  },
+  { 
+    id: "BK007", 
+    id_user: 1, 
+    id_hotel: 4, 
+    customer_name: "Khách hàng Một", 
+    email: "khachhang1@gmail.com", 
+    hotel_name: "Muong Thanh Luxury", 
+    room_number: "M301", 
+    check_in: "2026-03-15", 
+    check_out: "2026-03-16", 
+    total_price: 1500000, 
+    status: "Cancelled"
+  },
+];
+
+// MOCK REVIEWS
+export const MOCK_REVIEWS = [
+  // Khách sạn 1: Vinpearl
+  { id: 1, id_hotel: 1, id_user: 3, user: "Khách hàng Một", email: "user@gmail.com", rate: 5, date: "2026-04-13", comment: "Dịch vụ tuyệt vời, phòng sạch sẽ!", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=1" },
+  { id: 2, id_hotel: 1, id_user: 6, user: "Khách hàng Hai", email: "hai@gmail.com", rate: 4, date: "2026-04-14", comment: "View đẹp nhưng giá hơi cao.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=2" },
+  
+  // Khách sạn 2: InterContinental
+  { id: 3, id_hotel: 2, id_user: 7, user: "Khách hàng Ba", email: "ba@gmail.com", rate: 5, date: "2026-05-18", comment: "Đẳng cấp 5 sao thực sự.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=3" },
+  { id: 4, id_hotel: 2, id_user: 3, user: "Khách hàng Một", email: "user@gmail.com", rate: 4, date: "2026-05-19", comment: "Kiến trúc rất đẹp, đồ ăn ngon.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=4" },
+  { id: 5, id_hotel: 2, id_user: 6, user: "Khách hàng Hai", email: "hai@gmail.com", rate: 5, date: "2026-05-20", comment: "Trải nghiệm không thể quên.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=5" },
+
+  // Khách sạn 3: Pullman
+  { id: 6, id_hotel: 3, id_user: 3, user: "Khách hàng Một", email: "user@gmail.com", rate: 4, date: "2026-03-05", comment: "Gần biển, tiện lợi di chuyển.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=6" },
+  { id: 7, id_hotel: 3, id_user: 7, user: "Khách hàng Ba", email: "ba@gmail.com", rate: 3, date: "2026-03-06", comment: "Phòng hơi cũ một chút nhưng phục vụ tốt.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=7" },
+
+  // Khách sạn 4: Muong Thanh
+  { id: 8, id_hotel: 4, id_user: 6, user: "Khách hàng Hai", email: "hai@gmail.com", rate: 5, date: "2026-06-23", comment: "Rất hài lòng với kỳ nghỉ tại đây.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=8" },
+  { id: 9, id_hotel: 4, id_user: 3, user: "Khách hàng Một", email: "user@gmail.com", rate: 4, date: "2026-06-24", comment: "Giá cả hợp lý, phòng ốc ổn.", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=9" }
 ];

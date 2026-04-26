@@ -10,19 +10,28 @@ import Login from './pages/auth/Login';
 import RoleSelection from './pages/auth/RoleSelection';
 import RegisterForm from './pages/auth/RegisterForm';
 
-// 2. NHÓM KHÁCH HÀNG (CUSTOMER)
-import Home from './pages/customer/Home';
-import HotelList from './pages/customer/HotelList';
-import HotelDetail from './pages/customer/HotelDetail';
+// 2. NHÓM LAYOUT
+import CustomerLayout from './components/layouts/CustomerLayout';
+import PartnerLayout from './components/layouts/PartnerLayout';
+import AdminLayout from './components/layouts/AdminLayout';
+
+// 3. NHÓM GUEST (Khách vãng lai - Chưa đăng nhập)
+import GuestHome from './pages/guest/Home';
+import GuestHotelList from './pages/guest/HotelList';
+import GuestHotelDetail from './pages/guest/HotelDetail';
+
+// 4. NHÓM CUSTOMER (Khách hàng - Đã đăng nhập)
+import CustomerHome from './pages/customer/Home';
+import CustomerHotelList from './pages/customer/HotelList';
+import CustomerHotelDetail from './pages/customer/HotelDetail';
 import Checkout from './pages/customer/Checkout';
 import CustomerBookings from './pages/customer/CustomerBookings';
+import CustomerMessages from './pages/customer/Messages';
 import Profile from './pages/customer/Profile';
-import Messages from './pages/customer/Messages';
 
-// 3. NHÓM ĐỐI TÁC (PARTNER)
+// 5. NHÓM ĐỐI TÁC (PARTNER)
 import PartnerRegister from './pages/partner/ParterRegister';
 import PartnerLogin from './pages/partner/PartnerLogin';
-import PartnerLayout from './components/layouts/PartnerLayout';
 import PartnerDashboard from './pages/partner/PartnerDashboard';
 import HotelManagement from './pages/partner/HotelManagement';
 import PartnerRooms from './pages/partner/PartnerRooms';
@@ -32,9 +41,8 @@ import PartnerMessages from './pages/partner/PartnerMessages';
 import PartnerDiscounts from './pages/partner/PartnerDiscounts';
 import PartnerProfile from './pages/partner/PartnerProfile';
 
-// 4. NHÓM QUẢN TRỊ VIÊN (ADMIN)
+// 6. NHÓM QUẢN TRỊ VIÊN (ADMIN)
 import AdminLogin from './pages/admin/AdminLogin';
-import AdminLayout from './components/layouts/AdminLayout';
 import AdminPartners from './pages/admin/AdminPartners';
 import UserManagement from './pages/admin/UserManagement';
 import AdminCategories from './pages/admin/AdminCategories';
@@ -65,65 +73,74 @@ function App() {
         <AuthProvider>
           <div style={{ minHeight: '100vh', width: '100%', background: '#f5f7fa' }}>
             <BrowserRouter>
-            <Routes>
-              {/* --- ROUTE CÔNG KHAI (PUBLIC) --- */}
-              <Route path="/partner/register" element={<PartnerRegister />} />
-              <Route path="/" element={<Home />} />
-              <Route path="/register" element={<RoleSelection />} />
-              <Route path="/register/form" element={<RegisterForm />} />
-              
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/partner/login" element={<PartnerLogin />} />
+              <Routes>
+                {/* GIAO DIỆN CHUNG (GUEST & CUSTOMER) - Dùng chung Navbar có auto nhận diện */}
+                <Route element={<CustomerLayout />}>
+                  
+                  {/* --- NHÁNH GUEST (Public) --- */}
+                  <Route path="/" element={<GuestHome />} />
+                  <Route path="/hotels" element={<GuestHotelList />} />
+                  <Route path="/hotel/:id" element={<GuestHotelDetail />} />
 
-              <Route path="/hotels" element={<HotelList />} />
-              <Route path="/hotel/:id" element={<HotelDetail />} />
+                  {/* --- NHÁNH CUSTOMER (Private - Yêu cầu Login) --- */}
+                  <Route path="/customer" element={<ProtectedRoute allowedRoles={['customer']} />}>
+                    <Route index element={<Navigate to="/customer/home" replace />} />
+                    <Route path="home" element={<CustomerHome />} />
+                    
+                    {/* Đã đồng bộ tên đường dẫn với nhánh Guest */}
+                    <Route path="hotels" element={<CustomerHotelList />} /> 
+                    <Route path="hotel/:id" element={<CustomerHotelDetail />} />
+                    
+                    <Route path="checkout" element={<Checkout />} />
+                    <Route path="customerbookings" element={<CustomerBookings />} />
+                    <Route path="profile" element={<Profile />} />
+                    <Route path="messages" element={<CustomerMessages />} />
+                  </Route>
 
-              {/* PHÂN HỆ KHÁCH HÀNG (CUSTOMER) */}
-              <Route element={<ProtectedRoute allowedRoles={['customer']} />}>
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/bookings" element={<CustomerBookings />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/messages" element={<Messages />} />
-              </Route>
-
-              {/* PHÂN HỆ ĐỐI TÁC (PARTNER) */}
-              <Route element={<ProtectedRoute allowedRoles={['partner']} />}>
-                <Route path="/partner" element={<PartnerLayout />}>
-                  <Route index element={<Navigate to="/partner/dashboard" replace />} />
-                  <Route path="dashboard" element={<PartnerDashboard />} />
-                  <Route path="profile" element={<PartnerProfile />} />
-                  <Route path="rooms" element={<PartnerRooms />} />
-                  <Route path="hotels" element={<HotelManagement />} />
-                  <Route path="bookings" element={<PartnerBookings />} />
-                  <Route path="messages" element={<PartnerMessages />} />
-                  <Route path="roomnumbers" element={<RoomNumbers />} />
-                  <Route path="discounts" element={<PartnerDiscounts/>} />
                 </Route>
-              </Route>
 
-              {/* PHÂN HỆ QUẢN TRỊ (ADMIN) */}
-              <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                  <Route path="dashboard" element={<AdminDashboard/>} />
-                  <Route path="profile" element={<AdminProfile />} />
-                  <Route path="partners" element={<AdminPartners />} />
-                  <Route path="categories" element={<AdminCategories />} />
-                  <Route path="amenities" element={<AdminAmenity />} />
+                {/* ================= CÁC TRANG LOGIN/REGISTER ================= */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<RoleSelection />} />
+                <Route path="/register/form" element={<RegisterForm />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/partner/login" element={<PartnerLogin />} />
+                <Route path="/partner/register" element={<PartnerRegister />} />
 
-                  <Route element={<RootAdminRoute />}>
-                    <Route path="users" element={<UserManagement />} />
-                    <Route path="revenues" element={<AdminRevenues />} />
-                    <Route path="discounts" element={<AdminDiscounts />} />
+                {/* ================= PHÂN HỆ ĐỐI TÁC (PARTNER) ================= */}
+                <Route element={<ProtectedRoute allowedRoles={['partner']} />}>
+                  <Route path="/partner" element={<PartnerLayout />}>
+                    <Route index element={<Navigate to="/partner/dashboard" replace />} />
+                    <Route path="dashboard" element={<PartnerDashboard />} />
+                    <Route path="profile" element={<PartnerProfile />} />
+                    <Route path="rooms" element={<PartnerRooms />} />
+                    <Route path="hotels" element={<HotelManagement />} />
+                    <Route path="bookings" element={<PartnerBookings />} />
+                    <Route path="messages" element={<PartnerMessages />} />
+                    <Route path="roomnumbers" element={<RoomNumbers />} />
+                    <Route path="discounts" element={<PartnerDiscounts/>} />
                   </Route>
                 </Route>
-              </Route>
 
-              {/* HẾT PHẦN ROUTE CHUNG - Đã chuyển hết vào từng phân hệ cụ thể */}
+                {/* ================= PHÂN HỆ QUẢN TRỊ (ADMIN) ================= */}
+                <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboard/>} />
+                    <Route path="profile" element={<AdminProfile />} />
+                    <Route path="partners" element={<AdminPartners />} />
+                    <Route path="categories" element={<AdminCategories />} />
+                    <Route path="amenities" element={<AdminAmenity />} />
+                    <Route element={<RootAdminRoute />}>
+                      <Route path="users" element={<UserManagement />} />
+                      <Route path="revenues" element={<AdminRevenues />} />
+                      <Route path="discounts" element={<AdminDiscounts />} />
+                    </Route>
+                  </Route>
+                </Route>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
             </BrowserRouter>
           </div>
         </AuthProvider>

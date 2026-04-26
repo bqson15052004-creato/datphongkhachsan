@@ -1,31 +1,29 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Row, Col, Typography, Button, Card, Tag, Table, Tabs, Image, Rate, Divider, Space, Spin, Empty, Alert, App as AntApp, List, Avatar
 } from 'antd';
 import {
   EnvironmentOutlined,
-  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, MessageOutlined, StarFilled
+  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
-// IMPORT CONTEXT & MOCK DATA
-import AuthContext from '../../contexts/AuthContext';
+// IMPORT MOCK DATA
 import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData.jsx';
 
 const { Title, Text, Paragraph } = Typography;
 
-// Mock data đánh giá (Sau này ông thay bằng API gọi theo id_hotel)
+// Dữ liệu mẫu đánh giá dành cho Guest xem
 const MOCK_REVIEWS = [
-  { id: 1, hotelId: 1, user: "Nguyễn Sơn", avatar: "", rate: 5, date: "20/04/2026", comment: "Khách sạn tuyệt vời, nhân viên hỗ trợ rất nhiệt tình. Phòng sạch và thoáng!" },
-  { id: 2, hotelId: 1, user: "Hoàng Anh", avatar: "", rate: 4, date: "15/04/2026", comment: "Vị trí thuận tiện, gần trung tâm. Đồ ăn sáng ngon nhưng cần đa dạng hơn." },
-  { id: 3, hotelId: 2, user: "Minh Thu", avatar: "", rate: 5, date: "10/04/2026", comment: "Giá cả hợp lý, chất lượng dịch vụ 5 sao. Sẽ quay lại!" },
+  { id: 1, hotelId: 1, user: "Khách hàng ẩn danh", rate: 5, date: "22/04/2026", comment: "Phòng cực kỳ sạch sẽ và yên tĩnh. Nhân viên hỗ trợ check-in rất nhanh!" },
+  { id: 2, hotelId: 1, user: "Minh Anh", rate: 4, date: "18/04/2026", comment: "View biển đẹp tuyệt vời, tuy nhiên buffet sáng nên có nhiều món Việt hơn." },
+  { id: 3, hotelId: 2, user: "Tuấn Trần", rate: 5, date: "10/04/2026", comment: "Vị trí ngay trung tâm, rất tiện đi lại. Giá cả hợp lý." },
 ];
 
 const HotelDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useContext(AuthContext); // Lấy thông tin user để check quyền
   const { message: antdMessage, modal } = AntApp.useApp(); 
   
   const [hotel, setHotel] = useState(null);
@@ -46,6 +44,7 @@ const HotelDetail = () => {
         const hotelId = Number(id);
         const foundHotel = MOCK_HOTELS.find(h => h.id_hotel === hotelId);
         const foundRooms = MOCK_ROOMS.filter(r => r.id_hotel === hotelId);
+        // Lọc review theo hotel
         const foundReviews = MOCK_REVIEWS.filter(rev => rev.hotelId === hotelId);
 
         if (foundHotel) {
@@ -56,7 +55,7 @@ const HotelDetail = () => {
           antdMessage?.error("Không tìm thấy khách sạn trong hệ thống.");
         }
       } catch (error) {
-        console.error("Fetch error:", error);
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -88,7 +87,7 @@ const HotelDetail = () => {
       render: (record) => (
         <Space direction="vertical" size={0}>
           <Text strong style={{ fontSize: 16 }}>{record.room_type}</Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>Mã phòng: #{record.id_room}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>Mã: #{record.id_room}</Text>
         </Space>
       )
     },
@@ -107,7 +106,7 @@ const HotelDetail = () => {
       width: 160,
       align: 'right',
       render: (price) => (
-        <Text type="danger" strong style={{ fontSize: 19, whiteSpace: 'nowrap' }}>
+        <Text type="danger" strong style={{ fontSize: 19 }}>
           {Number(price).toLocaleString()}₫
         </Text>
       )
@@ -123,21 +122,14 @@ const HotelDetail = () => {
           block
           disabled={record.status === 'booked'}
           onClick={() => {
-            // Nếu là Guest thì yêu cầu login, nếu là Customer thì bay thẳng Checkout
-            if (location.pathname.startsWith('/customer') || user) {
-              navigate('/customer/checkout', { 
-                state: { room: record, hotel: hotel } 
-              });
-            } else {
-              modal.confirm({
-                title: 'Yêu cầu đăng nhập',
-                content: 'Bạn cần đăng nhập tài khoản Customer để thực hiện đặt phòng!',
-                okText: 'Đăng nhập',
-                cancelText: 'Để sau',
-                centered: true,
-                onOk: () => navigate('/login', { state: { from: location.pathname } }),
-              });
-            }
+            modal.confirm({
+              title: 'Yêu cầu đăng nhập',
+              content: 'Ông cần đăng nhập tài khoản để thực hiện đặt phòng này nhé!',
+              okText: 'Đăng nhập ngay',
+              cancelText: 'Để sau',
+              centered: true,
+              onOk: () => navigate('/login', { state: { from: location.pathname } }),
+            });
           }}
           style={{ borderRadius: 8, fontWeight: 600, height: 40 }}
         >
@@ -147,7 +139,7 @@ const HotelDetail = () => {
     },
   ];
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
+  if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" /></div>;
   if (!hotel) return <div style={{ textAlign: 'center', padding: '100px' }}><Empty description="Khách sạn không tồn tại." /></div>;
 
   return (
@@ -175,8 +167,7 @@ const HotelDetail = () => {
         <Col span={24}>
           <Image 
             src={hotel.image_url} 
-            style={{ width: '100%', height: 480, objectFit: 'cover', borderRadius: 20, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }} 
-            placeholder={<Spin />}
+            style={{ width: '100%', height: 480, objectFit: 'cover', borderRadius: 20 }} 
           />
         </Col>
       </Row>
@@ -187,43 +178,43 @@ const HotelDetail = () => {
           <Tabs 
             defaultActiveKey="1" 
             size="large" 
+            onChange={(key) => key === '2' && scrollToRooms()}
             items={[
               { label: 'Tổng quan', key: '1' },
-              { label: 'Tiện nghi', key: '2' },
-              { label: 'Đánh giá', key: '3', label: `Đánh giá (${reviews.length})` },
+              { label: 'Xem phòng', key: '2' },
             ]}
           />
           
           <div style={{ marginTop: 24 }}>
-            <Title level={4}>Giới thiệu</Title>
+            <Title level={4}>Về khách sạn này</Title>
             <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
-              {hotel.description || "Tận hưởng không gian nghỉ dưỡng tuyệt vời với đầy đủ tiện nghi hiện đại tại đây."}
+              {hotel.description || "Không gian nghỉ dưỡng lý tưởng với đầy đủ tiện nghi hiện đại."}
               <br /><br />
-              <EnvironmentOutlined /> <b>Vị trí:</b> {hotel.address}
+              <EnvironmentOutlined /> <b>Địa chỉ:</b> {hotel.address}
             </Paragraph>
           </div>
         </Col>
 
         <Col xs={24} lg={8}>
           <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', position: 'sticky', top: 80 }}>
-            <Text type="secondary">Giá phòng trung bình</Text>
+            <Text type="secondary">Giá phòng chỉ từ</Text>
             <Title level={3} style={{ color: '#ff4d4f', marginTop: 4, marginBottom: 20 }}>
               {Number(hotel.price_per_night).toLocaleString()}₫ <small style={{fontSize: 14, color: '#999'}}> /đêm</small>
             </Title>
             <Alert 
-              message="Giá có thể thay đổi theo hạng phòng" 
-              type="warning" 
+              message="Đăng nhập để nhận giá ưu đãi!" 
+              type="info" 
               showIcon 
-              style={{ marginBottom: 16, fontSize: 13 }}
+              style={{ marginBottom: 16 }}
             />
             <Button 
               type="primary" 
               block 
               size="large" 
               onClick={scrollToRooms}
-              style={{ height: 50, fontWeight: 'bold', borderRadius: 12, fontSize: 16 }}
+              style={{ height: 50, fontWeight: 'bold', borderRadius: 12 }}
             >
-              CHỌN PHÒNG NGAY
+              CHỌN PHÒNG & ĐẶT
             </Button>
           </Card>
         </Col>
@@ -231,10 +222,10 @@ const HotelDetail = () => {
 
       {/* ROOM TABLE */}
       <div 
-        style={{ marginTop: 20, paddingTop: 40, borderTop: '2px solid #f0f2f5', scrollMarginTop: '80px' }} 
+        style={{ marginTop: 20, paddingTop: 40, borderTop: '1px solid #f0f0f0', scrollMarginTop: '80px' }} 
         ref={roomTableRef}
       >
-        <Title level={3} style={{ marginBottom: 24 }}>Các hạng phòng trống</Title>
+        <Title level={3} style={{ marginBottom: 24 }}>Danh sách phòng trống</Title>
         <Table
           columns={columns}
           dataSource={rooms}
@@ -242,57 +233,38 @@ const HotelDetail = () => {
           rowKey="id_room"
           bordered={false}
           scroll={{ x: 900 }} 
-          style={{ width: '100%', background: '#fff', borderRadius: 12, overflow: 'hidden' }}
         />
       </div>
 
-      {/* REVIEW SECTION */}
-      <div style={{ marginTop: 60, padding: '40px', background: '#fff', borderRadius: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 32 }}>
-          <Col>
-            <Title level={3} style={{ margin: 0 }}>
-              <MessageOutlined style={{ marginRight: 12, color: '#1890ff' }} />
-              Đánh giá từ khách đã ở
-            </Title>
-          </Col>
-          <Col>
-            <Space size="large">
-              <div style={{ textAlign: 'center' }}>
-                <Title level={2} style={{ margin: 0, color: '#faad14' }}>{hotel.rate_star}</Title>
-                <Rate disabled defaultValue={1} count={1} style={{ fontSize: 14 }} />
-              </div>
-              <Divider type="vertical" style={{ height: 40 }} />
-              <Text type="secondary">{reviews.length} nhận xét</Text>
-            </Space>
-          </Col>
-        </Row>
-
-        <List
-          itemLayout="vertical"
-          dataSource={reviews}
-          locale={{ emptyText: <Empty description="Chưa có đánh giá nào." /> }}
-          renderItem={(item) => (
-            <List.Item style={{ borderBottom: '1px solid #f0f0f0', padding: '24px 0' }}>
-              <List.Item.Meta
-                avatar={<Avatar size={54} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />}
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text strong style={{ fontSize: 16 }}>{item.user}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{item.date}</Text>
-                  </div>
-                }
-                description={
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    <Rate disabled defaultValue={item.rate} style={{ fontSize: 12 }} />
-                    <Paragraph style={{ color: '#4b5563', marginTop: 8, fontSize: 15, fontStyle: 'italic' }}>
-                      "{item.comment}"
-                    </Paragraph>
-                  </Space>
-                }
-              />
-            </List.Item>
-          )}
-        />
+      {/* PHẦN ĐÁNH GIÁ (Dành cho Guest xem) */}
+      <div style={{ marginTop: 60, padding: '30px', background: '#fafafa', borderRadius: 16 }}>
+        <Title level={3} style={{ marginBottom: 24 }}>
+          <MessageOutlined /> Đánh giá từ khách hàng ({reviews.length})
+        </Title>
+        
+        {reviews.length > 0 ? (
+          <List
+            itemLayout="horizontal"
+            dataSource={reviews}
+            renderItem={(item) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={<Avatar icon={<UserOutlined />} style={{ backgroundColor: '#87d068' }} />}
+                  title={
+                    <Space size="middle">
+                      <Text strong>{item.user}</Text>
+                      <Rate disabled defaultValue={item.rate} style={{ fontSize: 12 }} />
+                      <Text type="secondary" style={{ fontSize: 12 }}>{item.date}</Text>
+                    </Space>
+                  }
+                  description={<Text italic color="secondary">"{item.comment}"</Text>}
+                />
+              </List.Item>
+            )}
+          />
+        ) : (
+          <Empty description="Chưa có đánh giá nào." />
+        )}
       </div>
     </div>
   );
