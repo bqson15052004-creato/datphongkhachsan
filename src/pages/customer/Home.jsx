@@ -45,29 +45,26 @@ const Home = () => {
     const fetchData = async () => {
       setLoading(true);
       setTimeout(() => {
-        // Giả lập xử lý dữ liệu (giảm giá & đề xuất)
         const processedData = MOCK_HOTELS.map(h => ({
           ...h,
           discount_percent: h.discount_percent || Math.floor(Math.random() * 30) + 10 
         }));
 
         setFeaturedHotels(processedData.slice(0, 4));
-        
         const sortedByDiscount = [...processedData].sort((a, b) => b.discount_percent - a.discount_percent);
         setDiscountHotels(sortedByDiscount.slice(0, 4));
-        
         setLoading(false);
       }, 600);
     };
     fetchData();
   }, []);
 
-  // Hàm điều hướng linh hoạt (Dùng chung cho tìm kiếm, loại chỗ nghỉ, tỉnh thành)
+  // --- CẬP NHẬT ĐIỀU HƯỚNG SANG CỤM /CUSTOMER ---
   const handleNavigate = (filters) => {
     const params = new URLSearchParams();
     if (filters.location) params.set('location', filters.location);
     if (filters.type) params.set('type', filters.type);
-    navigate(`/hotels?${params.toString()}`);
+    navigate(`/customer/hotels?${params.toString()}`); // Đã thêm /customer
   };
 
   return (
@@ -171,7 +168,7 @@ const Home = () => {
           </Row>
         </div>
 
-        {/* 4. SECTION: ƯU ĐÃI LỚN NHẤT (MỚI THÊM) */}
+        {/* 4. SECTION: ƯU ĐÃI LỚN NHẤT */}
         <div style={{ marginBottom: '60px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
             <PercentageOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />
@@ -187,7 +184,8 @@ const Home = () => {
                   <Card
                     hoverable
                     styles={{ body: { padding: '12px' } }}
-                    onClick={() => navigate(`/hotel/${hotel.id_hotel}`)}
+                    // ĐÃ CẬP NHẬT ĐƯỜNG DẪN CHI TIẾT
+                    onClick={() => navigate(`/customer/hotel/${hotel.id_hotel}`)}
                     cover={
                       <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
                         <img src={hotel.image_url} alt={hotel.hotel_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="zoom-img"/>
@@ -227,7 +225,8 @@ const Home = () => {
               </Title>
               <Text type="secondary" style={{ fontSize: 16 }}>Dựa trên xu hướng du lịch năm 2026</Text>
             </div>
-            <Button type="link" onClick={() => navigate('/hotels')} style={{ fontWeight: 600 }}>
+            {/* ĐÃ CẬP NHẬT ĐƯỜNG DẪN XEM TẤT CẢ */}
+            <Button type="link" onClick={() => navigate('/customer/hotels')} style={{ fontWeight: 600 }}>
               Xem tất cả <RightOutlined style={{ fontSize: 12 }} />
             </Button>
           </div>
@@ -246,7 +245,8 @@ const Home = () => {
                 <Col xs={24} sm={12} md={6} key={hotel.id_hotel}>
                   <Card
                     hoverable
-                    onClick={() => navigate(`/hotel/${hotel.id_hotel}`)}
+                    // ĐÃ CẬP NHẬT ĐƯỜNG DẪN CHI TIẾT
+                    onClick={() => navigate(`/customer/hotel/${hotel.id_hotel}`)}
                     cover={
                       <div style={{ overflow: 'hidden', height: 220, position: 'relative' }}>
                         <img 

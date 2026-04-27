@@ -1,10 +1,11 @@
 import React, { useContext } from 'react';
-import { Layout, Button, Dropdown, Avatar, Space, Typography, App as AntApp, Badge } from 'antd';
+import { Layout, Button, Dropdown, Avatar, Space, Typography, App as AntApp, Badge, Tooltip } from 'antd';
 import { 
   UserOutlined, 
   LogoutOutlined, 
   HomeOutlined,
-  MessageOutlined 
+  MessageOutlined,
+  AuditOutlined 
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/AuthContext';
@@ -16,7 +17,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
   
-  // Quan trọng: Lấy trực tiếp user từ Context để Navbar tự render lại khi login thành công
+  // Lấy trực tiếp user từ Context
   const { user, logout } = useContext(AuthContext);
 
   const handle_logout = () => {
@@ -30,13 +31,7 @@ const Navbar = () => {
       key: 'profile',
       label: 'Hồ sơ cá nhân',
       icon: <UserOutlined />,
-      onClick: () => navigate('/customer/profile'), // Nhớ đúng path nhé ông
-    },
-    {
-      key: 'messages',
-      label: 'Tin nhắn của tôi',
-      icon: <MessageOutlined />,
-      onClick: () => navigate('/messages'),
+      onClick: () => navigate('/customer/profile'),
     },
     { type: 'divider' },
     {
@@ -51,37 +46,56 @@ const Navbar = () => {
   return (
     <Header style={headerStyle}>
       {/* 1. LOGO SECTION */}
-      <div className="logo" style={logoStyle} onClick={() => navigate('/')}>
+      <div 
+        className="logo" 
+        style={logoStyle} 
+        onClick={() => navigate(user ? '/customer/home' : '/')}
+      >
         <HomeOutlined style={{ fontSize: '24px', color: '#1890ff', marginRight: '8px' }} />
-        <Title level={4} style={{ margin: 0, color: '#1890ff' }}>HOTEL BOOKING</Title>
+        <Title level={4} style={{ margin: 0, color: '#1890ff', letterSpacing: '0.5px' }}>
+          HOTEL BOOKING
+        </Title>
       </div>
 
       {/* 2. RIGHT SECTION: LOGIN STATUS */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
         {user ? (
-          /* --- TRẠNG THÁI: ĐÃ ĐĂNG NHẬP (CUSTOMER/ADMIN/PARTNER) --- */
           <Space size="large">
-            {/* Tin nhắn */}
-            <div 
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} 
-              onClick={() => navigate('/messages')}
-            >
-              <Badge count={3} size="small" offset={[2, 0]}>
+            {/* 1. Tin nhắn */}
+            <Tooltip title="Tin nhắn">
+              <div 
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }} 
+                onClick={() => navigate('/customer/messages')}
+              >
+              <Badge size="small" offset={[2, 0]}>
                 <MessageOutlined style={{ fontSize: '20px', color: '#595959' }} />
               </Badge>
-            </div>
+              </div>
+            </Tooltip>
 
-            {/* Thông tin User */}
+            {/* 2. Lịch sử đặt phòng */}
+            <Tooltip title="Lịch sử đặt phòng">
+              <div 
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }} 
+                onClick={() => navigate('/customer/customerbookings')} 
+              >
+                <AuditOutlined style={{ fontSize: '20px', color: '#595959' }} />
+              </div>
+            </Tooltip>
+
+            {/* 3. Hồ sơ cá nhân */}
             <Dropdown menu={{ items: user_menu_items }} placement="bottomRight" arrow>
-              <Space style={{ cursor: 'pointer', padding: '0 8px' }}>
+              <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'all 0.3s' }} className="user-dropdown-hover">
                 <Avatar 
                   style={{ backgroundColor: '#1890ff' }} 
                   icon={<UserOutlined />} 
-                  src={user.avatar} // Hiện avatar từ dữ liệu user
+                  src={user.avatar} 
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-                  <Text strong>{user.full_name || user.user_name || 'Người dùng'}</Text>
-                  <Text type="secondary" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
+                  <Text strong style={{ fontSize: '14px' }}>
+                    {user.full_name || user.user_name || 'Người dùng'}
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 600 }}>
                     {user.role || 'Thành viên'}
                   </Text>
                 </div>
@@ -89,7 +103,6 @@ const Navbar = () => {
             </Dropdown>
           </Space>
         ) : (
-          /* --- TRẠNG THÁI: GUEST (CHƯA ĐĂNG NHẬP) --- */
           <Space>
             <Button type="text" onClick={() => navigate('/login')}>
               Đăng nhập
@@ -104,6 +117,12 @@ const Navbar = () => {
           </Space>
         )}
       </div>
+
+      <style>{`
+        .user-dropdown-hover:hover {
+          background: #f5f5f5;
+        }
+      `}</style>
     </Header>
   );
 };
@@ -114,9 +133,9 @@ const headerStyle = {
   alignItems: 'center', 
   justifyContent: 'space-between',
   background: '#fff', 
-  padding: '0 5%', // Tui đổi sang 5% cho nó co giãn theo màn hình
+  padding: '0 2%', 
   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-  position: 'fixed', // Giữ Navbar ở đỉnh khi cuộn
+  position: 'fixed', 
   top: 0, 
   zIndex: 1000, 
   width: '100%',

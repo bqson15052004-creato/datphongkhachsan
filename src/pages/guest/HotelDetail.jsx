@@ -150,7 +150,7 @@ const HotelDetail = () => {
         onClick={() => navigate(-1)} 
         style={{ color: '#64748b', marginBottom: 16, padding: 0 }}
       >
-        Quay lại trang danh sách
+        Quay lại
       </Button>
 
       {/* HEADER SECTION */}

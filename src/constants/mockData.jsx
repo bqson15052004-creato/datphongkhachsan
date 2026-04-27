@@ -182,7 +182,51 @@ export const MOCK_ROOMS = [
     capacity: 2, 
     status: "available", 
     image_url: "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=500",
-    amenities: ["wifi", "parking"]
+    amenities: ["wifi", "parking", "tivi"]
+  },
+  { 
+    id_room: 7, 
+    id_hotel: 4, 
+    room_number: "MT-302", 
+    room_type: "Standard Double Room", 
+    price_per_night: 2000000, 
+    capacity: 2, 
+    status: "available", 
+    image_url: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500",
+    amenities: ["wifi", "air_conditioning", "minibar"]
+  },
+  { 
+    id_room: 8, 
+    id_hotel: 4, 
+    room_number: "MT-401", 
+    room_type: "Deluxe King Room", 
+    price_per_night: 3500000, 
+    capacity: 2, 
+    status: "available", 
+    image_url: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=500",
+    amenities: ["wifi", "breakfast", "bathtub", "city_view"]
+  },
+  { 
+    id_room: 9, 
+    id_hotel: 4, 
+    room_number: "MT-402", 
+    room_type: "Executive Suite", 
+    price_per_night: 5500000, 
+    capacity: 3, 
+    status: "booked", 
+    image_url: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=500",
+    amenities: ["wifi", "luxury", "ocean_view", "balcony"]
+  },
+  { 
+    id_room: 10, 
+    id_hotel: 4, 
+    room_number: "MT-501", 
+    room_type: "Family Connecting Room", 
+    price_per_night: 4200000, 
+    capacity: 4, 
+    status: "available", 
+    image_url: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500",
+    amenities: ["wifi", "kitchen", "extra_bed", "fridge"]
   }
 ];
 

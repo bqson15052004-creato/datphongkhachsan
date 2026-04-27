@@ -10,10 +10,10 @@ const { Text, Title } = Typography;
 const Messages = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const hotelFromState = location.state;
+  // Nhận dữ liệu từ HotelDetail (id_hotel, hotel_name, hotel_avatar)
+  const hotelFromState = location.state; 
   const scrollRef = useRef(null);
 
-  // 1. KẾT NỐI DỮ LIỆU
   const [allChats, setAllChats] = useState(() => {
     return MOCK_HOTELS.filter(h => h.id_hotel <= 2).map(hotel => {
       const partner = MOCK_USERS.find(u => u.id === hotel.owner_id);
@@ -64,27 +64,41 @@ const Messages = () => {
   const handleSelectChat = (chat) => {
     const isExisted = allChats.find(c => c.id === chat.id);
     if (!isExisted) {
-      const newEntry = { ...chat, isNewSearch: false, lastMsg: 'Bắt đầu trò chuyện...' };
+      const newEntry = { 
+        ...chat, 
+        isNewSearch: false, 
+        lastMsg: 'Bắt đầu trò chuyện...',
+        time: 'Bây giờ'
+      };
       setAllChats([newEntry, ...allChats]);
       setSelectedChat(newEntry);
-      setChatHistory([]); 
+      setChatHistory([]); // Reset lịch sử chat cho hotel mới
     } else {
-      setSelectedChat(chat);
+      setSelectedChat(isExisted);
     }
   };
 
+  // XỬ LÝ KHI CÓ DATA TỪ HOTEL DETAIL TRUYỀN SANG
   useEffect(() => {
-    if (hotelFromState?.hotelId) {
-      const hotel = MOCK_HOTELS.find(h => h.id_hotel === hotelFromState.hotelId);
-      if (hotel) {
+    if (hotelFromState?.id_hotel) {
+      const hotelId = hotelFromState.id_hotel;
+      const existedInList = allChats.find(c => c.id === hotelId);
+
+      if (existedInList) {
+        setSelectedChat(existedInList);
+      } else {
+        // Nếu hotel chưa có trong danh sách chat thì tạo mới
         handleSelectChat({
-          id: hotel.id_hotel,
-          name: hotel.hotel_name,
-          avatar: hotel.image_url,
-          lastMsg: 'Bạn vừa chọn khách sạn này',
+          id: hotelId,
+          name: hotelFromState.hotel_name,
+          avatar: hotelFromState.hotel_avatar,
+          lastMsg: 'Đang kết nối...',
           time: 'Bây giờ'
         });
       }
+      
+      // Xóa state trong location để tránh việc F5 lại trang nó lại tự chọn lại hotel này
+      window.history.replaceState({}, document.title);
     } else if (!selectedChat && allChats.length > 0) {
       setSelectedChat(allChats[0]);
     }
@@ -106,7 +120,7 @@ const Messages = () => {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 180px)', width: '100%' }}>
+    <div style={{ height: 'calc(100vh - 140px)', width: '100%', padding: '0 20px 20px' }}>
       <Card 
         styles={{ body: { padding: 0, height: '100%' } }} 
         style={{ 
@@ -119,7 +133,7 @@ const Messages = () => {
       >
         <Layout style={{ height: '100%', background: '#fff' }}>
           
-          {/* SIDEBAR: DANH SÁCH CHAT */}
+          {/* SIDEBAR */}
           <Sider width={320} theme="light" style={{ borderRight: '1px solid #f1f5f9' }}>
             <div style={{ padding: '24px 16px', borderBottom: '1px solid #f1f5f9' }}>
               <Title level={4} style={{ marginBottom: 16, marginTop: 0 }}>Tin nhắn</Title>
@@ -170,11 +184,10 @@ const Messages = () => {
             </div>
           </Sider>
 
-          {/* KHUNG CHAT CHÍNH */}
+          {/* MAIN CHAT AREA */}
           <Layout style={{ background: '#fff' }}>
             {selectedChat ? (
               <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                {/* Chat Header */}
                 <div style={{ padding: '16px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Space size="middle">
                     <Avatar src={selectedChat.avatar} size="large" />
@@ -192,12 +205,11 @@ const Messages = () => {
                   </Button>
                 </div>
 
-                {/* Messages Area */}
                 <div 
                   ref={scrollRef}
                   style={{ flex: 1, padding: '24px', overflowY: 'auto', background: '#f8fafc' }}
                 >
-                  {chatHistory.map((msg) => (
+                  {chatHistory.length > 0 ? chatHistory.map((msg) => (
                     <div key={msg.id} style={{ 
                       display: 'flex', 
                       justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
@@ -219,14 +231,17 @@ const Messages = () => {
                         </Text>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div style={{ textAlign: 'center', marginTop: 20 }}>
+                      <Text type="secondary">Bắt đầu câu chuyện với {selectedChat.name}</Text>
+                    </div>
+                  )}
                 </div>
 
-                {/* Chat Input */}
                 <div style={{ padding: '20px 24px', borderTop: '1px solid #f1f5f9' }}>
                   <Space.Compact style={{ width: '100%' }}>
                     <Input 
-                      placeholder="Nhập tin nhắn của bạn..." 
+                      placeholder="Nhập tin nhắn..." 
                       size="large" 
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}

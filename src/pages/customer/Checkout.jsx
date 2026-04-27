@@ -67,30 +67,42 @@ const Checkout = () => {
     }
 
     setLoading(true);
-    try {
-      const bookingData = {
-        id_room: room.id_room,
-        check_in: dates[0].format('YYYY-MM-DD'),
-        check_out: dates[1].format('YYYY-MM-DD'),
-        total_price: billingDetails.total,
-        payment_method: 'banking' // Mặc định banking cho demo
-      };
+    const bookingData = {
+      id_booking: Date.now(),
+      id_room: room.id_room,
+      room_number: room.room_number,
+      hotel_name: hotel?.hotel_name,
+      id_hotel: hotel?.id_hotel,
+      check_in: dates[0].format('YYYY-MM-DD'),
+      check_out: dates[1].format('YYYY-MM-DD'),
+      total_price: billingDetails.total,
+      status: '',
+      booking_date: dayjs().format('YYYY-MM-DD HH:mm'),
+      customer_name: currentUser?.fullName,
+      room_image: room.image_url,
+      hotel_address: hotel?.address,
+    };
 
+    try {
+      // 1. Vẫn thử gọi BE thật
       await axiosClient.post('/hotels/bookings/', bookingData);
+      Modal.success({ title: 'Thành công!', onOk: () => navigate('/profile/bookings') });
+    } catch (error) {
+      // 2. BE LỖI -> LƯU VÀO LOCALSTORAGE
+      console.warn("Switching to LocalStorage Mode");
+
+      // Lấy danh sách cũ ra (nếu có), thêm đơn mới vào
+      const existingBookings = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+      existingBookings.push(bookingData);
+      localStorage.setItem('mock_bookings', JSON.stringify(existingBookings));
+
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       Modal.success({
-        title: 'Đặt phòng thành công!',
-        centered: true,
-        content: (
-          <div style={{ marginTop: 10 }}>
-            <p>Yêu cầu đặt phòng <b>{room.room_number}</b> của bạn đã được gửi đi.</p>
-            <p>Vui lòng theo dõi trạng thái tại mục <b>Chuyến đi của tôi</b>.</p>
-          </div>
-        ),
-        onOk: () => navigate('/profile/bookings'), // Chuyển về trang lịch sử
+        title: 'Đặt phòng thành công (Chế độ Demo)!',
+        content: 'Dữ liệu đã được lưu vào bộ nhớ tạm của trình duyệt.',
+        onOk: () => navigate('/customer/customerbookings'),
       });
-    } catch (error) {
-      antdMessage?.error(error.response?.data?.detail || 'Không thể đặt phòng. Vui lòng thử lại!');
     } finally {
       setLoading(false);
     }
@@ -114,7 +126,7 @@ const Checkout = () => {
         <Col xs={24} lg={15}>
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             
-            <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <Card variant={false} style={{ borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <Title level={4}><SafetyCertificateOutlined style={{ color: '#52c41a' }} /> Thông tin khách hàng</Title>
               <div style={{ 
                 display: 'flex', 
@@ -135,7 +147,7 @@ const Checkout = () => {
               </div>
             </Card>
 
-            <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <Card variant={false} style={{ borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <Title level={4} style={{ marginBottom: 20 }}><CalendarOutlined /> Thời gian lưu trú</Title>
               <RangePicker
                 style={{ width: '100%', height: 55, borderRadius: 12 }}
@@ -158,7 +170,7 @@ const Checkout = () => {
         {/* CỘT PHẢI: CHI TIẾT THANH TOÁN (STICKY) */}
         <Col xs={24} lg={9}>
           <Card 
-            bordered={false} 
+            variant={false} 
             style={{ 
               borderRadius: 20, 
               boxShadow: '0 10px 25px rgba(0,0,0,0.05)', 

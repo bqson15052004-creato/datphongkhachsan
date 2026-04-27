@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Rate, Typography, Tag, Empty, Button, Space, Spin, App as AntApp, Badge } from 'antd';
-import { EnvironmentOutlined, CalendarOutlined, RocketOutlined, RightOutlined } from '@ant-design/icons';
+import { EnvironmentOutlined, CalendarOutlined, RocketOutlined, RightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 // import axiosClient from '../../services/axiosClient';
 import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData.jsx';
 
@@ -60,7 +60,14 @@ const HotelList = () => {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', width: '100%' }}>
-      
+      <Button 
+        type="link" 
+        icon={<ArrowLeftOutlined />} 
+        onClick={() => navigate(-1)} 
+        style={{ color: '#64748b', marginBottom: 16, padding: 0 }}
+      >
+        Quay lại
+      </Button>
       {/* TIÊU ĐỀ & TRẠNG THÁI */}
       <div style={{ marginBottom: 32 }}>
         <Title level={2} style={{ marginBottom: 8, color: '#1e293b' }}>

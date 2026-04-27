@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
-  Row, Col, Typography, Button, Card, Tag, Table, Tabs, Image, Rate, Divider, Space, Spin, Empty, Alert, App as AntApp, List, Avatar
+  Row, Col, Typography, Button, Card, Tag, Table, Tabs, Image, Rate, Divider, Space, Spin, Empty, Alert, App as AntApp, List, Avatar, Tooltip
 } from 'antd';
 import {
   EnvironmentOutlined,
-  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, MessageOutlined, StarFilled
+  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, MessageOutlined, CalendarOutlined, BankOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 // IMPORT CONTEXT & MOCK DATA
 import AuthContext from '../../contexts/AuthContext';
-import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData.jsx';
+import { MOCK_ROOMS, MOCK_HOTELS, MOCK_BOOKINGS } from '../../constants/mockData.jsx';
 
 const { Title, Text, Paragraph } = Typography;
 
-// Mock data đánh giá (Sau này ông thay bằng API gọi theo id_hotel)
 const MOCK_REVIEWS = [
   { id: 1, hotelId: 1, user: "Nguyễn Sơn", avatar: "", rate: 5, date: "20/04/2026", comment: "Khách sạn tuyệt vời, nhân viên hỗ trợ rất nhiệt tình. Phòng sạch và thoáng!" },
   { id: 2, hotelId: 1, user: "Hoàng Anh", avatar: "", rate: 4, date: "15/04/2026", comment: "Vị trí thuận tiện, gần trung tâm. Đồ ăn sáng ngon nhưng cần đa dạng hơn." },
@@ -25,7 +24,7 @@ const HotelDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useContext(AuthContext); // Lấy thông tin user để check quyền
+  const { user } = useContext(AuthContext); 
   const { message: antdMessage, modal } = AntApp.useApp(); 
   
   const [hotel, setHotel] = useState(null);
@@ -45,13 +44,32 @@ const HotelDetail = () => {
       try {
         const hotelId = Number(id);
         const foundHotel = MOCK_HOTELS.find(h => h.id_hotel === hotelId);
-        const foundRooms = MOCK_ROOMS.filter(r => r.id_hotel === hotelId);
-        const foundReviews = MOCK_REVIEWS.filter(rev => rev.hotelId === hotelId);
+        
+        // --- LOGIC KIỂM TRA TRẠNG THÁI PHÒNG ---
+        let foundRooms = MOCK_ROOMS.filter(r => r.id_hotel === hotelId);
+        const localBookings = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+        const allBookings = [...MOCK_BOOKINGS, ...localBookings];
+
+        const updatedRooms = foundRooms.map(room => {
+          const isOccupied = allBookings.some(booking => 
+            Number(booking.id_room) === Number(room.id_room) && 
+            booking.status !== 'Cancelled'
+          );
+          return { ...room, status: isOccupied ? 'booked' : room.status };
+        });
+
+        // --- LOGIC LẤY ĐÁNH GIÁ (Gộp tĩnh + động) ---
+        const staticReviews = MOCK_REVIEWS.filter(rev => rev.hotelId === hotelId);
+        const localReviews = JSON.parse(localStorage.getItem('mock_reviews') || '[]');
+        const filteredLocal = localReviews.filter(rev => Number(rev.hotelId) === hotelId);
+        
+        // Gộp lại, đưa đánh giá mới nhất từ LocalStorage lên đầu
+        const allReviews = [...filteredLocal.reverse(), ...staticReviews];
 
         if (foundHotel) {
           setHotel(foundHotel);
-          setRooms(foundRooms);
-          setReviews(foundReviews);
+          setRooms(updatedRooms);
+          setReviews(allReviews);
         } else {
           antdMessage?.error("Không tìm thấy khách sạn trong hệ thống.");
         }
@@ -64,6 +82,24 @@ const HotelDetail = () => {
     fetchData();
     window.scrollTo(0, 0);
   }, [id, antdMessage]);
+
+  const handleChat = () => {
+    if (!user) {
+      modal.confirm({
+        title: 'Yêu cầu đăng nhập',
+        content: 'Bạn cần đăng nhập tài khoản để gửi tin nhắn cho khách sạn!',
+        onOk: () => navigate('/login', { state: { from: location.pathname } }),
+      });
+      return;
+    }
+    navigate('/customer/messages', { 
+      state: { 
+        id_hotel: hotel.id_hotel, 
+        hotel_name: hotel.hotel_name,
+        hotel_avatar: hotel.image_url 
+      } 
+    });
+  };
 
   const columns = [
     {
@@ -84,7 +120,6 @@ const HotelDetail = () => {
     {
       title: 'Hạng phòng',
       key: 'room_info',
-      width: 250, 
       render: (record) => (
         <Space direction="vertical" size={0}>
           <Text strong style={{ fontSize: 16 }}>{record.room_type}</Text>
@@ -107,7 +142,7 @@ const HotelDetail = () => {
       width: 160,
       align: 'right',
       render: (price) => (
-        <Text type="danger" strong style={{ fontSize: 19, whiteSpace: 'nowrap' }}>
+        <Text type="danger" strong style={{ fontSize: 19 }}>
           {Number(price).toLocaleString()}₫
         </Text>
       )
@@ -117,34 +152,90 @@ const HotelDetail = () => {
       key: 'action',
       width: 150,
       align: 'center',
-      render: (_, record) => (
-        <Button
-          type="primary"
-          block
-          disabled={record.status === 'booked'}
-          onClick={() => {
-            // Nếu là Guest thì yêu cầu login, nếu là Customer thì bay thẳng Checkout
-            if (location.pathname.startsWith('/customer') || user) {
-              navigate('/customer/checkout', { 
-                state: { room: record, hotel: hotel } 
-              });
-            } else {
-              modal.confirm({
-                title: 'Yêu cầu đăng nhập',
-                content: 'Bạn cần đăng nhập tài khoản Customer để thực hiện đặt phòng!',
-                okText: 'Đăng nhập',
-                cancelText: 'Để sau',
-                centered: true,
-                onOk: () => navigate('/login', { state: { from: location.pathname } }),
-              });
-            }
-          }}
-          style={{ borderRadius: 8, fontWeight: 600, height: 40 }}
-        >
-          {record.status === 'booked' ? 'Hết phòng' : 'ĐẶT NGAY'}
-        </Button>
+      render: (_, record) => {
+        const isBooked = record.status === 'booked';
+        return (
+          <Button
+            type={isBooked ? "default" : "primary"}
+            block
+            disabled={isBooked}
+            onClick={() => {
+              if (user?.role === 'customer') {
+                navigate('/customer/checkout', { state: { room: record, hotel: hotel } });
+              } else {
+                modal.confirm({
+                  title: 'Yêu cầu đăng nhập',
+                  content: 'Vui lòng đăng nhập quyền Khách hàng để đặt phòng!',
+                  onOk: () => navigate('/login', { state: { from: location.pathname } }),
+                });
+              }
+            }}
+            style={{ borderRadius: 8, fontWeight: 600, height: 40 }}
+          >
+            {isBooked ? 'Hết phòng' : 'ĐẶT NGAY'}
+          </Button>
+        );
+      }
+    },
+  ];
+
+  // Nội dung cho các Tabs
+  const tabItems = [
+    {
+      label: 'Tổng quan',
+      key: '1',
+      children: (
+        <div style={{ marginTop: 20 }}>
+          <Title level={4}>Giới thiệu</Title>
+          <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
+            {hotel?.description || "Không gian nghỉ dưỡng tuyệt vời với đầy đủ tiện nghi."}
+          </Paragraph>
+        </div>
       )
     },
+    {
+      label: 'Tiện nghi',
+      key: '2',
+      children: (
+        <div style={{ marginTop: 20 }}>
+          <Title level={4}>Tiện ích khách sạn</Title>
+          <ul style={{ color: '#4b5563', fontSize: 15 }}>
+            <li>Wifi miễn phí tốc độ cao</li>
+            <li>Hồ bơi ngoài trời & Rooftop Bar</li>
+            <li>Trung tâm thể hình & Spa</li>
+            <li>Dịch vụ đưa đón sân bay</li>
+          </ul>
+        </div>
+      )
+    },
+    {
+      label: `Đánh giá (${reviews.length})`,
+      key: '3',
+      children: (
+        <div style={{ marginTop: 20 }}>
+          <List
+            itemLayout="horizontal"
+            dataSource={reviews}
+            locale={{ emptyText: <Empty description="Chưa có đánh giá nào." /> }}
+            renderItem={(item) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={<Avatar icon={<UserOutlined />} src={item.avatar} />}
+                  title={
+                    <Space size="middle">
+                      <Text strong>{item.user}</Text>
+                      <Rate disabled defaultValue={item.rate} style={{ fontSize: 12 }} />
+                      <Text type="secondary" style={{ fontSize: 12 }}>{item.date}</Text>
+                    </Space>
+                  }
+                  description={<Text style={{ color: '#374151' }}>{item.comment}</Text>}
+                />
+              </List.Item>
+            )}
+          />
+        </div>
+      )
+    }
   ];
 
   if (loading) return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" tip="Đang tải dữ liệu..." /></div>;
@@ -152,13 +243,8 @@ const HotelDetail = () => {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', padding: '20px' }}>
-      <Button 
-        type="link" 
-        icon={<ArrowLeftOutlined />} 
-        onClick={() => navigate(-1)} 
-        style={{ color: '#64748b', marginBottom: 16, padding: 0 }}
-      >
-        Quay lại trang danh sách
+      <Button type="link" icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ color: '#64748b', marginBottom: 16, padding: 0 }}>
+        Quay lại
       </Button>
 
       {/* HEADER SECTION */}
@@ -171,128 +257,35 @@ const HotelDetail = () => {
             <Tag color="green" icon={<SafetyCertificateOutlined />}>Đã xác thực</Tag>
           </Space>
         </Col>
-        
         <Col span={24}>
-          <Image 
-            src={hotel.image_url} 
-            style={{ width: '100%', height: 480, objectFit: 'cover', borderRadius: 20, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }} 
-            placeholder={<Spin />}
-          />
+          <Image src={hotel.image_url} style={{ width: '100%', height: 480, objectFit: 'cover', borderRadius: 20 }} />
         </Col>
       </Row>
 
-      {/* INFO SECTION */}
-      <Row gutter={[40, 40]} style={{ marginBottom: 40 }}>
+      {/* INFO & BOOKING CARD */}
+      <Row gutter={[40, 40]}>
         <Col xs={24} lg={16}>
-          <Tabs 
-            defaultActiveKey="1" 
-            size="large" 
-            items={[
-              { label: 'Tổng quan', key: '1' },
-              { label: 'Tiện nghi', key: '2' },
-              { label: 'Đánh giá', key: '3', label: `Đánh giá (${reviews.length})` },
-            ]}
-          />
-          
-          <div style={{ marginTop: 24 }}>
-            <Title level={4}>Giới thiệu</Title>
-            <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
-              {hotel.description || "Tận hưởng không gian nghỉ dưỡng tuyệt vời với đầy đủ tiện nghi hiện đại tại đây."}
-              <br /><br />
-              <EnvironmentOutlined /> <b>Vị trí:</b> {hotel.address}
-            </Paragraph>
-          </div>
+          <Tabs defaultActiveKey="1" size="large" items={tabItems} />
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', position: 'sticky', top: 80 }}>
-            <Text type="secondary">Giá phòng trung bình</Text>
-            <Title level={3} style={{ color: '#ff4d4f', marginTop: 4, marginBottom: 20 }}>
-              {Number(hotel.price_per_night).toLocaleString()}₫ <small style={{fontSize: 14, color: '#999'}}> /đêm</small>
+          <Card bordered={false} style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.08)', position: 'sticky', top: 100 }}>
+            <Text type="secondary">Giá trung bình</Text>
+            <Title level={3} style={{ color: '#ff4d4f', marginTop: 4 }}>
+              {Number(hotel.price_per_night).toLocaleString()}₫ <small style={{fontSize: 12, color: '#999'}}>/đêm</small>
             </Title>
-            <Alert 
-              message="Giá có thể thay đổi theo hạng phòng" 
-              type="warning" 
-              showIcon 
-              style={{ marginBottom: 16, fontSize: 13 }}
-            />
-            <Button 
-              type="primary" 
-              block 
-              size="large" 
-              onClick={scrollToRooms}
-              style={{ height: 50, fontWeight: 'bold', borderRadius: 12, fontSize: 16 }}
-            >
-              CHỌN PHÒNG NGAY
-            </Button>
+            <Space direction="vertical" block size="middle">
+              <Button type="primary" block size="large" onClick={scrollToRooms} style={{ height: 50, borderRadius: 12 }}>CHỌN PHÒNG</Button>
+              <Button icon={<MessageOutlined />} block size="large" onClick={handleChat} style={{ height: 50, borderRadius: 12 }}>NHẮN TIN</Button>
+            </Space>
           </Card>
         </Col>
       </Row>
 
-      {/* ROOM TABLE */}
-      <div 
-        style={{ marginTop: 20, paddingTop: 40, borderTop: '2px solid #f0f2f5', scrollMarginTop: '80px' }} 
-        ref={roomTableRef}
-      >
-        <Title level={3} style={{ marginBottom: 24 }}>Các hạng phòng trống</Title>
-        <Table
-          columns={columns}
-          dataSource={rooms}
-          pagination={false}
-          rowKey="id_room"
-          bordered={false}
-          scroll={{ x: 900 }} 
-          style={{ width: '100%', background: '#fff', borderRadius: 12, overflow: 'hidden' }}
-        />
-      </div>
-
-      {/* REVIEW SECTION */}
-      <div style={{ marginTop: 60, padding: '40px', background: '#fff', borderRadius: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
-        <Row justify="space-between" align="middle" style={{ marginBottom: 32 }}>
-          <Col>
-            <Title level={3} style={{ margin: 0 }}>
-              <MessageOutlined style={{ marginRight: 12, color: '#1890ff' }} />
-              Đánh giá từ khách đã ở
-            </Title>
-          </Col>
-          <Col>
-            <Space size="large">
-              <div style={{ textAlign: 'center' }}>
-                <Title level={2} style={{ margin: 0, color: '#faad14' }}>{hotel.rate_star}</Title>
-                <Rate disabled defaultValue={1} count={1} style={{ fontSize: 14 }} />
-              </div>
-              <Divider type="vertical" style={{ height: 40 }} />
-              <Text type="secondary">{reviews.length} nhận xét</Text>
-            </Space>
-          </Col>
-        </Row>
-
-        <List
-          itemLayout="vertical"
-          dataSource={reviews}
-          locale={{ emptyText: <Empty description="Chưa có đánh giá nào." /> }}
-          renderItem={(item) => (
-            <List.Item style={{ borderBottom: '1px solid #f0f0f0', padding: '24px 0' }}>
-              <List.Item.Meta
-                avatar={<Avatar size={54} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />}
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text strong style={{ fontSize: 16 }}>{item.user}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{item.date}</Text>
-                  </div>
-                }
-                description={
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    <Rate disabled defaultValue={item.rate} style={{ fontSize: 12 }} />
-                    <Paragraph style={{ color: '#4b5563', marginTop: 8, fontSize: 15, fontStyle: 'italic' }}>
-                      "{item.comment}"
-                    </Paragraph>
-                  </Space>
-                }
-              />
-            </List.Item>
-          )}
-        />
+      {/* TABLE */}
+      <div style={{ marginTop: 40, paddingTop: 40, borderTop: '1px solid #eee' }} ref={roomTableRef}>
+        <Title level={3}>Danh sách hạng phòng</Title>
+        <Table columns={columns} dataSource={rooms} pagination={false} rowKey="id_room" scroll={{ x: 800 }} />
       </div>
     </div>
   );

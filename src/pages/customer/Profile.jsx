@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Layout, Menu, Button, theme, Avatar, Typography, 
-  Badge, Card, Row, Col, Descriptions, Table, Tag, Modal, App as AntApp, Space, Form, Input, Divider, Tooltip, Rate 
+  Badge, Card, Row, Col, Descriptions, Table, Tag, Modal, App as AntApp, Space, Form, Input, Divider, Rate 
 } from 'antd';
 import {
   UserOutlined, HistoryOutlined, LogoutOutlined,
@@ -40,6 +40,7 @@ const Profile = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
+  // LOGIC: LẤY DỮ LIỆU TỪ LOCALSTORAGE + MOCK
   useEffect(() => {
     const sessionUser = JSON.parse(sessionStorage.getItem('user'));
     if (sessionUser) setUserData(sessionUser);
@@ -47,10 +48,13 @@ const Profile = () => {
     setLoading(true);
     setTimeout(() => {
       const myId = sessionUser?.id || userData.id;
-      const myBookings = MOCK_BOOKINGS.filter(b => b.id_user === myId);
-      setBookings(myBookings);
+      const staticBookings = MOCK_BOOKINGS.filter(b => b.id_user === myId);
+      const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+      const myLocalBookings = localData.filter(b => b.id_user === myId);
+
+      setBookings([...myLocalBookings.reverse(), ...staticBookings]);
       setLoading(false);
-    }, 500);
+    }, 600);
   }, [userData.id]);
 
   const handleUpdateProfile = (values) => {
@@ -61,16 +65,6 @@ const Profile = () => {
       sessionStorage.setItem('user', JSON.stringify(newData));
       antdMessage.success("Cập nhật thông tin thành công!");
       setIsUpdateModalOpen(false);
-      setLoading(false);
-    }, 800);
-  };
-
-  const handleChangePassword = (values) => {
-    setLoading(true);
-    setTimeout(() => {
-      antdMessage.success("Đổi mật khẩu thành công!");
-      setIsPasswordModalOpen(false);
-      formPassword.resetFields();
       setLoading(false);
     }, 800);
   };
@@ -88,14 +82,14 @@ const Profile = () => {
     });
   };
 
-  // CẤU HÌNH CÁC CỘT (TÁCH RIÊNG NGÀY NHẬN/TRẢ)
+  // CẤU HÌNH CÁC CỘT - ĐÃ TÁCH RIÊNG NGÀY NHẬN & NGÀY TRẢ
   const columns = [
     { 
-      title: 'Mã', 
-      dataIndex: 'id', 
-      key: 'id', 
-      width: 65,
-      render: (id) => <Text code style={{ fontSize: '12px' }}>#{id}</Text> 
+      title: 'Mã đơn', 
+      dataIndex: 'id_booking',
+      key: 'id_booking', 
+      width: 110,
+      render: (id, record) => <Text code style={{ fontSize: '11px' }}>{id || `#${record.id}`}</Text> 
     },
     { 
       title: 'Khách sạn', 
@@ -108,7 +102,7 @@ const Profile = () => {
       title: 'Phòng', 
       dataIndex: 'room_number', 
       key: 'room_number',
-      width: 65,
+      width: 70,
       align: 'center'
     },
     { 
@@ -130,16 +124,17 @@ const Profile = () => {
       dataIndex: 'total_price', 
       key: 'total_price', 
       width: 110,
-      render: (val) => <Text strong type="danger" style={{ fontSize: '13px' }}>{val?.toLocaleString()}₫</Text> 
+      render: (val) => <Text strong type="danger" style={{ fontSize: '13px' }}>{Number(val)?.toLocaleString()}₫</Text> 
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 90,
+      width: 130,
       render: (status) => {
-        let color = status === 'Confirmed' ? 'green' : status === 'Pending' ? 'gold' : 'red';
-        let text = status === 'Confirmed' ? 'Xong' : status === 'Pending' ? 'Chờ' : 'Hủy';
+        const s = status?.toLowerCase();
+        let color = s === 'confirmed' ? 'green' : s === 'pending' ? 'gold' : 'red';
+        let text = s === 'confirmed' ? 'Đã xác nhận' : s === 'pending' ? 'Đang chờ xác nhận' : 'Đã hủy';
         return <Tag color={color} style={{ margin: 0, fontSize: '11px' }}>{text}</Tag>;
       }
     },
@@ -147,22 +142,26 @@ const Profile = () => {
       title: 'Đánh giá', 
       key: 'review',
       align: 'center',
-      width: 130,
+      width: 140, // Tăng nhẹ width để hiện sao cho đẹp
       render: (record) => {
         const userReview = MOCK_REVIEWS.find(
           (r) => r.id_user === record.id_user && r.id_hotel === record.id_hotel
         );
 
-        if (record.status !== 'Confirmed') return <Text type="secondary">-</Text>;
+        // 1. Case: Đơn chưa được xác nhận hoặc đã hủy -> Không cho đánh giá
+        if (record.status?.toLowerCase() !== 'confirmed') {
+          return <Text type="secondary" style={{ fontSize: '11px' }}>-</Text>;
+        }
 
+        // 2. Case: Đã có đánh giá trong hệ thống
         if (userReview) {
           return (
-            <Space direction="vertical" size={0}>
-              <Rate disabled defaultValue={userReview.rate} style={{ fontSize: 10 }} />
+            <Space direction="vertical" size={0} style={{ display: 'flex', alignItems: 'center' }}>
+              <Rate disabled defaultValue={userReview.rate} style={{ fontSize: 12 }} />
               <Button 
                 type="link" 
                 size="small" 
-                style={{ fontSize: '11px', padding: 0, height: 'auto' }}
+                style={{ fontSize: '11px', height: '20px', padding: 0 }}
                 onClick={() => {
                   antdModal.info({
                     title: `Nhận xét của bạn - ${record.hotel_name}`,
@@ -171,24 +170,26 @@ const Profile = () => {
                         <Rate disabled defaultValue={userReview.rate} />
                         <Divider style={{ margin: '12px 0' }} />
                         <Text italic>"{userReview.comment}"</Text>
-                        <Text type="secondary" style={{ display: 'block', marginTop: 10, fontSize: 12 }}>
-                          Ngày đánh giá: {dayjs(userReview.date).format('DD/MM/YYYY')}
-                        </Text>
                       </div>
                     ),
                   });
                 }}
               >
-                Xem nhận xét
+                Chi tiết
               </Button>
             </Space>
           );
         }
 
+        // 3. Case: Đã xác nhận nhưng chưa đánh giá
         return (
           <Button 
-            type="primary" size="small" ghost icon={<StarOutlined />} 
-            onClick={() => antdMessage.success(`Mở form đánh giá cho ${record.hotel_name}`)}
+            type="primary" 
+            size="small" 
+            ghost 
+            icon={<StarOutlined />} 
+            style={{ fontSize: '11px', borderRadius: '4px' }}
+            onClick={() => antdMessage.info(`Đang mở form đánh giá cho ${record.hotel_name}`)}
           >
             Đánh giá
           </Button>
@@ -198,7 +199,7 @@ const Profile = () => {
   ];
 
   const renderUserInfo = () => (
-    <Card variant={false} style={{ borderRadius: borderRadiusLG }}>
+    <Card bordered={false} style={{ borderRadius: borderRadiusLG }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <Title level={4} style={{ margin: 0 }}><UserOutlined /> Thông tin cá nhân</Title>
         <Space>
@@ -233,7 +234,7 @@ const Profile = () => {
     <Layout style={{ minHeight: '85vh', background: '#f5f5f5', borderRadius: borderRadiusLG, overflow: 'hidden' }}>
       <Sider trigger={null} collapsible collapsed={collapsed} theme="light" width={220} style={{ borderRight: '1px solid #f0f0f0' }}>
         <div style={{ padding: '24px 16px', textAlign: 'center' }}>
-           {!collapsed && <Text strong style={{ fontSize: 16, color: '#1890ff' }}>MY PROFILE</Text>}
+            {!collapsed && <Text strong style={{ fontSize: 16, color: '#1890ff' }}>MY PROFILE</Text>}
         </div>
         <Menu
           mode="inline"
@@ -260,12 +261,12 @@ const Profile = () => {
         
         <Content style={{ margin: '20px', minHeight: 280 }}>
           {currentTab === 'info' ? renderUserInfo() : (
-            <Card variant={false} style={{ borderRadius: borderRadiusLG }}>
+            <Card bordered={false} style={{ borderRadius: borderRadiusLG }}>
                <Title level={4} style={{ marginBottom: 20 }}><HistoryOutlined /> Lịch sử chuyến đi</Title>
                <Table 
                  columns={columns} 
                  dataSource={bookings} 
-                 rowKey="id" 
+                 rowKey={(record) => record.id_booking || record.id} 
                  loading={loading} 
                  pagination={{ pageSize: 6 }}
                  size="small"
@@ -281,14 +282,6 @@ const Profile = () => {
           <Form.Item name="full_name" label="Họ và tên" rules={[{ required: true }]}><Input size="large" /></Form.Item>
           <Form.Item name="phone" label="Số điện thoại"><Input size="large" /></Form.Item>
           <Form.Item name="avatar" label="URL Ảnh đại diện"><Input size="large" /></Form.Item>
-        </Form>
-      </Modal>
-
-      <Modal title="Đổi mật khẩu" open={isPasswordModalOpen} onCancel={() => setIsPasswordModalOpen(false)} onOk={() => formPassword.submit()} confirmLoading={loading}>
-        <Form form={formPassword} layout="vertical" onFinish={handleChangePassword}>
-          <Form.Item name="oldPassword" label="Mật khẩu cũ" rules={[{ required: true }]}><Input.Password size="large" /></Form.Item>
-          <Form.Item name="newPassword" label="Mật khẩu mới" rules={[{ required: true, min: 6 }]}><Input.Password size="large" /></Form.Item>
-          <Form.Item name="confirm" label="Xác nhận" dependencies={['newPassword']} rules={[{ required: true }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue('newPassword') === value) return Promise.resolve(); return Promise.reject(new Error('Không khớp!')); } })]}><Input.Password size="large" /></Form.Item>
         </Form>
       </Modal>
     </Layout>

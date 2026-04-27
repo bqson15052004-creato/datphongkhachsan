@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tooltip, Empty, Tabs, Row, Col } from 'antd';
-import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, InfoCircleOutlined, BankOutlined } from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, BankOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import axiosClient from '../../services/axiosClient';
-
 import { MOCK_BOOKINGS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
@@ -13,208 +12,187 @@ const PartnerBookings = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+
   const fetchBookings = async () => {
     setLoading(true);
+    let apiData = [];
     try {
       const response = await axiosClient.get('/hotels/partner-bookings/');
-      // Nếu API trả về mảng dữ liệu, dùng nó, nếu không dùng Mock
-      setBookings(Array.isArray(response) && response.length > 0 ? response : MOCK_BOOKINGS);
+      apiData = Array.isArray(response) ? response : [];
     } catch (error) {
-      console.warn("Backend chưa sẵn sàng. Đang hiển thị dữ liệu mẫu đơn hàng.");
-      setBookings(MOCK_BOOKINGS); // Hiện Mock Data khi lỗi BE
-    } finally {
-      setLoading(false);
+      console.warn("Dùng dữ liệu giả lập.");
     }
+    const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+    // Ưu tiên đơn mới từ LocalStorage (đơn khách vừa đặt)
+    const allBookings = [...localData.reverse(), ...apiData, ...MOCK_BOOKINGS];
+    setBookings(allBookings);
+    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  useEffect(() => { fetchBookings(); }, []);
 
   const handleUpdateStatus = async (bookingId, newStatus) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      // Giả lập gọi API
       await axiosClient.patch(`/hotels/bookings/${bookingId}/`, { status: newStatus });
-      antdMessage?.success(newStatus === 'Confirmed' ? 'Đã xác nhận đơn hàng thành công!' : 'Đã từ chối đơn hàng.');
       fetchBookings();
     } catch (error) {
-      // Nếu lỗi (do chưa có BE), mình vẫn cập nhật local để demo cho mượt
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: newStatus } : b));
-      antdMessage?.info(`[Demo] Cập nhật trạng thái thành: ${newStatus}`);
-    } finally {
-      setLoading(false);
-    }
+      const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+      const updatedLocalData = localData.map(b => 
+        (b.id_booking === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b
+      );
+      localStorage.setItem('mock_bookings', JSON.stringify(updatedLocalData));
+      setBookings(prev => prev.map(b => 
+        (b.id_booking === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b
+      ));
+      antdMessage?.success(`[Demo] Đã chuyển sang ${newStatus}`);
+    } finally { setLoading(false); }
   };
 
   const filteredBookings = activeTab === 'all' 
     ? bookings 
-    : bookings.filter(b => b.status === activeTab);
+    : bookings.filter(b => (b.status || b.Status || 'pending').toLowerCase() === activeTab.toLowerCase());
 
   const columns = [
     { 
       title: 'Mã đơn', 
-      dataIndex: 'id', 
-      key: 'id',
-      width: 100,
-      render: (id) => <Text code style={{color: '#1890ff'}}>#{id}</Text>
+      key: 'id_booking',
+      width: 80,
+      render: (record) => <Text code style={{color: '#1890ff', fontSize: '11px'}}>{record.id_booking || `#${record.id}`}</Text>
     },
     { 
       title: 'Khách hàng', 
       key: 'customer',
+      width: 140,
+      ellipsis: true,
       render: (record) => (
-        <Space orientation="vertical" size={0}>
-          <Text strong><UserOutlined /> {record.customer_name || 'Khách vãng lai'}</Text>
-          <Text type="secondary" style={{fontSize: 12}}>{record.customer_phone || 'N/A'}</Text>
+        <Space direction="vertical" size={0}>
+          <Text strong style={{fontSize: '12px'}}><UserOutlined /> {record.customer_name || 'Khách'}</Text>
+          <Text type="secondary" style={{fontSize: 10}}>{record.customer_email || 'No email'}</Text>
         </Space>
       )
     },
-    // --- Đã tách cột Khách sạn riêng ---
     { 
       title: 'Khách sạn', 
       dataIndex: 'hotel_name',
       key: 'hotel_name',
-      render: (hotelName) => (
-        <Space>
-          <BankOutlined style={{ color: '#8c8c8c' }} />
-          <Text strong>{hotelName}</Text>
-        </Space>
-      )
+      width: 130,
+      ellipsis: true,
+      render: (name) => <Text strong style={{fontSize: '11px'}}><BankOutlined /> {name}</Text>
     },
-    // --- Đã tách cột Thông tin phòng riêng ---
     { 
-      title: 'Thông tin phòng', 
+      title: 'Phòng', 
       key: 'room_info',
+      width: 90,
       render: (record) => (
-        <Space orientation="vertical" size={0}>
-          <Tag color="cyan">Phòng {record.room_number}</Tag>
-          <Text type="secondary" style={{fontSize: 12}}>{record.room_type_name}</Text>
+        <Space direction="vertical" size={0}>
+          <Tag color="cyan" style={{margin: 0, fontSize: '10px'}}>P.{record.room_number || record.id_room}</Tag>
+          <Text type="secondary" style={{fontSize: 10}}>{record.room_type || 'Standard'}</Text>
         </Space>
       )
     },
     { 
-      title: 'Ngày lưu trú', 
+      title: 'Lưu trú', 
       key: 'dates',
+      width: 140,
       render: (record) => (
-        <div style={{minWidth: 160}}>
-          <Space orientation="vertical" size={0}>
-            <Text style={{fontSize: 13}}><CalendarOutlined /> <Text type="success">Vào: {record.check_in}</Text></Text>
-            <Text style={{fontSize: 13}}><CalendarOutlined /> <Text type="danger">Ra: {record.check_out}</Text></Text>
-          </Space>
+        <div style={{lineHeight: '1.4', fontSize: 10}}>
+          <div><Text type="success">●</Text> {record.check_in}</div>
+          <div><Text type="danger">●</Text> {record.check_out}</div>
         </div>
       )
     },
     {
-      title: 'Thành tiền',
+      title: 'Tổng tiền',
       dataIndex: 'total_price',
       key: 'total_price',
-      render: (price) => (
-        <Text strong style={{color: '#faad14'}}>
-          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)}
-        </Text>
-      )
+      width: 100,
+      align: 'right',
+      render: (price) => <Text strong style={{color: '#faad14', fontSize: '12px'}}>{Number(price)?.toLocaleString()}₫</Text>
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
       key: 'status',
-      render: (status) => {
+      width: 100,
+      align: 'center',
+      render: (record) => {
+        // Fix: Ép mặc định 'pending' nếu dữ liệu rỗng
+        const s = (record.status || record.Status || 'pending').toLowerCase();
         const statusConfig = {
-          'Pending': { color: 'orange', text: 'CHỜ DUYỆT', icon: <Badge status="warning" /> },
-          'Confirmed': { color: 'green', text: 'ĐÃ XÁC NHẬN', icon: <Badge status="success" /> },
-          'Cancelled': { color: 'red', text: 'ĐÃ TỪ CHỐI', icon: <Badge status="error" /> },
-          'Completed': { color: 'blue', text: 'HOÀN THÀNH', icon: <Badge status="processing" /> }
+          'pending': { color: 'orange', text: 'CHỜ DUYỆT' },
+          'chờ duyệt': { color: 'orange', text: 'CHỜ DUYỆT' },
+          'confirmed': { color: 'green', text: 'XÁC NHẬN' },
+          'cancelled': { color: 'red', text: 'TỪ CHỐI' }
         };
-        const config = statusConfig[status] || { color: 'default', text: status };
-        return <Tag color={config.color} style={{borderRadius: 10, padding: '2px 10px'}}>{config.text}</Tag>;
+        const config = statusConfig[s] || { color: 'default', text: s.toUpperCase() };
+        return <Tag color={config.color} style={{borderRadius: 10, fontSize: '9px'}}>{config.text}</Tag>;
       }
     },
     {
       title: 'Thao tác',
       key: 'action',
-      fixed: 'right',
-      width: 150,
-      render: (_, record) => (
-        record.status === 'Pending' ? (
-          <Space>
-            <Tooltip title="Xác nhận đơn">
-              <Button 
-                type="primary" 
-                shape="circle"
-                icon={<CheckOutlined />}
-                onClick={() => handleUpdateStatus(record.id, 'Confirmed')}
-              />
-            </Tooltip>
-            <Tooltip title="Từ chối đơn">
-              <Button 
-                danger 
-                shape="circle"
-                icon={<CloseOutlined />}
-                onClick={() => handleUpdateStatus(record.id, 'Cancelled')}
-              />
-            </Tooltip>
-          </Space>
-        ) : (
-          <Tooltip title="Xem chi tiết đơn hàng">
-            <Button icon={<InfoCircleOutlined />} type="link">Chi tiết</Button>
+      width: 80,
+      align: 'center',
+      render: (_, record) => {
+        // Fix: Đồng bộ logic check trạng thái với cột Trạng thái bên trái
+        const s = (record.status || record.Status || 'pending').toLowerCase();
+        
+        if (s === 'pending' || s === 'chờ duyệt') {
+          return (
+            <Space size="middle">
+              <Tooltip title="Xác nhận">
+                <CheckOutlined 
+                  style={{ color: '#52c41a', cursor: 'pointer', fontSize: '16px' }} 
+                  onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Confirmed')}
+                />
+              </Tooltip>
+              <Tooltip title="Từ chối">
+                <CloseOutlined 
+                  style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: '16px' }} 
+                  onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Cancelled')}
+                />
+              </Tooltip>
+            </Space>
+          );
+        }
+        return (
+          <Tooltip title="Xem chi tiết">
+            <InfoCircleOutlined 
+              style={{ color: '#1890ff', cursor: 'pointer', fontSize: '18px' }} 
+              onClick={() => antdMessage.info("Chi tiết đơn hàng đang được cập nhật")}
+            />
           </Tooltip>
-        )
-      )
+        );
+      }
     }
   ];
 
   return (
-    <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: '24px' }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-        
-        {/* Frame trên: Tiêu đề */}
-        <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh', padding: '16px' }}>
+      <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}> 
+        <Card bordered={false} style={{ marginBottom: 12, borderRadius: 8 }}>
           <Row justify="space-between" align="middle">
-            <Col>
-              <Title level={4} style={{ margin: 0 }}>
-                <DollarOutlined style={{ color: '#1890ff', marginRight: 10 }} />
-                Quản lý đặt phòng
-              </Title>
-              <Text type="secondary">Theo dõi và cập nhật trạng thái các đơn đặt phòng của khách hàng</Text>
-            </Col>
-            <Col style={{ textAlign: 'right' }}>
-              <Text type="secondary">Cập nhật lúc: {new Date().toLocaleTimeString()}</Text>
-            </Col>
+            <Col><Title level={4} style={{ margin: 0 }}>Quản lý Đơn hàng (Partner)</Title></Col>
+            <Col><Badge status="processing" text="Dữ liệu thực" /></Col>
           </Row>
         </Card>
 
-        {/* Frame dưới: Tabs và Bảng dữ liệu */}
-        <Card 
-          variant={false} 
-          style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-        >
-          <Tabs 
-            activeKey={activeTab} 
-            onChange={setActiveTab}
-            style={{ marginBottom: 16 }}
+        <Card bordered={false} style={{ borderRadius: 12 }}>
+          <Tabs activeKey={activeTab} onChange={setActiveTab} size="small"
             items={[
-              { label: `Tất cả (${bookings.length})`, key: 'all' },
-              { label: `Chờ duyệt`, key: 'Pending' },
-              { label: `Đã xác nhận`, key: 'Confirmed' },
-              { label: `Đã hoàn thành`, key: 'Completed' },
-              { label: `Đã hủy`, key: 'Cancelled' },
+              { label: 'Tất cả', key: 'all' },
+              { label: 'Chờ duyệt', key: 'pending' },
+              { label: 'Đã xác nhận', key: 'confirmed' },
+              { label: 'Đã hủy', key: 'cancelled' },
             ]}
           />
-
           <Table 
             columns={columns} 
             dataSource={filteredBookings} 
-            rowKey="id"
+            rowKey={(record) => record.id_booking || record.id}
             loading={loading}
-            pagination={{ 
-              pageSize: 8, 
-              showTotal: (total) => `Tổng cộng ${total} đơn hàng`,
-              current: currentPage, // Nếu ông có quản lý state cho trang
-              onChange: (page) => setCurrentPage?.(page)
-            }}
-            scroll={{ x: 1000 }}
-            locale={{ emptyText: <Empty description="Không có đơn đặt phòng nào" /> }}
+            // Loại bỏ hoàn toàn thanh cuộn ngang bằng cách không set scroll.x
+            pagination={{ pageSize: 8, size: 'small', current: currentPage, onChange: (p) => setCurrentPage(p) }}
           />
         </Card>
       </div>

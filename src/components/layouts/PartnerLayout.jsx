@@ -20,7 +20,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 const { confirm } = Modal;
-
 const PartnerLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();

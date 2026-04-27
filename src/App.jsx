@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { ConfigProvider, App as AntApp } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
+import ScrollToTop from './components/common/ScrollToTop'; // Import tại đây
 
 // 1. NHÓM XÁC THỰC & HỆ THỐNG
 import ProtectedRoute from './pages/auth/ProtectedRoute';
@@ -15,12 +16,12 @@ import CustomerLayout from './components/layouts/CustomerLayout';
 import PartnerLayout from './components/layouts/PartnerLayout';
 import AdminLayout from './components/layouts/AdminLayout';
 
-// 3. NHÓM GUEST (Khách vãng lai - Chưa đăng nhập)
+// 3. NHÓM GUEST
 import GuestHome from './pages/guest/Home';
 import GuestHotelList from './pages/guest/HotelList';
 import GuestHotelDetail from './pages/guest/HotelDetail';
 
-// 4. NHÓM CUSTOMER (Khách hàng - Đã đăng nhập)
+// 4. NHÓM CUSTOMER
 import CustomerHome from './pages/customer/Home';
 import CustomerHotelList from './pages/customer/HotelList';
 import CustomerHotelDetail from './pages/customer/HotelDetail';
@@ -73,33 +74,29 @@ function App() {
         <AuthProvider>
           <div style={{ minHeight: '100vh', width: '100%', background: '#f5f7fa' }}>
             <BrowserRouter>
+              {/* QUAN TRỌNG: Đặt ScrollToTop ở đây để nó theo dõi mọi sự thay đổi Route */}
+              <ScrollToTop />
+
               <Routes>
-                {/* GIAO DIỆN CHUNG (GUEST & CUSTOMER) - Dùng chung Navbar có auto nhận diện */}
+                {/* GIAO DIỆN CHUNG (GUEST & CUSTOMER) */}
                 <Route element={<CustomerLayout />}>
-                  
-                  {/* --- NHÁNH GUEST (Public) --- */}
                   <Route path="/" element={<GuestHome />} />
                   <Route path="/hotels" element={<GuestHotelList />} />
                   <Route path="/hotel/:id" element={<GuestHotelDetail />} />
 
-                  {/* --- NHÁNH CUSTOMER (Private - Yêu cầu Login) --- */}
                   <Route path="/customer" element={<ProtectedRoute allowedRoles={['customer']} />}>
                     <Route index element={<Navigate to="/customer/home" replace />} />
                     <Route path="home" element={<CustomerHome />} />
-                    
-                    {/* Đã đồng bộ tên đường dẫn với nhánh Guest */}
                     <Route path="hotels" element={<CustomerHotelList />} /> 
                     <Route path="hotel/:id" element={<CustomerHotelDetail />} />
-                    
                     <Route path="checkout" element={<Checkout />} />
                     <Route path="customerbookings" element={<CustomerBookings />} />
                     <Route path="profile" element={<Profile />} />
                     <Route path="messages" element={<CustomerMessages />} />
                   </Route>
-
                 </Route>
 
-                {/* ================= CÁC TRANG LOGIN/REGISTER ================= */}
+                {/* LOGIN/REGISTER */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RoleSelection />} />
                 <Route path="/register/form" element={<RegisterForm />} />
@@ -107,7 +104,7 @@ function App() {
                 <Route path="/partner/login" element={<PartnerLogin />} />
                 <Route path="/partner/register" element={<PartnerRegister />} />
 
-                {/* ================= PHÂN HỆ ĐỐI TÁC (PARTNER) ================= */}
+                {/* PARTNER SYSTEM */}
                 <Route element={<ProtectedRoute allowedRoles={['partner']} />}>
                   <Route path="/partner" element={<PartnerLayout />}>
                     <Route index element={<Navigate to="/partner/dashboard" replace />} />
@@ -122,7 +119,7 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* ================= PHÂN HỆ QUẢN TRỊ (ADMIN) ================= */}
+                {/* ADMIN SYSTEM */}
                 <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
                   <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<Navigate to="/admin/dashboard" replace />} />
