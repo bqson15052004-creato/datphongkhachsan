@@ -98,7 +98,7 @@ const Home = () => {
           }}
         >
           <Row gutter={[12, 12]} align="middle">
-            <Col xs={24} md={19}>
+            <Col xs={24} md={18}>
               <Input 
                 size="large" 
                 value={query} 
@@ -109,13 +109,11 @@ const Home = () => {
                 style={{ borderRadius: '8px', height: '45px' }}
               />
             </Col>
-            <Col xs={24} md={5}>
+            <Col xs={24} md={6}>
               <Button
-                type="primary"
-                block
-                icon={<SearchOutlined />}
+                size="large" type="primary" block icon={<SearchOutlined />}
                 onClick={() => handleNavigate({ location: query })}
-                style={{ borderRadius: '8px', height: '45px', fontWeight: '600' }}
+                style={{ borderRadius: '8px', height: '45px', fontWeight: 'bold' }}
               >
                 TÌM KIẾM
               </Button>
@@ -125,88 +123,73 @@ const Home = () => {
       </div>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
-        
-        {/* 2. SECTION: TÌM THEO LOẠI CHỖ NGHỈ */}
+              
+        {/* 2. TÌM THEO LOẠI CHỖ NGHỈ */}
         <div style={{ marginBottom: '50px' }}>
-          <Title level={3} style={{ marginBottom: '24px' }}>
-            <AppstoreOutlined style={{ color: '#1890ff', marginRight: 10 }} /> 
-            Tìm theo loại chỗ nghỉ
+          <Title level={3} style={{ marginBottom: '20px' }}>
+            <AppstoreOutlined style={{ color: '#1890ff' }} /> Tìm theo loại chỗ nghỉ
           </Title>
           <Row gutter={[16, 16]}>
-            {PROPERTY_TYPES.map((type, index) => (
+            {PROPERTY_TYPES.map((item, index) => (
               <Col xs={12} sm={6} key={index}>
-                <div style={{ cursor: 'pointer' }} className="hover-scale-card" onClick={() => handleNavigate({ type: type.title })}>
-                  <div style={{ overflow: 'hidden', borderRadius: '12px', marginBottom: '8px', height: '160px' }}>
-                    <img src={type.img} alt={type.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="zoom-img"/>
+                <div style={{ cursor: 'pointer' }} className="hover-scale-card" onClick={() => handleNavigate({ type: item.title })}>
+                  <div style={{ overflow: 'hidden', borderRadius: '8px', marginBottom: '8px', height: '150px' }}>
+                    <img src={item.img} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="zoom-img"/>
                   </div>
-                  <Text strong style={{ fontSize: '16px' }}>{type.title}</Text>
+                  <Text strong style={{ fontSize: '16px' }}>{item.title}</Text>
                 </div>
               </Col>
             ))}
           </Row>
         </div>
 
-        {/* 3. SECTION: KHÁM PHÁ VIỆT NAM */}
+        {/* 3. KHÁM PHÁ VIỆT NAM */}
         <div style={{ marginBottom: '60px' }}>
           <Title level={3} style={{ margin: '0 0 4px 0' }}>
-            <CompassOutlined style={{ color: '#fa8c16', marginRight: 10 }} /> 
-            Khám phá Việt Nam
+            <CompassOutlined style={{ color: '#fa8c16' }} /> Khám phá Việt Nam
           </Title>
-          <Text type="secondary" style={{ display: 'block', marginBottom: '24px' }}>Các điểm đến phổ biến có nhiều điều chờ đón bạn</Text>
-          <Row gutter={[16, 16]}>
+          <Row gutter={[20, 20]}>
             {DESTINATIONS.map((dest, index) => (
               <Col xs={12} sm={8} md={4} key={index}>
                 <div style={{ cursor: 'pointer' }} className="hover-scale-card" onClick={() => handleNavigate({ location: dest.city })}>
-                  <div style={{ overflow: 'hidden', borderRadius: '12px', marginBottom: '8px', height: '130px' }}>
+                  <div style={{ overflow: 'hidden', borderRadius: '8px', marginBottom: '8px', height: '120px' }}>
                     <img src={dest.img} alt={dest.city} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="zoom-img"/>
                   </div>
                   <Text strong style={{ display: 'block', fontSize: '15px' }}>{dest.city}</Text>
-                  <Text type="secondary" style={{ fontSize: '13px' }}>{dest.count} chỗ nghỉ</Text>
                 </div>
               </Col>
             ))}
           </Row>
         </div>
 
-        {/* 4. SECTION: ƯU ĐÃI LỚN NHẤT */}
+        {/* 4. ƯU ĐÃI LỚN NHẤT (HOT DEALS) */}
         <div style={{ marginBottom: '60px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <PercentageOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />
             <Title level={3} style={{ margin: 0 }}>Ưu đãi cực hời</Title>
-            <Tag color="red">GIẢM NHIỀU NHẤT</Tag>
           </div>
+          <Text type="secondary" style={{ display: 'block', marginBottom: '20px' }}>Mã giảm giá siêu hấp dẫn</Text>
           <Row gutter={[20, 20]}>
-            {loading ? (
-              [1, 2, 3, 4].map(i => <Col xs={12} md={6} key={i}><Skeleton active /></Col>)
-            ) : (
+            {loading ? [1, 2, 3, 4].map(i => <Col xs={12} md={6} key={i}><Skeleton active /></Col>) : (
               discountHotels.map((hotel) => (
                 <Col xs={12} md={6} key={hotel.id_hotel}>
                   <Card
-                    hoverable
-                    styles={{ body: { padding: '12px' } }}
-                    // ĐÃ CẬP NHẬT ĐƯỜNG DẪN CHI TIẾT
+                    hoverable styles={{ body: { padding: '12px' } }}
                     onClick={() => navigate(`/customer/hotel/${hotel.id_hotel}`)}
                     cover={
                       <div style={{ position: 'relative', height: '180px', overflow: 'hidden' }}>
-                        <img src={hotel.image_url} alt={hotel.hotel_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="zoom-img"/>
-                        <div style={{ 
-                          position: 'absolute', top: 0, right: 0, background: '#ff4d4f', color: '#fff', 
-                          padding: '4px 12px', fontWeight: 'bold', borderBottomLeftRadius: '12px' 
-                        }}>
+                        <img src={hotel.image_url} alt={hotel.hotel_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', top: 0, right: 0, background: '#ff4d4f', color: '#fff', padding: '4px 12px', fontWeight: 'bold', borderBottomLeftRadius: '12px' }}>
                           -{hotel.discount_percent}%
                         </div>
                       </div>
                     }
-                    style={{ borderRadius: '16px', overflow: 'hidden', border: '1px solid #ffccc7' }}
+                    style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid #ffccc7' }}
                   >
                     <Text strong ellipsis style={{ display: 'block' }}>{hotel.hotel_name}</Text>
                     <Space align="center" style={{ marginTop: '8px' }}>
-                      <Text delete type="secondary" style={{ fontSize: '12px' }}>
-                        {(hotel.price_per_night * 1.3).toLocaleString()}₫
-                      </Text>
-                      <Text type="danger" strong style={{ fontSize: '17px' }}>
-                        {hotel.price_per_night?.toLocaleString()}₫
-                      </Text>
+                      <Text delete type="secondary" style={{ fontSize: '12px' }}>{(hotel.price_per_night * 1.3).toLocaleString()}₫</Text>
+                      <Text type="danger" strong style={{ fontSize: '16px' }}>{hotel.price_per_night.toLocaleString()}₫</Text>
                     </Space>
                   </Card>
                 </Col>
@@ -215,61 +198,25 @@ const Home = () => {
           </Row>
         </div>
 
-        {/* 5. SECTION: ĐỀ XUẤT CHO BẠN */}
+        {/* 5. GỢI Ý CHO BẠN */}
         <div style={{ paddingBottom: '80px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
-            <div>
-              <Title level={2} style={{ margin: 0 }}>
-                <FireOutlined style={{ color: '#ff4d4f', marginRight: 10 }} />
-                Đề xuất cho bạn
-              </Title>
-              <Text type="secondary" style={{ fontSize: 16 }}>Dựa trên xu hướng du lịch năm 2026</Text>
-            </div>
-            {/* ĐÃ CẬP NHẬT ĐƯỜNG DẪN XEM TẤT CẢ */}
-            <Button type="link" onClick={() => navigate('/customer/hotels')} style={{ fontWeight: 600 }}>
-              Xem tất cả <RightOutlined style={{ fontSize: 12 }} />
-            </Button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <Title level={3} style={{ margin: 0 }}><FireOutlined style={{ color: '#ff4d4f' }} /> Gợi ý cho bạn</Title>
+            <Button type="link" onClick={() => navigate('/customer/hotels')}>Xem tất cả <RightOutlined style={{ fontSize: 12 }} /></Button>
           </div>
-
           <Row gutter={[24, 24]}>
-            {loading ? (
-              [1, 2, 3, 4].map(i => (
-                <Col xs={24} sm={12} md={6} key={i}>
-                  <Card variant="none" cover={<Skeleton.Image style={{ width: '100%', height: 220 }} active />}>
-                    <Skeleton active paragraph={{ rows: 2 }} />
-                  </Card>
-                </Col>
-              ))
-            ) : (
+            {loading ? [1, 2, 3, 4].map(i => <Col xs={24} sm={12} md={6} key={i}><Skeleton active /></Col>) : (
               featuredHotels.map((hotel) => (
                 <Col xs={24} sm={12} md={6} key={hotel.id_hotel}>
                   <Card
-                    hoverable
-                    // ĐÃ CẬP NHẬT ĐƯỜNG DẪN CHI TIẾT
-                    onClick={() => navigate(`/customer/hotel/${hotel.id_hotel}`)}
-                    cover={
-                      <div style={{ overflow: 'hidden', height: 220, position: 'relative' }}>
-                        <img 
-                          alt={hotel.hotel_name} src={hotel.image_url} 
-                          className="zoom-img"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s' }} 
-                        />
-                        <Tag color="rgba(0,0,0,0.6)" style={{ position: 'absolute', top: 12, left: 12, border: 'none', backdropFilter: 'blur(4px)' }}>
-                           <EnvironmentOutlined /> {hotel.location_city}
-                        </Tag>
-                      </div>
-                    }
-                    style={{ borderRadius: '20px', overflow: 'hidden', border: '1px solid #f1f5f9' }}
-                    actions={[
-                      <Text key="book" style={{ color: '#1890ff', fontWeight: 700 }}>ĐẶT NGAY</Text>
-                    ]}
+                    hoverable onClick={() => navigate(`/customer/hotel/${hotel.id_hotel}`)}
+                    cover={<div style={{ height: 220, overflow: 'hidden' }}><img src={hotel.image_url} alt={hotel.hotel_name} className="zoom-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+                    style={{ borderRadius: '12px', overflow: 'hidden' }}
                   >
-                    <Title level={5} style={{ margin: '0 0 8px 0', height: '44px', overflow: 'hidden' }}>{hotel.hotel_name}</Title>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                       <Rate disabled defaultValue={hotel.rate_star} style={{ fontSize: '12px' }} />
-                       <Text type="danger" style={{ fontSize: '18px', fontWeight: 700 }}>
-                          {hotel.price_per_night?.toLocaleString()}₫
-                        </Text>
+                    <Title level={5} ellipsis style={{ margin: 0 }}>{hotel.hotel_name}</Title>
+                    <Text type="secondary"><EnvironmentOutlined /> {hotel.location_city}</Text>
+                    <div style={{ marginTop: '12px' }}>
+                      <Text type="danger" strong style={{ fontSize: '18px' }}>{hotel.price_per_night.toLocaleString()}₫</Text>
                     </div>
                   </Card>
                 </Col>

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Tag, Space, Button, Card, Typography,
+  Table, Tag, Space, Button, Card, Typography, Alert, 
   message, Modal, Input, Badge, Select, Descriptions, Avatar, Tooltip, Form
 } from 'antd';
 import {
   SearchOutlined, UserOutlined,
-  EyeOutlined, LockOutlined, UnlockOutlined, CrownOutlined, PlusOutlined
+  EyeOutlined, LockOutlined, UnlockOutlined, CrownOutlined, PlusOutlined,
+  MailOutlined, PhoneOutlined, KeyOutlined, IdcardOutlined
 } from '@ant-design/icons';
 
-// FIX: Import dữ liệu từ file mockData
+// IMPORT MOCK DATA
 import { MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
@@ -17,15 +18,13 @@ const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [search_text, setSearchText] = useState('');
   
-  // State cho modal xem chi tiết
+  // State cho modal
   const [is_modal_open, setIsModalOpen] = useState(false);
   const [selected_user, setSelectedUser] = useState(null);
-
-  // State cho modal thêm admin
   const [is_add_modal_open, setIsAddModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  // Khởi tạo dữ liệu từ "Database" (localStorage)
+  // Khởi tạo dữ liệu
   useEffect(() => {
     const database_data = JSON.parse(localStorage.getItem('SYSTEM_USERS'));
     
@@ -34,27 +33,24 @@ const UserManagement = () => {
     } else {
       const initial_data = MOCK_USERS.map(user => ({
         email_address: user.email,
-        user_name: user.id,
+        user_name: user.id || `user_${Math.random().toString(36).substr(2, 5)}`,
         full_name: user.full_name,
         user_role: user.role || 'customer',
-        is_root: user.role === 'admin',
+        is_root: user.role === 'admin' && user.email === 'admin@gmail.com', // Giả định admin gốc
         account_status: 'active',
         created_at: new Date().toISOString(),
         phone_number: user.phone || '0900 000 000',
         avatar_url: user.avatar
       }));
-
       save_users_to_db(initial_data);
     }
   }, []);
 
-  // Hàm lưu dữ liệu vào "Database"
   const save_users_to_db = (new_users) => {
     localStorage.setItem('SYSTEM_USERS', JSON.stringify(new_users));
     setUsers(new_users);
   };
 
-  // Hàm xử lý khóa/mở khóa tài khoản
   const handle_toggle_status = (user) => {
     const action = user.account_status === 'active' ? 'KHÓA' : 'MỞ KHÓA';
     Modal.confirm({
@@ -75,30 +71,34 @@ const UserManagement = () => {
 
   // Hàm xử lý thêm Admin Cấp 2 mới
   const handle_add_admin = (values) => {
-    // Kiểm tra trùng email
     if (users.some(u => u.email_address === values.email)) {
-      message.error('Email này đã tồn tại trong hệ thống!');
+      message.error('Email này đã tồn tại!');
+      return;
+    }
+    if (users.some(u => u.user_name === values.user_name)) {
+      message.error('Tên tài khoản đã tồn tại!');
       return;
     }
 
     const new_admin = {
       email_address: values.email,
-      user_name: `admin_${Date.now().toString().slice(-6)}`, // Tạo username ngẫu nhiên
+      user_name: values.user_name,
       full_name: values.full_name,
-      user_role: 'admin', // Cố định quyền là admin cấp 2
-      is_root: false,     // Không phải root
+      user_role: 'admin',
+      is_root: false,
       account_status: 'active',
       created_at: new Date().toISOString(),
       phone_number: values.phone || 'N/A',
-      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${values.full_name}` // Tạo avatar ngẫu nhiên theo tên
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${values.user_name}`,
+      password: values.password
     };
 
-    const updated_users = [...users, new_admin];
+    const updated_users = [new_admin, ...users];
     save_users_to_db(updated_users);
     
-    message.success('Đã thêm Admin Cấp 2 thành công!');
+    message.success('Đã tạo tài khoản Admin Cấp 2 thành công!');
     setIsAddModalOpen(false);
-    form.resetFields(); // Xóa form sau khi thêm thành công
+    form.resetFields();
   };
 
   const columns = [
@@ -108,12 +108,12 @@ const UserManagement = () => {
       render: (_, record) => (
         <Space>
           <Avatar 
-            icon={<UserOutlined />} 
             src={record.avatar_url} 
+            icon={<UserOutlined />}
             style={{ backgroundColor: record.is_root ? '#f5222d' : '#1890ff' }}
           />
           <div>
-            <Text strong>{record.full_name}</Text>
+            <div style={{ fontWeight: 'bold' }}>{record.full_name}</div>
           </div>
         </Space>
       ),
@@ -128,25 +128,10 @@ const UserManagement = () => {
       dataIndex: 'user_role',
       key: 'user_role',
       render: (role, record) => {
-        if (record.is_root) return <Tag color="gold" icon={<CrownOutlined />}>ADMIN CẤP 1 (ROOT)</Tag>;
-
-        return (
-          <Select
-            value={role}
-            size="small"
-            style={{ width: 140 }}
-            onChange={(val) => {
-              const new_users = users.map(u => u.email_address === record.email_address ? { ...u, user_role: val } : u);
-              save_users_to_db(new_users);
-              message.success('Đã cập nhật quyền hạn');
-            }}
-            options={[
-              { value: 'admin', label: 'Admin Cấp 2' },
-              { value: 'partner', label: 'Đối tác' },
-              { value: 'customer', label: 'Khách hàng' },
-            ]}
-          />
-        );
+        if (record.is_root) return <Tag color="volcano" icon={<CrownOutlined />}>ADMIN CẤP 1</Tag>;
+        if (role === 'admin') return <Tag color="blue">ADMIN CẤP 2</Tag>;
+        if (role === 'partner') return <Tag color="purple">ĐỐI TÁC</Tag>;
+        return <Tag color="default">KHÁCH HÀNG</Tag>;
       },
     },
     {
@@ -156,7 +141,7 @@ const UserManagement = () => {
       render: (status) => (
         <Badge 
           status={status === 'active' ? 'success' : 'error'} 
-          text={<Tag color={status === 'active' ? 'green' : 'red'}>{status === 'active' ? 'Hoạt động' : 'Đã khóa'}</Tag>} 
+          text={<Tag color={status === 'active' ? 'blue' : 'red'}>{status === 'active' ? 'Hoạt động' : 'Đã khóa'}</Tag>} 
         />
       ),
     },
@@ -174,9 +159,9 @@ const UserManagement = () => {
             <Tooltip title={record.account_status === 'active' ? "Khóa tài khoản" : "Mở khóa"}>
               <Button 
                 size="small" 
-                icon={record.account_status === 'active' ? <LockOutlined /> : <UnlockOutlined />} 
-                danger={record.account_status === 'active'}
-                type={record.account_status !== 'active' ? 'primary' : 'default'}
+                icon={record.account_status === 'active' ? <UnlockOutlined /> : <LockOutlined />} 
+                type={record.account_status === 'active' ? 'primary' : 'default'}
+                danger={record.account_status !== 'active'} 
                 onClick={() => handle_toggle_status(record)}
               />
             </Tooltip>
@@ -187,22 +172,22 @@ const UserManagement = () => {
   ];
 
   return (
-    <Card variant={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+    <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
-        <Title level={4} style={{ margin: 0 }}><UserOutlined /> Quản lý danh sách tài khoản</Title>
+        <Title level={4} style={{ margin: 0 }}><UserOutlined /> Quản lý người dùng</Title>
         <Space>
           <Input
-            placeholder="Tìm theo tên hoặc email..."
+            placeholder="Tìm tên, email hoặc tài khoản..."
             prefix={<SearchOutlined />}
             allowClear
-            style={{ width: 300, borderRadius: 8 }}
+            style={{ width: 280, borderRadius: 8 }}
             onChange={e => setSearchText(e.target.value)}
           />
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={() => setIsAddModalOpen(true)}
-            style={{ borderRadius: 8 }}
+            style={{ borderRadius: 8, fontWeight: 500 }}
           >
             Thêm Admin
           </Button>
@@ -213,86 +198,117 @@ const UserManagement = () => {
         columns={columns}
         dataSource={users.filter(u => 
           u.full_name?.toLowerCase().includes(search_text.toLowerCase()) || 
-          u.email_address?.toLowerCase().includes(search_text.toLowerCase())
+          u.email_address?.toLowerCase().includes(search_text.toLowerCase()) ||
+          u.user_name?.toLowerCase().includes(search_text.toLowerCase())
         )}
         rowKey="email_address"
-        pagination={{ pageSize: 7, showTotal: (total) => `Tổng cộng ${total} tài khoản` }}
+        pagination={{ pageSize: 8 }}
       />
 
-      {/* Modal xem chi tiết người dùng */}
+      {/* MODAL XEM CHI TIẾT */}
       <Modal
-        title={<Space><UserOutlined /> Hồ sơ chi tiết</Space>}
+        title="Thông tin người dùng"
         open={is_modal_open}
         onCancel={() => setIsModalOpen(false)}
-        footer={[<Button key="ok" type="primary" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
-        width={600}
+        footer={[<Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
       >
         {selected_user && (
-          <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
-            <Descriptions.Item label="Họ tên" span={2}>{selected_user.full_name}</Descriptions.Item>
+          <Descriptions bordered column={1} size="small">
+            <Descriptions.Item label="Tên tài khoản">{selected_user.user_name}</Descriptions.Item>
+            <Descriptions.Item label="Họ và tên">{selected_user.full_name}</Descriptions.Item>
             <Descriptions.Item label="Email">{selected_user.email_address}</Descriptions.Item>
-            <Descriptions.Item label="Username">{selected_user.user_name}</Descriptions.Item>
-            <Descriptions.Item label="Vai trò" span={2}>
-              <Tag color={selected_user.is_root ? 'volcano' : 'blue'}>
-                {selected_user.is_root ? 'ADMIN TỐI CAO' : selected_user.user_role.toUpperCase()}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày tạo">
-               {new Date(selected_user.created_at).toLocaleDateString('vi-VN')}
-            </Descriptions.Item>
             <Descriptions.Item label="Số điện thoại">{selected_user.phone_number}</Descriptions.Item>
+            <Descriptions.Item label="Vai trò">
+                <Tag color="blue">{selected_user.user_role.toUpperCase()}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tham gia">
+                {new Date(selected_user.created_at).toLocaleDateString('vi-VN')}
+            </Descriptions.Item>
           </Descriptions>
         )}
       </Modal>
 
-      {/* Modal Thêm Admin Cấp 2 */}
+      {/* MODAL THÊM ADMIN CẤP 2 */}
       <Modal
-        title="Thêm Admin Cấp 2 Mới"
+        title={<Title level={4} style={{ margin: 0 }}>Tạo tài khoản Admin Cấp 2</Title>}
         open={is_add_modal_open}
         onCancel={() => { setIsAddModalOpen(false); form.resetFields(); }}
-        onOk={() => form.submit()} // Kích hoạt submit form khi bấm nút OK của Modal
-        okText="Tạo tài khoản"
-        cancelText="Hủy bỏ"
+        onOk={() => form.submit()}
+        okText="Xác nhận tạo"
+        cancelText="Hủy"
+        width={500}
       >
         <Form 
           form={form} 
           layout="vertical" 
           onFinish={handle_add_admin}
-          style={{ marginTop: 16 }}
+          style={{ marginTop: 20 }}
         >
+          <Form.Item 
+            name="user_name" 
+            label="Tên tài khoản (Username)" 
+            rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
+          >
+            <Input prefix={<IdcardOutlined />} placeholder="Ví dụ: admin_phong" />
+          </Form.Item>
+
           <Form.Item 
             name="full_name" 
             label="Họ và tên" 
-            rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
+            rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
           >
-            <Input placeholder="Nhập họ và tên admin" />
+            <Input prefix={<UserOutlined />} placeholder="Nhập tên đầy đủ" />
           </Form.Item>
 
-          <Form.Item 
-            name="email" 
-            label="Địa chỉ Email" 
-            rules={[
-              { required: true, message: 'Vui lòng nhập email!' },
-              { type: 'email', message: 'Email không hợp lệ!' }
-            ]}
-          >
-            <Input placeholder="Nhập email đăng nhập" />
-          </Form.Item>
-
-          <Form.Item 
-            name="phone" 
-            label="Số điện thoại"
-          >
-            <Input placeholder="Nhập số điện thoại (Không bắt buộc)" />
-          </Form.Item>
+          <Space style={{ display: 'flex' }} align="baseline">
+            <Form.Item 
+                name="email" 
+                label="Email" 
+                rules={[{ required: true, type: 'email', message: 'Email không hợp lệ!' }]}
+            >
+                <Input prefix={<MailOutlined />} placeholder="Email liên lạc" />
+            </Form.Item>
+            <Form.Item 
+                name="phone" 
+                label="Số điện thoại"
+                rules={[{ required: true, message: 'Vui lòng nhập SĐT!' }]}
+            >
+                <Input prefix={<PhoneOutlined />} placeholder="Số điện thoại" />
+            </Form.Item>
+          </Space>
 
           <Form.Item 
             name="password" 
             label="Mật khẩu" 
-            rules={[{ required: true, message: 'Vui lòng thiết lập mật khẩu!' }]}
+            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
           >
-            <Input.Password placeholder="Nhập mật khẩu" />
+            <Input.Password prefix={<KeyOutlined />} placeholder="Nhập mật khẩu" />
           </Form.Item>
+
+          <Form.Item 
+            name="confirm" 
+            label="Nhập lại mật khẩu" 
+            dependencies={['password']}
+            rules={[
+              { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Mật khẩu không khớp!'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password prefix={<KeyOutlined />} placeholder="Xác nhận mật khẩu" />
+          </Form.Item>
+          
+          <Alert 
+            message="Tài khoản này sẽ được cấp quyền Admin Cấp 2 theo mặc định hệ thống." 
+            type="info" 
+            showIcon 
+          />
         </Form>
       </Modal>
     </Card>

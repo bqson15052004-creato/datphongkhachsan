@@ -129,12 +129,11 @@ const PartnerBookings = () => {
       }
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       key: 'action',
       width: 80,
       align: 'center',
       render: (_, record) => {
-        // Fix: Đồng bộ logic check trạng thái với cột Trạng thái bên trái
         const s = (record.status || record.Status || 'pending').toLowerCase();
         
         if (s === 'pending' || s === 'chờ duyệt') {
@@ -142,13 +141,13 @@ const PartnerBookings = () => {
             <Space size="middle">
               <Tooltip title="Xác nhận">
                 <CheckOutlined 
-                  style={{ color: '#52c41a', cursor: 'pointer', fontSize: '16px' }} 
+                  style={{ color: 'blue', cursor: 'pointer', fontSize: '16px' }} 
                   onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Confirmed')}
                 />
               </Tooltip>
               <Tooltip title="Từ chối">
                 <CloseOutlined 
-                  style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: '16px' }} 
+                  style={{ color: 'red', cursor: 'pointer', fontSize: '16px' }} 
                   onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Cancelled')}
                 />
               </Tooltip>

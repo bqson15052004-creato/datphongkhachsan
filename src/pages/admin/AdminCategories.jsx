@@ -82,12 +82,12 @@ const AdminCategories = () => {
       width: 150,
       align: 'center',
       render: (status) => {
-        // PHÒNG THỦ: Nếu status rỗng thì mặc định là active (Xanh)
         const isActive = !status || status === 'active'; 
         return (
           <Tag 
-            color={isActive ? 'success' : 'error'} 
-            icon={isActive ? <UnlockOutlined /> : <LockOutlined />}
+            color={isActive ? 'blue' : 'red'} 
+            //icon={isActive ? <UnlockOutlined /> : <LockOutlined />}
+            style={{ borderRadius: '4px', padding: '2px 8px' }}
           >
             {isActive ? 'Đang mở' : 'Đang khóa'}
           </Tag>
@@ -103,16 +103,22 @@ const AdminCategories = () => {
         const is_active = !record.status || record.status === 'active';
         return (
           <Space size="small">
-            <Tooltip title="Chỉnh sửa">
-              <Button type="text" icon={<EditOutlined />} onClick={() => handle_edit_click(record)} />
+            <Tooltip title={is_active ? "Chỉnh sửa" : "Không thể sửa khi đang khóa"}>
+              <Button 
+                type="text" 
+                icon={<EditOutlined />} 
+                // VÔ HIỆU HÓA NÚT SỬA KHI ĐANG KHÓA
+                disabled={!is_active} 
+                onClick={() => handle_edit_click(record)} 
+              />
             </Tooltip>
             
             <Tooltip title={is_active ? "Nhấn để Khóa" : "Nhấn để Mở khóa"}>
               <Button 
                 type="text" 
                 icon={is_active 
-                  ? <UnlockOutlined style={{ color: '#52c41a' }} /> 
-                  : <LockOutlined style={{ color: '#ff4d4f' }} />
+                  ? <UnlockOutlined style={{ color: 'blue', fontSize: '16px' }} /> 
+                  : <LockOutlined style={{ color: 'red', fontSize: '16px' }} />
                 } 
                 onClick={() => handle_toggle_status(record)}
               />
@@ -164,7 +170,7 @@ const AdminCategories = () => {
         }
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKey(null); form.resetFields(); setIsModalVisible(true); }}>
-            Thêm loại mới
+            Thêm loại khách sạn mới
           </Button>
         }
       >

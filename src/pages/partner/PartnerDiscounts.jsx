@@ -108,11 +108,11 @@ const PartnerDiscounts = () => {
       render: (_, record) => {
         if (record.status === 'locked') return <Tag color="error">ĐÃ KHÓA</Tag>;
         const isExpired = dayjs().isAfter(dayjs(record.end_date));
-        return <Tag color={isExpired ? 'default' : 'green'}>{isExpired ? 'Hết hạn' : 'Đang chạy'}</Tag>;
+        return <Tag color={isExpired ? 'default' : 'blue'}>{isExpired ? 'Hết hạn' : 'Đang hoạt động'}</Tag>;
       }
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       key: 'action',
       align: 'right',
       width: 120,
@@ -121,7 +121,7 @@ const PartnerDiscounts = () => {
           {/* NÚT SỬA */}
           <Button 
             type="text" 
-            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : '#1890ff' }} />} 
+            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : 'blue' }} />} 
             disabled={record.status === 'locked'}
             onClick={() => {
               setEditingId(record.id_discount);
@@ -133,13 +133,12 @@ const PartnerDiscounts = () => {
             }}
           />
           
-          {/* NÚT KHÓA / MỞ KHÓA (Update theo yêu cầu) */}
           <Button 
             type="text" 
             icon={
               record.status === 'locked' 
-                ? <LockOutlined style={{ color: '#ff4d4f' }} /> 
-                : <UnlockOutlined style={{ color: '#52c41a' }} />
+                ? <LockOutlined style={{ color: 'red' }} /> 
+                : <UnlockOutlined style={{ color: 'blue' }} />
             } 
             onClick={() => handleToggleLock(record)}
           />

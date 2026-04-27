@@ -198,7 +198,7 @@ const HotelManagement = () => {
       }
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       align: 'right',
       width: 100,
       render: (_, record) => (
@@ -206,7 +206,7 @@ const HotelManagement = () => {
           <Button 
             size="small" 
             type="text"
-            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : '#1890ff' }} />} 
+            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : 'blue' }} />} 
             disabled={record.status === 'locked'} 
             onClick={() => {
               setEditingId(record.id_hotel);
@@ -226,7 +226,7 @@ const HotelManagement = () => {
           <Button 
             size="small"
             type="text"
-            icon={record.status === 'locked' ? <LockOutlined style={{ color: '#ff4d4f' }} /> : <UnlockOutlined style={{ color: '#52c41a' }} />} 
+            icon={record.status === 'locked' ? <LockOutlined style={{ color: 'red' }} /> : <UnlockOutlined style={{ color: 'blue' }} />} 
             onClick={() => handleToggleLock(record)} 
           />
         </Space>

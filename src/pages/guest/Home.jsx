@@ -73,12 +73,29 @@ const Home = () => {
       <div style={{
         position: 'relative',
         background: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.3)), url(${beachh}) no-repeat center/cover`,
-        padding: '10px 10px', textAlign: 'center', color: '#fff', borderRadius: '0 0 20px 20px', marginBottom: '30px'
+        padding: '10px 10px',
+        textAlign: 'center', 
+        color: '#fff', 
+        borderRadius: '0 0 20px 20px', 
+        marginBottom: '40px'
       }}>
-        <Title style={{ color: '#fff', fontSize: 'clamp(32px, 5vw, 36px)', fontWeight: 700, marginBottom: '0px' }}>Tận hưởng kỳ nghỉ tuyệt vời</Title>
-        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '18px', display: 'block', marginBottom: '20px' }}>Với hàng nghìn khách sạn chờ đón</Text>
+        <Title style={{ color: '#fff', fontSize: 'clamp(32px, 5vw, 36px)', fontWeight: 700, marginBottom: '0px' }}>
+          Tận hưởng kỳ nghỉ tuyệt vời
+        </Title>
+        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '18px', display: 'block', marginBottom: '20px' }}>
+          Với hàng nghìn khách sạn chờ đón
+        </Text>
 
-        <Card variant={false} style={{ maxWidth: '800px', margin: '0 auto', borderRadius: '16px', boxShadow: '0 15px 40px rgba(0,0,0,0.15)' }}>
+        <Card 
+          variant={false} 
+          styles={{ body: { padding: '12px 20px' } }}
+          style={{ 
+            maxWidth: '700px', 
+            margin: '0 auto', 
+            borderRadius: '12px', 
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)' 
+          }}
+        >
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} md={18}>
               <Input 
@@ -86,14 +103,14 @@ const Home = () => {
                 onPressEnter={() => handleNavigate({ location: query })}
                 placeholder="Bạn muốn nghỉ dưỡng ở đâu?" 
                 prefix={<EnvironmentOutlined style={{ color: '#1890ff' }} />} 
-                style={{ borderRadius: '8px' }}
+                style={{ borderRadius: '8px', height: '45px' }}
               />
             </Col>
             <Col xs={24} md={6}>
               <Button
                 size="large" type="primary" block icon={<SearchOutlined />}
                 onClick={() => handleNavigate({ location: query })}
-                style={{ borderRadius: '12px', height: '50px', fontWeight: 'bold' }}
+                style={{ borderRadius: '8px', height: '45px', fontWeight: 'bold' }}
               >
                 TÌM KIẾM
               </Button>
@@ -123,8 +140,9 @@ const Home = () => {
 
         {/* 3. KHÁM PHÁ VIỆT NAM */}
         <div style={{ marginBottom: '60px' }}>
-          <Title level={3} style={{ margin: '0 0 4px 0' }}><CompassOutlined style={{ color: '#fa8c16' }} /> Khám phá Việt Nam</Title>
-          <Text type="secondary" style={{ display: 'block', marginBottom: '20px' }}>Nhấn vào tỉnh thành để tìm kiếm khách sạn tại đó</Text>
+          <Title level={3} style={{ marginBottom: '20px' }}>
+            <CompassOutlined style={{ color: '#fa8c16' }} /> Khám phá Việt Nam
+          </Title>
           <Row gutter={[16, 16]}>
             {DESTINATIONS.map((dest, index) => (
               <Col xs={12} sm={8} md={4} key={index}>
@@ -144,8 +162,8 @@ const Home = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
             <PercentageOutlined style={{ fontSize: '24px', color: '#ff4d4f' }} />
             <Title level={3} style={{ margin: 0 }}>Ưu đãi cực hời</Title>
-            <Tag color="red" style={{ marginLeft: '10px' }}>GIẢM SÂU NHẤT</Tag>
           </div>
+          <Text type="secondary" style={{ display: 'block', marginBottom: '20px' }}>Mã giảm giá siêu hấp dẫn</Text>
           <Row gutter={[16, 16]}>
             {loading ? [1, 2, 3, 4].map(i => <Col xs={12} md={6} key={i}><Skeleton active /></Col>) : (
               discountHotels.map((hotel) => (
@@ -178,10 +196,10 @@ const Home = () => {
         {/* 5. GỢI Ý CHO BẠN */}
         <div style={{ paddingBottom: '80px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <Title level={3} style={{ margin: 0 }}><FireOutlined style={{ color: '#ff4d4f' }} /> Gợi ý cho bạn</Title>
+            <Title level={3} style={{ marginBottom: '20px' }}><FireOutlined style={{ color: '#ff4d4f' }} /> Gợi ý cho bạn</Title>
             <Button type="link" onClick={() => navigate('/hotels')}>Xem tất cả <RightOutlined style={{ fontSize: 12 }} /></Button>
           </div>
-          <Row gutter={[24, 24]}>
+          <Row gutter={[16, 16]}>
             {loading ? [1, 2, 3, 4].map(i => <Col xs={24} sm={12} md={6} key={i}><Skeleton active /></Col>) : (
               featuredHotels.map((hotel) => (
                 <Col xs={24} sm={12} md={6} key={hotel.id_hotel}>

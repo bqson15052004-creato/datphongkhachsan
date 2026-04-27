@@ -166,7 +166,7 @@ const RoomNumbers = () => {
       ),
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       key: 'action',
       align: 'center',
       render: (_, record) => (
@@ -174,7 +174,7 @@ const RoomNumbers = () => {
           {/* NÚT SỬA */}
           <Button 
             type="text" 
-            icon={<EditOutlined style={{ color: '#1890ff', fontSize: '18px' }} />} 
+            icon={<EditOutlined style={{ color: 'blue', fontSize: '18px' }} />} 
             onClick={() => handleEdit(record)} 
           />
           
@@ -183,8 +183,8 @@ const RoomNumbers = () => {
             type="text" 
             icon={
               record.status === 'available' 
-                ? <UnlockOutlined style={{ color: '#1890ff', fontSize: '18px' }} />
-                : <LockOutlined style={{ color: '#ff4d4f', fontSize: '18px' }} />
+                ? <UnlockOutlined style={{ color: 'blue', fontSize: '18px' }} />
+                : <LockOutlined style={{ color: 'red', fontSize: '18px' }} />
             } 
             onClick={() => handleToggleStatus(record)} 
           />
@@ -198,7 +198,7 @@ const RoomNumbers = () => {
       <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Title level={4} style={{ margin: 0 }}><HomeOutlined /> Quản lý chi tiết phòng</Title>
+            <Title level={4} style={{ margin: 0 }}><HomeOutlined /> Quản lý phòng</Title>
             <Text type="secondary">Cấu hình danh sách phòng cho khách sạn đã chọn</Text>
           </Col>
         </Row>

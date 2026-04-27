@@ -123,7 +123,7 @@ const PartnerRooms = () => {
       )
     },
     {
-      title: 'Thao tác',
+      title: 'Hành động',
       key: 'action',
       width: 150,
       align: 'right',
@@ -131,7 +131,7 @@ const PartnerRooms = () => {
         <Space>
           <Button 
             type="text"
-            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : '#1890ff' }} />} 
+            icon={<EditOutlined style={{ color: record.status === 'locked' ? '#d9d9d9' : 'blue' }} />} 
             disabled={record.status === 'locked'}
             onClick={() => {
               set_editing_room(record);
@@ -145,8 +145,8 @@ const PartnerRooms = () => {
             type="text"
             icon={
               record.status === 'locked' 
-                ? <LockOutlined style={{ color: '#ff4d4f' }} /> 
-                : <UnlockOutlined style={{ color: '#52c41a' }} />
+                ? <LockOutlined style={{ color: 'red' }} /> 
+                : <UnlockOutlined style={{ color: 'blue' }} />
             } 
             onClick={() => handle_toggle_lock(record)}
           />
