@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { ConfigProvider, App as AntApp } from 'antd';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
-import ScrollToTop from './components/common/ScrollToTop'; // Import tại đây
+import ScrollToTop from './components/common/ScrollToTop';
 
 // 1. NHÓM XÁC THỰC & HỆ THỐNG
 import ProtectedRoute from './pages/auth/ProtectedRoute';
@@ -48,7 +48,6 @@ import AdminPartners from './pages/admin/AdminPartners';
 import UserManagement from './pages/admin/UserManagement';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminAmenity from './pages/admin/AdminAmenity';
-import AdminDiscounts from './pages/admin/AdminDiscounts';
 import AdminRevenues from './pages/admin/AdminRevenues';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProfile from './pages/admin/AdminProfile';
@@ -131,7 +130,6 @@ function App() {
                     <Route element={<RootAdminRoute />}>
                       <Route path="users" element={<UserManagement />} />
                       <Route path="revenues" element={<AdminRevenues />} />
-                      <Route path="discounts" element={<AdminDiscounts />} />
                     </Route>
                   </Route>
                 </Route>

@@ -5,10 +5,9 @@ import {
 } from 'antd';
 import { 
   SafetyCertificateOutlined, UserOutlined, MailOutlined, EditOutlined, 
-  KeyOutlined, LockOutlined, IdcardOutlined, HistoryOutlined, UploadOutlined
+  LockOutlined, IdcardOutlined, HistoryOutlined, UploadOutlined
 } from '@ant-design/icons';
 
-// FIX: Import đúng từ mockData.jsx
 import { MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
@@ -69,7 +68,7 @@ const AdminProfile = () => {
   const handlePasswordChange = (values) => {
     setLoading(true);
     setTimeout(() => {
-      message.success('Đổi mật khẩu quản trị thành công!');
+      message.success('Đổi mật khẩu thành công!');
       setIsPasswordModalVisible(false);
       formPassword.resetFields();
       setLoading(false);
@@ -90,7 +89,7 @@ const AdminProfile = () => {
         extra={
           <Space>
             <Button icon={<EditOutlined />} onClick={() => setIsEditModalVisible(true)}>Sửa hồ sơ</Button>
-            <Button type="primary" danger icon={<KeyOutlined />} onClick={() => setIsPasswordModalVisible(true)}>Đổi mật khẩu</Button>
+            <Button type="primary" danger icon={<LockOutlined />} onClick={() => setIsPasswordModalVisible(true)}>Đổi mật khẩu</Button>
           </Space>
         }
       >
@@ -175,7 +174,7 @@ const AdminProfile = () => {
       </Modal>
 
       <Modal
-        title="Đổi mật khẩu quản trị"
+        title="Đổi mật khẩu"
         open={isPasswordModalVisible}
         onCancel={() => setIsPasswordModalVisible(false)}
         onOk={() => formPassword.submit()}

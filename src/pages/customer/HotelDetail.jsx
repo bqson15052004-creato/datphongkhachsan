@@ -194,21 +194,6 @@ const HotelDetail = () => {
       )
     },
     {
-      label: 'Tiện nghi',
-      key: '2',
-      children: (
-        <div style={{ marginTop: 20 }}>
-          <Title level={4}>Tiện ích khách sạn</Title>
-          <ul style={{ color: '#4b5563', fontSize: 15 }}>
-            <li>Wifi miễn phí tốc độ cao</li>
-            <li>Hồ bơi ngoài trời & Rooftop Bar</li>
-            <li>Trung tâm thể hình & Spa</li>
-            <li>Dịch vụ đưa đón sân bay</li>
-          </ul>
-        </div>
-      )
-    },
-    {
       label: `Đánh giá (${reviews.length})`,
       key: '3',
       children: (
@@ -254,7 +239,6 @@ const HotelDetail = () => {
           <Space split={<Divider type="vertical" />}>
             <Rate disabled defaultValue={hotel.rate_star} style={{ fontSize: 14 }} />
             <Text type="secondary"><EnvironmentOutlined /> {hotel.location_city}</Text>
-            <Tag color="green" icon={<SafetyCertificateOutlined />}>Đã xác thực</Tag>
           </Space>
         </Col>
         <Col span={24}>
@@ -275,7 +259,7 @@ const HotelDetail = () => {
               {Number(hotel.price_per_night).toLocaleString()}₫ <small style={{fontSize: 12, color: '#999'}}>/đêm</small>
             </Title>
             <Space direction="vertical" block size="middle">
-              <Button type="primary" block size="large" onClick={scrollToRooms} style={{ height: 50, borderRadius: 12 }}>CHỌN PHÒNG</Button>
+              <Button type="primary" block size="large" onClick={scrollToRooms} style={{ height: 50, borderRadius: 12 }}>XEM PHÒNG</Button>
               <Button icon={<MessageOutlined />} block size="large" onClick={handleChat} style={{ height: 50, borderRadius: 12 }}>NHẮN TIN</Button>
             </Space>
           </Card>

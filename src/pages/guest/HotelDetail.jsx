@@ -4,7 +4,7 @@ import {
 } from 'antd';
 import {
   EnvironmentOutlined,
-  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, MessageOutlined
+  ArrowLeftOutlined, UserOutlined, MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
@@ -13,7 +13,7 @@ import { MOCK_ROOMS, MOCK_HOTELS } from '../../constants/mockData.jsx';
 
 const { Title, Text, Paragraph } = Typography;
 
-// Dữ liệu mẫu đánh giá dành cho Guest xem
+// Dữ liệu mẫu đánh giá
 const MOCK_REVIEWS = [
   { id: 1, hotelId: 1, user: "Khách hàng ẩn danh", rate: 5, date: "22/04/2026", comment: "Phòng cực kỳ sạch sẽ và yên tĩnh. Nhân viên hỗ trợ check-in rất nhanh!" },
   { id: 2, hotelId: 1, user: "Minh Anh", rate: 4, date: "18/04/2026", comment: "View biển đẹp tuyệt vời, tuy nhiên buffet sáng nên có nhiều món Việt hơn." },
@@ -44,7 +44,6 @@ const HotelDetail = () => {
         const hotelId = Number(id);
         const foundHotel = MOCK_HOTELS.find(h => h.id_hotel === hotelId);
         const foundRooms = MOCK_ROOMS.filter(r => r.id_hotel === hotelId);
-        // Lọc review theo hotel
         const foundReviews = MOCK_REVIEWS.filter(rev => rev.hotelId === hotelId);
 
         if (foundHotel) {
@@ -63,6 +62,52 @@ const HotelDetail = () => {
     fetchData();
     window.scrollTo(0, 0);
   }, [id, antdMessage]);
+
+  // Cấu hình nội dung các Tabs
+  const tabItems = [
+    {
+      label: 'Tổng quan',
+      key: '1',
+      children: (
+        <div style={{ marginTop: 20 }}>
+          <Title level={4}>Về khách sạn này</Title>
+          <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
+            {hotel?.description || "Không gian nghỉ dưỡng lý tưởng với đầy đủ tiện nghi hiện đại."}
+            <br /><br />
+            <EnvironmentOutlined /> <b>Địa chỉ:</b> {hotel?.address}
+          </Paragraph>
+        </div>
+      )
+    },
+    {
+      label: `Đánh giá (${reviews.length})`,
+      key: '2',
+      children: (
+        <div style={{ marginTop: 20 }}>
+          <List
+            itemLayout="horizontal"
+            dataSource={reviews}
+            locale={{ emptyText: <Empty description="Chưa có đánh giá nào." /> }}
+            renderItem={(item) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={<Avatar icon={<UserOutlined />} style={{ backgroundColor: '#87d068' }} />}
+                  title={
+                    <Space size="middle">
+                      <Text strong>{item.user}</Text>
+                      <Rate disabled defaultValue={item.rate} style={{ fontSize: 12 }} />
+                      <Text type="secondary" style={{ fontSize: 12 }}>{item.date}</Text>
+                    </Space>
+                  }
+                  description={<Text italic style={{ color: '#374151' }}>"{item.comment}"</Text>}
+                />
+              </List.Item>
+            )}
+          />
+        </div>
+      )
+    }
+  ];
 
   const columns = [
     {
@@ -160,7 +205,6 @@ const HotelDetail = () => {
           <Space split={<Divider type="vertical" />}>
             <Rate disabled defaultValue={hotel.rate_star} style={{ fontSize: 14 }} />
             <Text type="secondary"><EnvironmentOutlined /> {hotel.location_city}</Text>
-            <Tag color="green" icon={<SafetyCertificateOutlined />}>Đã xác thực</Tag>
           </Space>
         </Col>
         
@@ -172,27 +216,14 @@ const HotelDetail = () => {
         </Col>
       </Row>
 
-      {/* INFO SECTION */}
+      {/* INFO & TABS SECTION */}
       <Row gutter={[40, 40]} style={{ marginBottom: 40 }}>
         <Col xs={24} lg={16}>
           <Tabs 
             defaultActiveKey="1" 
             size="large" 
-            onChange={(key) => key === '2' && scrollToRooms()}
-            items={[
-              { label: 'Tổng quan', key: '1' },
-              { label: 'Xem phòng', key: '2' },
-            ]}
+            items={tabItems}
           />
-          
-          <div style={{ marginTop: 24 }}>
-            <Title level={4}>Về khách sạn này</Title>
-            <Paragraph style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.8 }}>
-              {hotel.description || "Không gian nghỉ dưỡng lý tưởng với đầy đủ tiện nghi hiện đại."}
-              <br /><br />
-              <EnvironmentOutlined /> <b>Địa chỉ:</b> {hotel.address}
-            </Paragraph>
-          </div>
         </Col>
 
         <Col xs={24} lg={8}>
@@ -214,7 +245,7 @@ const HotelDetail = () => {
               onClick={scrollToRooms}
               style={{ height: 50, fontWeight: 'bold', borderRadius: 12 }}
             >
-              CHỌN PHÒNG & ĐẶT
+              XEM PHÒNG
             </Button>
           </Card>
         </Col>
@@ -234,37 +265,6 @@ const HotelDetail = () => {
           bordered={false}
           scroll={{ x: 900 }} 
         />
-      </div>
-
-      {/* PHẦN ĐÁNH GIÁ (Dành cho Guest xem) */}
-      <div style={{ marginTop: 60, padding: '30px', background: '#fafafa', borderRadius: 16 }}>
-        <Title level={3} style={{ marginBottom: 24 }}>
-          <MessageOutlined /> Đánh giá từ khách hàng ({reviews.length})
-        </Title>
-        
-        {reviews.length > 0 ? (
-          <List
-            itemLayout="horizontal"
-            dataSource={reviews}
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<Avatar icon={<UserOutlined />} style={{ backgroundColor: '#87d068' }} />}
-                  title={
-                    <Space size="middle">
-                      <Text strong>{item.user}</Text>
-                      <Rate disabled defaultValue={item.rate} style={{ fontSize: 12 }} />
-                      <Text type="secondary" style={{ fontSize: 12 }}>{item.date}</Text>
-                    </Space>
-                  }
-                  description={<Text italic color="secondary">"{item.comment}"</Text>}
-                />
-              </List.Item>
-            )}
-          />
-        ) : (
-          <Empty description="Chưa có đánh giá nào." />
-        )}
       </div>
     </div>
   );

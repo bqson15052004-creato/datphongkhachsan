@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   Table, Tag, Card, Typography, Button, Space, 
   App as AntApp, Spin, Empty, Tabs, Tooltip, 
-  Modal, Rate, Input, Badge 
+  Modal, Rate, Input, Badge, Descriptions 
 } from 'antd';
 import { 
   HistoryOutlined, StarOutlined, StarFilled,
   ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined,
   CalendarOutlined, MessageOutlined, EyeOutlined 
 } from '@ant-design/icons';
-import dayjs from 'dayjs'; // Cần thiết để lấy ngày tháng khi đánh giá
+import dayjs from 'dayjs';
 
 // Import dữ liệu mẫu
 import { MOCK_BOOKINGS } from '../../constants/mockData.jsx';
@@ -22,11 +22,15 @@ const CustomerBookings = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
-  // --- STATE CHO MODAL ĐÁNH GIÁ ---
+  // --- STATE CHO MODAL ĐÁNH GIÁ (GỬI MỚI) ---
   const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
   const [reviewingRecord, setReviewingRecord] = useState(null);
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
+
+  // --- STATE CHO MODAL XEM CHI TIẾT (ĐÃ ĐÁNH GIÁ) ---
+  const [isReviewDetailOpen, setIsReviewDetailOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -49,6 +53,7 @@ const CustomerBookings = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Hàm mở Modal gửi đánh giá mới
   const openReviewModal = (record) => {
     setReviewingRecord(record);
     setRating(5);
@@ -56,13 +61,18 @@ const CustomerBookings = () => {
     setIsReviewModalVisible(true);
   };
 
+  // HÀM MỚI: Mở Modal xem chi tiết đánh giá cũ
+  const openReviewDetail = (record) => {
+    setSelectedReview(record);
+    setIsReviewDetailOpen(true);
+  };
+
   const handleSubmitReview = () => {
     if (!reviewingRecord) return;
 
-    // --- LOGIC LƯU ĐÁNH GIÁ XUỐNG LOCALSTORAGE ---
     const newReview = {
       id: Date.now(),
-      hotelId: reviewingRecord.id_hotel || 1, // ID để HotelDetail filter
+      hotelId: reviewingRecord.id_hotel || 1,
       user: "Khách hàng", 
       avatar: "",
       rate: rating,
@@ -70,11 +80,9 @@ const CustomerBookings = () => {
       comment: reviewComment
     };
 
-    // Lưu vào "kho chung" mock_reviews
     const existingReviews = JSON.parse(localStorage.getItem('mock_reviews') || '[]');
     localStorage.setItem('mock_reviews', JSON.stringify([...existingReviews, newReview]));
 
-    // Cập nhật UI tại bảng
     setBookings(prev => prev.map(b => {
       if (b.id === reviewingRecord.id) {
         return { ...b, is_reviewed: true, rating: rating, review_comment: reviewComment };
@@ -185,16 +193,28 @@ const CustomerBookings = () => {
       render: (_, record) => {
         const s = (record.status || '').toLowerCase();
         const canReview = s === 'confirmed' || s === 'thành công' || s === 'completed';
+        
         if (!canReview) return <Text type="secondary">—</Text>;
+        
         if (record.is_reviewed || record.rating) {
+          const ratingCount = record.rating || 5;
           return (
-            <Tooltip title={record.review_comment || "Bạn đã đánh giá đơn này"}>
-              <Tag color="gold" style={{ margin: 0, cursor: 'help' }}>
-                {record.rating || 5} <StarFilled style={{ color: '#faad14' }} />
-              </Tag>
-            </Tooltip>
+            <Space direction="vertical" size={2} align="center">
+              <div style={{ display: 'flex', gap: '2px' }}>
+                {Array.from({ length: ratingCount }).map((_, index) => (
+                  <StarFilled key={index} style={{ color: '#faad14', fontSize: '12px' }} />
+                ))}
+              </div>
+              <Typography.Link 
+                style={{ fontSize: '12px' }} 
+                onClick={() => openReviewDetail(record)} 
+              >
+                Chi tiết
+              </Typography.Link>
+            </Space>
           );
         }
+        
         return (
           <Button 
             type="primary" size="small" ghost 
@@ -207,17 +227,6 @@ const CustomerBookings = () => {
         );
       }
     },
-    {
-      title: 'Thao tác',
-      key: 'action',
-      width: 80,
-      align: 'center',
-      render: () => (
-        <Tooltip title="Xem chi tiết">
-          <EyeOutlined style={{ color: '#1890ff', cursor: 'pointer', fontSize: '18px' }} />
-        </Tooltip>
-      )
-    }
   ];
 
   return (
@@ -256,6 +265,7 @@ const CustomerBookings = () => {
         />
       )}
 
+      {/* MODAL GỬI ĐÁNH GIÁ MỚI */}
       <Modal
         title={<Space><MessageOutlined style={{color: '#faad14'}} /> Đánh giá trải nghiệm</Space>}
         open={isReviewModalVisible}
@@ -279,6 +289,45 @@ const CustomerBookings = () => {
             style={{ borderRadius: 8 }}
           />
         </div>
+      </Modal>
+
+      {/* MODAL XEM CHI TIẾT ĐÁNH GIÁ - ĐÃ MỞ RỘNG SANG PHẢI */}
+      <Modal
+        title={<Space><StarFilled style={{ color: '#faad14' }} /> Chi tiết đánh giá từ bạn</Space>}
+        open={isReviewDetailOpen}
+        onCancel={() => setIsReviewDetailOpen(false)}
+        footer={[<Button key="close" onClick={() => setIsReviewDetailOpen(false)}>Đóng</Button>]}
+        width={650}
+        centered
+      >
+        {selectedReview ? (
+          <Descriptions 
+            bordered 
+            column={1} 
+            size="small"
+            labelStyle={{ width: '30%', fontWeight: 'bold', backgroundColor: '#fafafa' }}
+            contentStyle={{ width: '70%', backgroundColor: '#fff' }}
+          >
+            <Descriptions.Item label="Mã đơn hàng">
+              <Text code>#{selectedReview.id}</Text>
+            </Descriptions.Item>
+            <Descriptions.Item label="Khách sạn">
+              {selectedReview.hotel_name}
+            </Descriptions.Item>
+            <Descriptions.Item label="Điểm đánh giá">
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {Array.from({ length: selectedReview.rating || 5 }).map((_, i) => (
+                  <StarFilled key={i} style={{ color: '#faad14' }} />
+                ))}
+              </div>
+            </Descriptions.Item>
+            <Descriptions.Item label="Bình luận của bạn">
+              <div style={{ minHeight: '80px', whiteSpace: 'pre-line', padding: '8px 0' }}>
+                {selectedReview.review_comment || "Bạn không để lại bình luận."}
+              </div>
+            </Descriptions.Item>
+          </Descriptions>
+        ) : <Empty />}
       </Modal>
     </Card>
   );

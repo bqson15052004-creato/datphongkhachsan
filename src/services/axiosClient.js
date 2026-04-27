@@ -57,7 +57,7 @@ axiosClient.interceptors.response.use(
         console.error("Hệ thống Server đang gặp sự cố.");
       }
     } else if (error.request) {
-      console.error("Không thể kết nối đến máy chủ. Kiểm tra lại Backend (Port 8000) nhé ông!");
+      console.error("Không thể kết nối đến máy chủ. Kiểm tra lại Backend!");
     }
 
     return Promise.reject(error);

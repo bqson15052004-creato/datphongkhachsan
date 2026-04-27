@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Tag, Button, Space, Card, Typography,
-  Modal, Descriptions, Badge, Tabs, App as AntApp, Empty
+  Modal, Descriptions, Badge, Tabs, App as AntApp, Empty, Image, Row, Col
 } from 'antd';
 import {
   CheckCircleOutlined, EyeOutlined, SafetyOutlined, CloseCircleOutlined
@@ -15,32 +15,35 @@ const AdminPartners = () => {
   const [selected_partner, set_selected_partner] = useState(null);
   const [partner_list, set_partner_list] = useState([]);
 
-  // 1. Đồng bộ dữ liệu từ localStorage (Dùng chung key 'ALL_HOTELS' với trang Partner)
+  // 1. Đồng bộ dữ liệu từ localStorage
   const load_partners_data = () => {
-    // Đọc từ localStorage để lấy dữ liệu mới nhất mà Partner vừa đăng ký
     const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
     set_partner_list(all_hotels);
-    
-    // Cập nhật lại thông tin trong Modal nếu đang mở để tránh lệch data
-    if (selected_partner) {
-      const updated_selected = all_hotels.find(h => h.id_hotel === selected_partner.id_hotel);
-      if (updated_selected) set_selected_partner(updated_selected);
-    }
   };
 
+  // SỬA LỖI TẠI ĐÂY: Bỏ selected_partner khỏi dependency để tránh vòng lặp re-render
   useEffect(() => {
     load_partners_data();
-    // Lắng nghe sự kiện storage để cập nhật UI ngay lập tức khi tab khác (Partner) thêm data
     window.addEventListener('storage', load_partners_data);
     return () => window.removeEventListener('storage', load_partners_data);
-  }, [selected_partner]);
+  }, []); 
 
-  // 2. Logic: Phê duyệt (Cập nhật status sang 'active')
+  // Cập nhật lại thông tin hiển thị trong Modal nếu danh sách tổng thay đổi
+  useEffect(() => {
+    if (selected_partner && is_modal_open) {
+      const updated = partner_list.find(h => h.id_hotel === selected_partner.id_hotel);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selected_partner)) {
+        set_selected_partner(updated);
+      }
+    }
+  }, [partner_list, is_modal_open, selected_partner]);
+
+  // 2. Logic: Phê duyệt
   const handle_approve_partner = (hotel_id) => {
     Modal.confirm({
       title: 'Xác nhận phê duyệt đối tác?',
       content: 'Sau khi duyệt, khách sạn này sẽ chính thức hiển thị và hoạt động trên hệ thống.',
-      okText: 'Phê duyệt',
+      okText: 'Xác nhận duyệt',
       cancelText: 'Hủy',
       centered: true,
       onOk: () => {
@@ -48,7 +51,6 @@ const AdminPartners = () => {
         const updated_data = all_hotels.map(item =>
           item.id_hotel === hotel_id ? { ...item, status: 'active' } : item
         );
-        
         save_and_sync(updated_data, 'Đã phê duyệt khách sạn thành công!');
       }
     });
@@ -68,7 +70,6 @@ const AdminPartners = () => {
         const updated_data = all_hotels.map(item => 
           item.id_hotel === hotel_id ? { ...item, status: 'rejected' } : item
         );
-        
         save_and_sync(updated_data, 'Đã từ chối hồ sơ đối tác.');
       }
     });
@@ -130,7 +131,10 @@ const AdminPartners = () => {
           <Button
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => { set_selected_partner(record); set_is_modal_open(true); }}
+            onClick={() => { 
+              set_selected_partner(record); 
+              set_is_modal_open(true); 
+            }}
           >
             Chi tiết
           </Button>
@@ -185,39 +189,45 @@ const AdminPartners = () => {
         title={<Space><EyeOutlined /> Chi tiết hồ sơ đăng ký</Space>}
         open={is_modal_open}
         onCancel={() => set_is_modal_open(false)}
-        width={700}
+        width={750}
         centered
         footer={[
           <Button key="close" onClick={() => set_is_modal_open(false)}>Đóng</Button>,
-          selected_partner?.status === 'pending' && (
-            <Button key="reject" danger icon={<CloseCircleOutlined />} onClick={() => handle_reject_partner(selected_partner.id_hotel)}>
-              Từ chối
-            </Button>
-          ),
-          selected_partner?.status === 'pending' && (
-            <Button key="approve" type="primary" icon={<CheckCircleOutlined />} onClick={() => handle_approve_partner(selected_partner.id_hotel)}>
-              Duyệt yêu cầu
-            </Button>
-          ),
         ]}
       >
         {selected_partner ? (
-          <Descriptions bordered column={2} size="small" style={{ marginTop: 16 }}>
-            <Descriptions.Item label="Tên khách sạn" span={2}>{selected_partner.hotel_name}</Descriptions.Item>
-            <Descriptions.Item label="Mã định danh">{selected_partner.id_hotel}</Descriptions.Item>
-            <Descriptions.Item label="Hạng sao">{selected_partner.rate_star} ⭐</Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ" span={2}>{selected_partner.address}</Descriptions.Item>
-            <Descriptions.Item label="Mô tả" span={2}>{selected_partner.description || 'Không có mô tả chi tiết.'}</Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Badge 
-                status={selected_partner.status === 'active' ? 'success' : (selected_partner.status === 'rejected' ? 'error' : 'warning')} 
-                text={selected_partner.status === 'active' ? 'Đã hoạt động' : (selected_partner.status === 'rejected' ? 'Đã từ chối' : 'Chờ phê duyệt')} 
+          <div style={{ marginTop: 10 }}>
+            <div style={{ marginBottom: 20, textAlign: 'center' }}>
+              <Image
+                src={selected_partner.image_url}
+                alt="hotel"
+                style={{ width: '100%', maxHeight: 320, objectFit: 'cover', borderRadius: 12 }}
+                fallback="https://via.placeholder.com/800x400?text=No+Hotel+Image"
               />
-            </Descriptions.Item>
-            <Descriptions.Item label="Xác minh">
-              <Tag color="cyan">Hồ sơ hợp lệ</Tag>
-            </Descriptions.Item>
-          </Descriptions>
+            </div>
+
+            <Row gutter={[16, 16]}>
+              <Col span={14}>
+                <Descriptions 
+                  bordered column={1}
+                  size="small" 
+                  labelStyle={{ width: '30%' }} 
+                  contentStyle={{ width: '70%' }}
+                >
+                  <Descriptions.Item label="Tên khách sạn">{selected_partner.hotel_name}</Descriptions.Item>
+                  <Descriptions.Item label="Loại hình">
+                    <Tag color="blue">{selected_partner.type?.toUpperCase()}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Hạng sao">{selected_partner.rate_star} ⭐</Descriptions.Item>
+                  <Descriptions.Item label="Chiết khấu">{selected_partner.discount || '0'}%</Descriptions.Item>
+                  <Descriptions.Item label="Địa chỉ">{selected_partner.address}</Descriptions.Item>
+                  <Descriptions.Item label="Mô tả khách sạn" span={3}>
+                    <div style={{ minHeight: 60 }}>{selected_partner.description || 'Không có mô tả.'}</div>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Col>
+            </Row>
+          </div>
         ) : <Empty />}
       </Modal>
     </div>

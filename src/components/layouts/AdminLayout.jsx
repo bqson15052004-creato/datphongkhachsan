@@ -89,7 +89,6 @@ const AdminLayout = () => {
     { key: '/admin/users',       icon: <UserOutlined />,       label: 'Quản lý người dùng', level_required: 1 },
     { key: '/admin/categories', icon: <AppstoreOutlined />,   label: 'Loại khách sạn' },
     { key: '/admin/amenities',  icon: <CoffeeOutlined />,     label: 'Quản lý tiện nghi' },
-    { key: '/admin/discounts',  icon: <PercentageOutlined />, label: 'Quản lý chiết khấu', level_required: 1 },
   ];
 
   const side_menu_items = menu_config.filter(item => 

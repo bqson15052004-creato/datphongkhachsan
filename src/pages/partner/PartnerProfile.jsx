@@ -6,12 +6,11 @@ import {
   EnvironmentOutlined, 
   MailOutlined, 
   SafetyCertificateOutlined, 
-  KeyOutlined, 
   LockOutlined,
   EditOutlined,
   IdcardOutlined,
   CalendarOutlined,
-  UploadOutlined // Thêm icon Upload
+  UploadOutlined
 } from '@ant-design/icons';
 import { MOCK_HOTELS } from '../../constants/mockData.jsx';
 
@@ -96,7 +95,7 @@ const PartnerProfile = () => {
             <Button icon={<EditOutlined />} onClick={() => setIsEditModalVisible(true)}>
               Cập nhật thông tin
             </Button>
-            <Button type="primary" icon={<KeyOutlined />} onClick={() => setIsPasswordModalVisible(true)}>
+            <Button type="primary" icon={<LockOutlined />} onClick={() => setIsPasswordModalVisible(true)}>
               Đổi mật khẩu
             </Button>
           </Space>
@@ -210,9 +209,9 @@ const PartnerProfile = () => {
         </Form>
       </Modal>
 
-      {/* --- MODAL ĐỔI MẬT KHẨU --- */}
+      {/* MODAL ĐỔI MẬT KHẨU */}
       <Modal
-        title="Đổi mật khẩu tài khoản"
+        title="Đổi mật khẩu"
         open={isPasswordModalVisible}
         onCancel={() => setIsPasswordModalVisible(false)}
         footer={null}
