@@ -25,10 +25,11 @@ const PartnerMessages = () => {
 
   // --- LOGIC ĐỒNG BỘ BADGE THÔNG BÁO ---
   
-  // 1. Mỗi khi danh sách chats thay đổi, tính lại tổng unread và lưu vào localStorage
+  // 1. Mỗi khi danh sách chats thay đổi, đếm SỐ KHÁCH HÀNG có unread > 0 và lưu vào localStorage
   useEffect(() => {
-    const totalUnread = chats.reduce((acc, cur) => acc + (cur.unread || 0), 0);
-    localStorage.setItem('unread_messages_count', totalUnread);
+    // Chỉ đếm số lượng người có tin nhắn chưa đọc, không cộng dồn số tin nhắn lẻ
+    const customersWithUnread = chats.filter(chat => chat.unread > 0).length;
+    localStorage.setItem('unread_messages_count', customersWithUnread);
     // Phát event để PartnerLayout cập nhật Badge ngay lập tức
     window.dispatchEvent(new Event('storage'));
   }, [chats]);

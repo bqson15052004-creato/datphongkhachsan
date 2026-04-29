@@ -45,6 +45,11 @@ const CustomerBookings = () => {
       }));
 
       const combinedData = [...normalizedLocal, ...staticBookings];
+      
+      // --- CHỈ THÊM ĐÚNG ĐOẠN SẮP XẾP NÀY ---
+      combinedData.sort((a, b) => Number(b.id) - Number(a.id));
+      // -------------------------------------
+
       setBookings(combinedData);
       setLoading(false);
     };
@@ -291,7 +296,7 @@ const CustomerBookings = () => {
         </div>
       </Modal>
 
-      {/* MODAL XEM CHI TIẾT ĐÁNH GIÁ - ĐÃ MỞ RỘNG SANG PHẢI */}
+      {/* MODAL XEM CHI TIẾT ĐÁNH GIÁ */}
       <Modal
         title={<Space><StarFilled style={{ color: '#faad14' }} /> Chi tiết đánh giá từ bạn</Space>}
         open={isReviewDetailOpen}

@@ -8,6 +8,8 @@ import {
   LockOutlined, IdcardOutlined, HistoryOutlined, UploadOutlined
 } from '@ant-design/icons';
 
+// Import Cloudinary
+import CloudinaryUpload from '../../components/common/CloudinaryUpload';
 import { MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
@@ -22,6 +24,9 @@ const AdminProfile = () => {
   const [formUpdate] = Form.useForm();
   const [formPassword] = Form.useForm();
   const [fileList, setFileList] = useState([]);
+  
+  // Quản lý link ảnh từ Cloudinary
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem('currentUser')) || MOCK_USERS[0];
@@ -31,6 +36,7 @@ const AdminProfile = () => {
     
     if (savedUser.avatar) {
       setFileList([{ uid: '-1', name: 'avatar.png', status: 'done', url: savedUser.avatar }]);
+      setImageUrl(savedUser.avatar);
     }
   }, [formUpdate]);
 
@@ -45,14 +51,16 @@ const AdminProfile = () => {
   const handleUpdate = async (values) => {
     setLoading(true);
     try {
-      let avatarBase64 = user.avatar;
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        avatarBase64 = await getBase64(fileList[0].originFileObj);
-      } else if (fileList.length === 0) {
-        avatarBase64 = ''; 
+      // Ưu tiên link Cloudinary mới, sau đó đến link cũ, cuối cùng là Base64 nếu có upload local
+      let avatarFinal = imageUrl || user.avatar;
+
+      if (!imageUrl && fileList.length > 0 && fileList[0].originFileObj) {
+        avatarFinal = await getBase64(fileList[0].originFileObj);
+      } else if (!imageUrl && fileList.length === 0) {
+        avatarFinal = ''; 
       }
 
-      const updatedUser = { ...user, ...values, avatar: avatarBase64 };
+      const updatedUser = { ...user, ...values, avatar: avatarFinal };
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
       setUser(updatedUser);
       message.success('Cập nhật thành công!');
@@ -147,24 +155,35 @@ const AdminProfile = () => {
           
           <Form.Item label="Ảnh đại diện">
             <Space direction="vertical" style={{ width: '100%' }}>
+              {/* Tích hợp Cloudinary */}
+              <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
+
+              <Divider plain><Text type="secondary" style={{ fontSize: '11px' }}>Hoặc tải từ thiết bị</Text></Divider>
+
               <Upload
                 fileList={fileList}
-                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                onChange={({ fileList: newFileList }) => {
+                  setFileList(newFileList);
+                  if (newFileList.length === 0) setImageUrl('');
+                }}
                 beforeUpload={() => false}
                 maxCount={1}
-                onRemove={() => setFileList([])}
+                onRemove={() => {
+                  setFileList([]);
+                  setImageUrl('');
+                }}
               >
                 <Button icon={<UploadOutlined />}>Chọn file ảnh từ máy tính</Button>
               </Upload>
               
-              {fileList.length > 0 && (
+              {(imageUrl || fileList.length > 0) && (
                 <div style={{ marginTop: 8 }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>Xem trước:</Text>
                   <br />
                   <Avatar 
                     shape="square" 
                     size={64} 
-                    src={fileList[0].url || (fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
+                    src={imageUrl || (fileList[0]?.url) || (fileList[0]?.originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
                   />
                 </div>
               )}

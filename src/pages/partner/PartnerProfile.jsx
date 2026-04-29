@@ -12,6 +12,9 @@ import {
   CalendarOutlined,
   UploadOutlined
 } from '@ant-design/icons';
+
+// Import Cloudinary
+import CloudinaryUpload from '../../components/common/CloudinaryUpload';
 import { MOCK_HOTELS } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
@@ -25,8 +28,9 @@ const PartnerProfile = () => {
   const [passwordForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
-  // Thêm state quản lý file ảnh
+  // Quản lý link ảnh từ Cloudinary
   const [fileList, setFileList] = useState([]);
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     const user = JSON.parse(sessionStorage.getItem('user')) || {};
@@ -40,13 +44,12 @@ const PartnerProfile = () => {
       tax_id: user.tax_id,
     });
 
-    // Nếu đối tác đã có ảnh đại diện thì nạp vào ô Upload
     if (user.avatar) {
       setFileList([{ uid: '-1', name: 'avatar.png', status: 'done', url: user.avatar }]);
+      setImageUrl(user.avatar);
     }
   }, [editForm]);
 
-  // Hàm chuyển ảnh sang Base64
   const getBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -55,18 +58,17 @@ const PartnerProfile = () => {
       reader.onerror = (error) => reject(error);
     });
 
-  // Đổi thành async để đợi xử lý ảnh
   const handleUpdateProfile = async (values) => {
-    let avatarBase64 = userData.avatar;
+    // Ưu tiên link Cloudinary mới, nếu không có thì dùng link cũ, cuối cùng mới xét Base64 local
+    let avatarFinal = imageUrl || userData.avatar;
 
-    // Xử lý nếu có chọn ảnh mới hoặc xóa ảnh
-    if (fileList.length > 0 && fileList[0].originFileObj) {
-      avatarBase64 = await getBase64(fileList[0].originFileObj);
-    } else if (fileList.length === 0) {
-      avatarBase64 = '';
+    if (!imageUrl && fileList.length > 0 && fileList[0].originFileObj) {
+      avatarFinal = await getBase64(fileList[0].originFileObj);
+    } else if (!imageUrl && fileList.length === 0) {
+      avatarFinal = '';
     }
 
-    const updatedUser = { ...userData, ...values, avatar: avatarBase64 };
+    const updatedUser = { ...userData, ...values, avatar: avatarFinal };
     sessionStorage.setItem('user', JSON.stringify(updatedUser));
     setUserData(updatedUser);
     message.success('Cập nhật thông tin doanh nghiệp thành công!');
@@ -102,7 +104,6 @@ const PartnerProfile = () => {
         }
       >
         <Row gutter={[48, 16]}>
-          {/* CỘT TRÁI: THÔNG TIN CÁ NHÂN & ĐẠI DIỆN */}
           <Col xs={24} md={12}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24, gap: 20 }}>
               <Avatar size={80} src={userData.avatar} style={{ border: '3px solid #e6f7ff' }} />
@@ -132,7 +133,6 @@ const PartnerProfile = () => {
             </Descriptions>
           </Col>
 
-          {/* CỘT PHẢI: THÔNG TIN CƠ SỞ & DOANH NGHIỆP */}
           <Col xs={24} md={12} style={{ borderLeft: '1px solid #f0f0f0' }}>
             <Title level={5} style={{ marginBottom: 20, color: '#1890ff' }}>Thông tin cơ sở quản lý</Title>
             
@@ -154,7 +154,6 @@ const PartnerProfile = () => {
         </Row>
       </Card>
 
-      {/* --- MODAL CẬP NHẬT THÔNG TIN ĐỐI TÁC --- */}
       <Modal
         title="Cập nhật thông tin đối tác"
         open={isEditModalVisible}
@@ -173,27 +172,37 @@ const PartnerProfile = () => {
             <Input />
           </Form.Item>
 
-          {/* PHẦN CHỌN ẢNH TỪ MÁY TÍNH */}
           <Form.Item label="Ảnh đại diện">
             <Space direction="vertical" style={{ width: '100%' }}>
+              {/* Tích hợp Cloudinary */}
+              <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
+              
+              <Divider plain><Text type="secondary" style={{ fontSize: '12px' }}>Hoặc dùng file local</Text></Divider>
+
               <Upload
                 fileList={fileList}
-                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-                beforeUpload={() => false} // Chặn gửi request để mở file từ máy
+                onChange={({ fileList: newFileList }) => {
+                    setFileList(newFileList);
+                    if (newFileList.length === 0) setImageUrl('');
+                }}
+                beforeUpload={() => false}
                 maxCount={1}
-                onRemove={() => setFileList([])}
+                onRemove={() => {
+                    setFileList([]);
+                    setImageUrl('');
+                }}
               >
                 <Button icon={<UploadOutlined />}>Chọn file từ máy tính</Button>
               </Upload>
               
-              {fileList.length > 0 && (
+              {(imageUrl || fileList.length > 0) && (
                 <div style={{ marginTop: 8 }}>
-                  <Text type="secondary" size="small">Xem trước:</Text>
+                  <Text type="secondary">Xem trước:</Text>
                   <br />
                   <Avatar 
                     shape="square" 
                     size={64} 
-                    src={fileList[0].url || (fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
+                    src={imageUrl || (fileList[0]?.url) || (fileList[0]?.originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : '')} 
                   />
                 </div>
               )}
@@ -209,7 +218,6 @@ const PartnerProfile = () => {
         </Form>
       </Modal>
 
-      {/* MODAL ĐỔI MẬT KHẨU */}
       <Modal
         title="Đổi mật khẩu"
         open={isPasswordModalVisible}

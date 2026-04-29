@@ -10,6 +10,8 @@ import {
   PictureOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons';
 
+// Import Cloudinary
+import CloudinaryUpload from '../../components/common/CloudinaryUpload';
 // Data mẫu
 import { MOCK_HOTELS, MOCK_ROOMS, ALL_AMENITIES } from '../../constants/mockData.jsx'; 
 
@@ -26,6 +28,9 @@ const RoomNumbers = () => {
   const [fileList, setFileList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // State hứng link từ Cloudinary
+  const [imageUrl, setImageUrl] = useState('');
 
   // --- HELPER BIẾN FILE THÀNH BASE64 ---
   const getBase64 = (file) =>
@@ -45,7 +50,7 @@ const RoomNumbers = () => {
     Modal.confirm({
       title: `Xác nhận ${actionText} phòng?`,
       icon: <ExclamationCircleOutlined style={{ color }} />,
-      content: `Bạn có chắc chắn muốn ${actionText} phòng số ${record.room_number} không?`,
+      content: `Bạn chắc chắn muốn ${actionText} phòng số ${record.room_number} không?`,
       okText: 'Đồng ý',
       okType: isAvailable ? 'danger' : 'primary',
       cancelText: 'Hủy bỏ',
@@ -62,8 +67,10 @@ const RoomNumbers = () => {
 
   // --- XỬ LÝ FORM SUBMIT ---
   const handleSubmit = async (values) => {
-    let finalImage = values.image_url;
-    if (fileList.length > 0 && fileList[0].originFileObj) {
+    // Ưu tiên link từ Cloudinary trước
+    let finalImage = imageUrl || values.image_url;
+
+    if (!imageUrl && fileList.length > 0 && fileList[0].originFileObj) {
       finalImage = await getBase64(fileList[0].originFileObj);
     }
 
@@ -91,6 +98,7 @@ const RoomNumbers = () => {
       status: record.status === 'available'
     });
     setFileList(record.image_url ? [{ uid: '-1', url: record.image_url, status: 'done' }] : []);
+    setImageUrl(record.image_url || '');
     setIsModalOpen(true);
   };
 
@@ -99,6 +107,7 @@ const RoomNumbers = () => {
     setEditingId(null);
     form.resetFields();
     setFileList([]);
+    setImageUrl('');
   };
 
   const filteredRooms = rooms.filter(room => 
@@ -171,14 +180,11 @@ const RoomNumbers = () => {
       align: 'center',
       render: (_, record) => (
         <Space size="middle">
-          {/* NÚT SỬA */}
           <Button 
             type="text" 
             icon={<EditOutlined style={{ color: 'blue', fontSize: '18px' }} />} 
             onClick={() => handleEdit(record)} 
           />
-          
-          {/* NÚT KHÓA/MỞ */}
           <Button 
             type="text" 
             icon={
@@ -277,20 +283,27 @@ const RoomNumbers = () => {
           </Form.Item>
 
           <Form.Item label="Hình ảnh phòng">
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-              beforeUpload={() => false}
-              maxCount={1}
-            >
-              {fileList.length < 1 && (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                </div>
-              )}
-            </Upload>
+            {/* Tích hợp Cloudinary */}
+            <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
+            {imageUrl && <img src={imageUrl} alt="preview" style={{ width: 100, marginTop: 10, display: 'block' }} />}
+
+            <div style={{ marginTop: 10 }}>
+              <Text type="secondary">Hoặc tải trực tiếp (Base64):</Text>
+              <Upload
+                listType="picture-card"
+                fileList={fileList}
+                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                beforeUpload={() => false}
+                maxCount={1}
+              >
+                {fileList.length < 1 && (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                  </div>
+                )}
+              </Upload>
+            </div>
           </Form.Item>
 
           <Form.Item name="status" label="Trạng thái sẵn sàng" valuePropName="checked">

@@ -10,7 +10,8 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
-// IMPORT MOCK DATA
+// IMPORT CLOUDINARY & MOCK DATA
+import CloudinaryUpload from '../../components/common/CloudinaryUpload';
 import { MOCK_USERS } from '../../constants/mockData.jsx';
 
 const { Header, Sider, Content } = Layout;
@@ -28,21 +29,25 @@ const Profile = () => {
     JSON.parse(sessionStorage.getItem('user')) || MOCK_USERS.find(u => u.id === 3) 
   );
   
-  // State quản lý việc upload ảnh
   const [loading, setLoading] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   
   const [previewImage, setPreviewImage] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
+  
+  // State lưu trữ URL từ Cloudinary
+  const [cloudinaryUrl, setCloudinaryUrl] = useState("");
 
   useEffect(() => {
     const sessionUser = JSON.parse(sessionStorage.getItem('user'));
-    if (sessionUser) setUserData(sessionUser);
+    if (sessionUser) {
+        setUserData(sessionUser);
+        setCloudinaryUrl(sessionUser.avatar || "");
+    }
     window.scrollTo(0, 0);
   }, []);
 
-  // Xử lý khi chọn file từ máy tính
   const handleFileChange = ({ file }) => {
     if (file.status === 'removed') {
       setPreviewImage("");
@@ -52,8 +57,10 @@ const Profile = () => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      setPreviewImage(e.target.result); // Tạo base64 để xem trước
+      setPreviewImage(e.target.result);
       setUploadedFile(file);
+      // Khi chọn file local, tạm thời xóa link Cloudinary để ưu tiên ảnh local nếu cần
+      setCloudinaryUrl(""); 
     };
     reader.readAsDataURL(file.originFileObj);
   };
@@ -61,11 +68,13 @@ const Profile = () => {
   const handleUpdateProfile = (values) => {
     setLoading(true);
     setTimeout(() => {
-      // Nếu có ảnh mới thì lấy ảnh mới (base64), không thì giữ ảnh cũ
+      // Ưu tiên: 1. Link Cloudinary mới -> 2. Ảnh local (base64) -> 3. Ảnh cũ
+      const finalAvatar = cloudinaryUrl || previewImage || userData.avatar;
+
       const newData = { 
         ...userData, 
         ...values, 
-        avatar: previewImage || userData.avatar 
+        avatar: finalAvatar 
       };
       setUserData(newData);
       sessionStorage.setItem('user', JSON.stringify(newData));
@@ -95,7 +104,8 @@ const Profile = () => {
         <Space>
           <Button type="primary" ghost icon={<EditOutlined />} onClick={() => {
             formUpdate.setFieldsValue(userData);
-            setPreviewImage(userData.avatar); // Hiển thị ảnh hiện tại trong modal
+            setPreviewImage(userData.avatar);
+            setCloudinaryUrl(userData.avatar);
             setUploadedFile(null);
             setIsUpdateModalOpen(true);
           }}>Sửa hồ sơ</Button>
@@ -157,7 +167,6 @@ const Profile = () => {
         </Content>
       </Layout>
 
-      {/* MODAL CẬP NHẬT - PHẦN ÔNG CẦN ĐÂY */}
       <Modal 
         title="Cập nhật hồ sơ" 
         open={isUpdateModalOpen} 
@@ -176,18 +185,27 @@ const Profile = () => {
             <Input size="large" />
           </Form.Item>
 
-          {/* PHẦN TẢI ẢNH GIỐNG MẪU */}
           <Form.Item label="Ảnh đại diện">
-            <Upload
-              maxCount={1}
-              beforeUpload={() => false} // Chặn auto upload lên server
-              showUploadList={false}
-              onChange={handleFileChange}
-            >
-              <Button icon={<UploadOutlined />}>Chọn file từ máy tính</Button>
-            </Upload>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              {/* Tích hợp Cloudinary */}
+              <CloudinaryUpload onUploadSuccess={(url) => {
+                  setCloudinaryUrl(url);
+                  setPreviewImage(url);
+              }} />
 
-            {uploadedFile && (
+              <Divider plain><Text type="secondary" style={{ fontSize: '12px' }}>Hoặc dùng file máy tính</Text></Divider>
+
+              <Upload
+                maxCount={1}
+                beforeUpload={() => false}
+                showUploadList={false}
+                onChange={handleFileChange}
+              >
+                <Button icon={<UploadOutlined />}>Chọn file từ máy tính</Button>
+              </Upload>
+            </Space>
+
+            {uploadedFile && !cloudinaryUrl && (
               <div style={{ marginTop: 8 }}>
                 <PaperClipOutlined style={{ color: '#1890ff' }} /> 
                 <Text type="secondary" style={{ marginLeft: 8, color: '#1890ff' }}>{uploadedFile.name}</Text>

@@ -13,6 +13,10 @@ import {
   UploadOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+
+// Import thêm component Cloudinary
+import CloudinaryUpload from '../../components/common/CloudinaryUpload';
+
 // ĐÃ CẬP NHẬT: Chỉ giữ lại các import cần thiết
 import { MOCK_HOTELS, HOTEL_TYPES as MOCK_CATEGORIES } from '../../constants/mockData.jsx';
 
@@ -32,6 +36,10 @@ const HotelManagement = () => {
   const [fileList, setFileList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // THÊM STATE CHO CLOUDINARY
+  const [imageUrl, setImageUrl] = useState('');
+
   const fetchMyHotels = () => {
     setLoading(true);
     setTimeout(() => {
@@ -94,13 +102,17 @@ const HotelManagement = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      let finalImageUrl = '';
-      if (fileList.length > 0 && fileList[0].originFileObj) {
-        finalImageUrl = await getBase64(fileList[0].originFileObj);
-      } else if (fileList.length > 0 && fileList[0].url) {
-        finalImageUrl = fileList[0].url; 
-      } else {
-        finalImageUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'; 
+      // CẬP NHẬT: Ưu tiên lấy url từ Cloudinary, nếu không có mới dùng Base64/url cũ
+      let finalImageUrl = imageUrl;
+      
+      if (!finalImageUrl) {
+        if (fileList.length > 0 && fileList[0].originFileObj) {
+          finalImageUrl = await getBase64(fileList[0].originFileObj);
+        } else if (fileList.length > 0 && fileList[0].url) {
+          finalImageUrl = fileList[0].url; 
+        } else {
+          finalImageUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'; 
+        }
       }
 
       setTimeout(() => {
@@ -134,6 +146,7 @@ const HotelManagement = () => {
         setEditingId(null);
         form.resetFields();
         setFileList([]); 
+        setImageUrl(''); // Xóa link ảnh sau khi submit
         setLoading(false);
       }, 500);
     } catch (error) {
@@ -215,6 +228,9 @@ const HotelManagement = () => {
                 type: record.type || 'hotel',
                 discount: record.discount || 0
               });
+              
+              setImageUrl(record.image_url || ''); // Set ảnh Cloudinary nếu có
+
               if (record.image_url) {
                 setFileList([{ uid: '-1', name: 'image.png', status: 'done', url: record.image_url }]);
               } else {
@@ -263,6 +279,7 @@ const HotelManagement = () => {
                 setEditingId(null); 
                 form.resetFields(); 
                 setFileList([]); 
+                setImageUrl(''); // Reset ảnh Cloudinary
                 setIsModalOpen(true); 
               }}
               style={{ borderRadius: 8, height: 40 }}
@@ -288,7 +305,10 @@ const HotelManagement = () => {
         <Modal
           title={editingId ? 'Cập nhật thông tin khách sạn' : 'Đăng ký khách sạn mới'}
           open={isModalOpen}
-          onCancel={() => setIsModalOpen(false)}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setImageUrl(''); // Xóa state khi đóng
+          }}
           onOk={() => form.submit()}
           confirmLoading={loading}
           okText={editingId ? "Cập nhật" : "Đăng ký"}
@@ -342,21 +362,28 @@ const HotelManagement = () => {
             </Row>
 
             <Form.Item label="Hình ảnh khách sạn">
-              <Upload
-                listType="picture-card"
-                fileList={fileList}
-                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-                beforeUpload={() => false} 
-                maxCount={1}
-                accept="image/*"
-              >
-                {fileList.length < 1 && (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                  </div>
-                )}
-              </Upload>
+              {/* COMPONENT CLOUDINARY ĐƯỢC CHÈN VÀO ĐÂY */}
+              <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
+              {imageUrl && <img src={imageUrl} alt="preview" style={{ width: 100, marginTop: 10, display: 'block' }} />}
+
+              <div style={{ marginTop: 10 }}>
+                <Text type="secondary">Hoặc tải trực tiếp (Base64):</Text>
+                <Upload
+                  listType="picture-card"
+                  fileList={fileList}
+                  onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                  beforeUpload={() => false} 
+                  maxCount={1}
+                  accept="image/*"
+                >
+                  {fileList.length < 1 && (
+                    <div>
+                      <PlusOutlined />
+                      <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                    </div>
+                  )}
+                </Upload>
+              </div>
             </Form.Item>
 
             <Form.Item name="description" label="Mô tả">
