@@ -8,41 +8,86 @@ import {
   HomeOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
-
-// Giả sử ông đã thêm REVENUE_MOCK và TOP_HOTELS_MOCK vào file này
+import dayjs from 'dayjs';
 import { REVENUE_MOCK, TOP_HOTELS_MOCK, REPORT_SUMMARY_MOCK } from '../../constants/mockData.jsx';
 
 const { Title, Text } = Typography;
-const { RangePicker } = DatePicker;
 
 const AdminReports = () => {
+  const [selectedYear, setSelectedYear] = useState(dayjs().year());
   const [revenue_data, setRevenueData] = useState([]);
   const [top_hotels, setTopHotels] = useState([]);
   const [report_summary, setReportSummary] = useState(null);
 
-  // 1. Kết nối LocalStorage
   useEffect(() => {
+    // 1. Lấy dữ liệu gốc
+    const now = dayjs();
+    const currentYear = now.year();
+    const currentMonth = now.month() + 1;
+
     const saved_revenue = localStorage.getItem('REVENUE_DATA');
     const saved_top_hotels = localStorage.getItem('TOP_HOTELS');
     const saved_summary = localStorage.getItem('REPORT_SUMMARY');
 
-    if (saved_revenue && saved_top_hotels && saved_summary) {
-      setRevenueData(JSON.parse(saved_revenue));
-      setTopHotels(JSON.parse(saved_top_hotels));
-      setReportSummary(JSON.parse(saved_summary));
-    } else {
-      // Nếu trống, nạp từ mockData và lưu vào máy
-      setRevenueData(REVENUE_MOCK);
-      setTopHotels(TOP_HOTELS_MOCK);
-      setReportSummary(REPORT_SUMMARY_MOCK);
-      
+    let baseRevenue = saved_revenue ? JSON.parse(saved_revenue) : REVENUE_MOCK;
+    let baseTopHotels = saved_top_hotels ? JSON.parse(saved_top_hotels) : TOP_HOTELS_MOCK;
+    let baseSummary = saved_summary ? JSON.parse(saved_summary) : REPORT_SUMMARY_MOCK;
+
+    if (!saved_revenue) {
       localStorage.setItem('REVENUE_DATA', JSON.stringify(REVENUE_MOCK));
       localStorage.setItem('TOP_HOTELS', JSON.stringify(TOP_HOTELS_MOCK));
       localStorage.setItem('REPORT_SUMMARY', JSON.stringify(REPORT_SUMMARY_MOCK));
     }
-  }, []);
 
-  // 2. Helper định dạng tiền VND (Cố định VND)
+    // 2. LOGIC TẠO DỮ LIỆU THEO NĂM
+    const isCurrentYear = selectedYear === currentYear;
+    // Tạo factor để biến đổi dữ liệu giữa các năm cho sinh động
+    const factor = isCurrentYear ? 1 : 0.6 + (Math.random() * 0.5);
+
+    // Bước A: Tính toán doanh thu và số lượng đơn đã scale theo factor
+    const calculatedMonths = Array.from({ length: 12 }).map((_, index) => {
+      const month = index + 1;
+      if (isCurrentYear && month > currentMonth) return null;
+
+      const existingMonthData = baseRevenue[index];
+      const revenue = existingMonthData 
+        ? existingMonthData.total_revenue * factor 
+        : (baseRevenue[0]?.total_revenue || 50000000) * (0.7 + Math.random() * 0.6) * factor;
+
+      const bookings = existingMonthData 
+        ? Math.floor(existingMonthData.booking_count * factor)
+        : Math.floor((baseRevenue[0]?.booking_count || 20) * (0.7 + Math.random() * 0.6) * factor);
+
+      return {
+        key: `month-${month}-${selectedYear}`,
+        month_label: `Tháng ${month}/${selectedYear}`,
+        total_revenue: revenue,
+        booking_count: bookings,
+      };
+    }).filter(Boolean);
+
+    // Bước B: Gắn trend_status bằng cách so sánh tháng hiện tại với tháng trước đó trong mảng đã tính
+    const finalRevenueData = calculatedMonths.map((item, index) => {
+      const prevRevenue = index > 0 ? calculatedMonths[index - 1].total_revenue : item.total_revenue;
+      return {
+        ...item,
+        trend_status: item.total_revenue >= prevRevenue ? 'up' : 'down'
+      };
+    });
+
+    // 3. Cập nhật các danh sách khác
+    const filteredTopHotels = baseTopHotels.map(item => ({
+      ...item,
+      revenue_value: item.revenue_value * factor,
+      total_sales: Math.floor(item.total_sales * factor)
+    })).sort((a, b) => b.revenue_value - a.revenue_value);
+
+    setRevenueData(finalRevenueData);
+    setTopHotels(filteredTopHotels);
+    setReportSummary(baseSummary);
+
+  }, [selectedYear]);
+
   const format_currency = (value) => {
     return new Intl.NumberFormat('vi-VN', { 
       style: 'currency', 
@@ -51,22 +96,29 @@ const AdminReports = () => {
     }).format(value);
   };
 
-  if (!report_summary) return null; // Chờ nạp dữ liệu
+  if (!report_summary) return null;
 
   return (
     <div style={{ padding: '24px' }}>
-      {/* Header báo cáo */}
+      {/* Header */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <Title level={3} style={{ margin: 0 }}>
           <ShoppingOutlined /> Thống kê kinh doanh hệ thống
         </Title>
         <Space>
-          <Text strong>Thời gian báo cáo:</Text>
-          <RangePicker placeholder={['Từ ngày', 'Đến ngày']} style={{ borderRadius: '8px' }} />
+          <Text strong>Thời gian báo cáo (Năm):</Text>
+          <DatePicker 
+            picker="year" 
+            placeholder="Chọn năm" 
+            style={{ borderRadius: '8px', width: '150px' }}
+            defaultValue={dayjs()} 
+            disabledDate={(current) => current && current.year() > dayjs().year()}
+            onChange={(date) => date && setSelectedYear(date.year())}
+          />
         </Space>
       </div>
 
-      {/* 1. Hàng thẻ thống kê nhanh */}
+      {/* Cards Thống kê nhanh */}
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col xs={24} sm={12} lg={6}>
           <Card variant={false} hoverable style={{ borderRadius: '12px', borderLeft: '4px solid #52c41a' }}>
@@ -75,10 +127,8 @@ const AdminReports = () => {
               value={report_summary.monthly_revenue}
               formatter={(val) => <Text style={{ color: '#3f8600', fontSize: '24px', fontWeight: 'bold' }}>{format_currency(val)}</Text>}
             />
-            <Text type="success" size="small"><ArrowUpOutlined /> {report_summary.revenue_growth}% so với kỳ trước</Text>
           </Card>
         </Col>
-        
         <Col xs={24} sm={12} lg={6}>
           <Card variant={false} hoverable style={{ borderRadius: '12px', borderLeft: '4px solid #1890ff' }}>
             <Statistic
@@ -87,10 +137,8 @@ const AdminReports = () => {
               prefix={<ShoppingOutlined />}
               styles={{ content: { color: '#1890ff', fontWeight: 'bold' } }}
             />
-            <Text type="success"><ArrowUpOutlined /> {report_summary.booking_growth}% tăng trưởng</Text>
           </Card>
         </Col>
-
         <Col xs={24} sm={12} lg={6}>
           <Card variant={false} hoverable style={{ borderRadius: '12px', borderLeft: '4px solid #faad14' }}>
             <Statistic
@@ -99,34 +147,25 @@ const AdminReports = () => {
               prefix={<UserOutlined />}
               styles={{ content: { fontWeight: 'bold' } }}
             />
-            <Text type={report_summary.member_growth < 0 ? "danger" : "success"}>
-              {report_summary.member_growth < 0 ? <ArrowDownOutlined /> : <ArrowUpOutlined />} 
-              {Math.abs(report_summary.member_growth)}% người dùng mới
-            </Text>
           </Card>
         </Col>
-
         <Col xs={24} sm={12} lg={6}>
           <Card variant={false} hoverable style={{ borderRadius: '12px', borderLeft: '4px solid #722ed1' }}>
             <Statistic
               title="Đối tác hoạt động"
               value={report_summary.active_partners}
               prefix={<HomeOutlined />}
-              valueStyle={{ fontWeight: 'bold', color: '#722ed1' }}
+              styles={{ content: { color: '#722ed1', fontWeight: 'bold' } }}
             />
-            <Tag color="purple" style={{ marginTop: 4 }}>{report_summary.active_partners} Khách sạn đang online</Tag>
+            <Tag color="purple" style={{ marginTop: 4 }}>{report_summary.active_partners} Khách sạn mới</Tag>
           </Card>
         </Col>
       </Row>
 
       <Row gutter={[16, 16]}>
-        {/* 2. Bảng chi tiết doanh thu */}
+        {/* Bảng Doanh thu */}
         <Col xs={24} lg={15}>
-          <Card 
-            title="Biểu đồ tăng trưởng doanh thu" 
-            variant={false} 
-            style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-          >
+          <Card title="Biểu đồ tăng trưởng doanh thu" variant={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <Table
               dataSource={revenue_data}
               rowKey="key"
@@ -142,12 +181,12 @@ const AdminReports = () => {
                 },
                 { title: 'Số lượng đơn', dataIndex: 'booking_count', key: 'booking_count', align: 'center' },
                 {
-                  title: 'Trạng thái',
+                  title: 'Đánh giá',
                   dataIndex: 'trend_status',
                   key: 'trend_status',
                   render: (status) => (
                     <Tag icon={status === 'up' ? <ArrowUpOutlined /> : <ArrowDownOutlined />} color={status === 'up' ? 'green' : 'red'}>
-                      {status === 'up' ? 'VƯỢT CHỈ TIÊU' : 'CẦN CẢI THIỆN'}
+                      {status === 'up' ? 'TĂNG' : 'GIẢM '}
                     </Tag>
                   )
                 }
@@ -156,13 +195,9 @@ const AdminReports = () => {
           </Card>
         </Col>
 
-        {/* 3. Hiệu suất khách sạn */}
+        {/* Khách sạn doanh thu cao nhất */}
         <Col xs={24} lg={9}>
-          <Card 
-            title="Khách sạn hiệu suất cao" 
-            variant={false} 
-            style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-          >
+          <Card title="Khách sạn doanh thu cao nhất theo từng năm" variant={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             {top_hotels.map((item, index) => (
               <div key={index} style={{ marginBottom: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -173,15 +208,12 @@ const AdminReports = () => {
                   <Progress 
                     percent={item.occupancy_rate} 
                     showInfo={false}
-                    strokeColor={{
-                      '0%': '#108ee9',
-                      '100%': index === 0 ? '#52c41a' : '#1890ff',
-                    }}
+                    strokeColor={index === 0 ? '#52c41a' : '#1890ff'}
                     size={12}
                   />
                 </Tooltip>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-                  <Text type="secondary" style={{ fontSize: '11px' }}>Xếp hạng: Top {index + 1}</Text>
+                  <Text type="secondary" style={{ fontSize: '11px' }}>Top {index + 1}</Text>
                   <Text type="secondary" style={{ fontSize: '11px' }}>{item.total_sales} đơn thành công</Text>
                 </div>
               </div>

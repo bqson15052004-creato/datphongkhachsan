@@ -14,7 +14,7 @@ const PartnerMessages = () => {
   // Thêm field 'updatedAt' để quản lý thời gian nhắn tin mới nhất
   const [chats, set_chats] = useState([
     { id: 2, name: 'Nguyễn Văn A', lastMsg: 'View biển không shop?', online: true, unread: 1, updatedAt: 1714000000000 },
-    { id: 3, name: 'Trần Thị B', lastMsg: 'Cảm ơn bạn nhiều!', online: false, unread: 0, updatedAt: 1714000080000 },
+    { id: 3, name: 'Trần Thị B', lastMsg: 'Cảm ơn bạn nhiều!', online: false, unread: 2, updatedAt: 1714000080000 },
     { id: 4, name: 'Anh Tuấn', lastMsg: 'Phòng đơn giá sao bạn?', online: true, unread: 0, updatedAt: 1714000050000 },
   ]);
 
@@ -23,14 +23,30 @@ const PartnerMessages = () => {
     { id: 2, sender: 'partner', text: 'Chào bạn, hiện tại bên mình vẫn còn 2 phòng Suite tầng cao view biển nhé!', time: '10:32 AM', chat_id: 2 },
   ]);
 
+  // --- LOGIC ĐỒNG BỘ BADGE THÔNG BÁO ---
+  
+  // 1. Mỗi khi danh sách chats thay đổi, tính lại tổng unread và lưu vào localStorage
+  useEffect(() => {
+    const totalUnread = chats.reduce((acc, cur) => acc + (cur.unread || 0), 0);
+    localStorage.setItem('unread_messages_count', totalUnread);
+    // Phát event để PartnerLayout cập nhật Badge ngay lập tức
+    window.dispatchEvent(new Event('storage'));
+  }, [chats]);
+
+  // 2. Khi chọn một chat mới, reset unread của chat đó về 0
+  useEffect(() => {
+    if (active_chat) {
+      set_chats(prev => prev.map(chat => 
+        chat.id === active_chat ? { ...chat, unread: 0 } : chat
+      ));
+    }
+  }, [active_chat]);
+
   // --- LOGIC LỌC VÀ SẮP XẾP ---
   const displayChats = useMemo(() => {
-    // 1. Lọc theo chữ cái ông nhập vào ô Search
     const filtered = chats.filter(customer => 
       customer.name.toLowerCase().includes(searchText.toLowerCase())
     );
-
-    // 2. Sắp xếp theo thời gian (updatedAt) - Ai mới nhất lên đầu
     return filtered.sort((a, b) => b.updatedAt - a.updatedAt);
   }, [chats, searchText]);
 
@@ -58,7 +74,6 @@ const PartnerMessages = () => {
 
     set_messages(prev => [...prev, new_msg]);
     
-    // Cập nhật lastMsg VÀ updatedAt để đẩy người này lên đầu danh sách
     set_chats(prev_chats => {
       return prev_chats.map(chat => 
         chat.id === active_chat 
@@ -77,7 +92,7 @@ const PartnerMessages = () => {
           
           <Sider width={350} theme="light" style={{ borderRight: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '24px', background: '#fff', flexShrink: 0 }}>
-              <Space orientation="vertical" style={{ width: '100%' }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
                 <Title level={4} style={{ margin: 0, color: '#1a3353' }}>
                   <MessageOutlined /> Khách hàng
                 </Title>
@@ -86,7 +101,7 @@ const PartnerMessages = () => {
                   variant="filled" 
                   style={{ marginTop: 10, borderRadius: 8 }} 
                   value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)} // Cập nhật state tìm kiếm
+                  onChange={(e) => setSearchText(e.target.value)}
                   allowClear
                   prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                 />
@@ -96,7 +111,7 @@ const PartnerMessages = () => {
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {displayChats.length > 0 ? (
                 <List
-                  dataSource={displayChats} // Dùng danh sách đã lọc và sắp xếp
+                  dataSource={displayChats}
                   renderItem={(item) => (
                     <List.Item
                       onClick={() => set_active_chat(item.id)}
@@ -136,7 +151,6 @@ const PartnerMessages = () => {
           <Content style={{ display: 'flex', flexDirection: 'column', background: '#fcfcfc' }}>
             {current_chat ? (
               <>
-                {/* Chat Header */}
                 <div style={{ padding: '16px 30px', background: '#fff', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                   <Space size="middle">
                     <Avatar size={44} icon={<UserOutlined />} style={{ backgroundColor: '#1890ff' }} />
@@ -148,7 +162,6 @@ const PartnerMessages = () => {
                   </Space>
                 </div>
 
-                {/* Message Body */}
                 <div ref={scroll_ref} style={{ flex: 1, padding: '30px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   {messages.filter(m => m.chat_id === active_chat).map((msg) => {
                     const is_me = msg.sender === 'partner';
@@ -169,7 +182,6 @@ const PartnerMessages = () => {
                   })}
                 </div>
 
-                {/* Chat Input */}
                 <div style={{ padding: '24px 30px', background: '#fff', borderTop: '1px solid #f0f0f0', flexShrink: 0 }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <Input 

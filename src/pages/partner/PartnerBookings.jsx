@@ -13,6 +13,19 @@ const PartnerBookings = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Hàm cập nhật Badge thông báo cho PartnerLayout (nếu ông dùng Event hoặc Storage)
+  const updateBadgeCount = (allBookings) => {
+    const pendingCount = allBookings.filter(b => {
+      const s = (b.status || b.Status || 'pending').toLowerCase();
+      return s === 'pending' || s === 'chờ duyệt';
+    }).length;
+    
+    // Lưu vào localStorage để PartnerLayout có thể lấy về hiển thị Badge
+    localStorage.setItem('pending_bookings_count', pendingCount);
+    // Phát một event để Layout biết mà cập nhật (nếu cần)
+    window.dispatchEvent(new Event('storage'));
+  };
+
   const fetchBookings = async () => {
     setLoading(true);
     let apiData = [];
@@ -23,13 +36,20 @@ const PartnerBookings = () => {
       console.warn("Dùng dữ liệu giả lập.");
     }
     const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
+    
     // Ưu tiên đơn mới từ LocalStorage (đơn khách vừa đặt)
     const allBookings = [...localData.reverse(), ...apiData, ...MOCK_BOOKINGS];
     setBookings(allBookings);
+    
+    // Cập nhật số lượng Badge thông báo
+    updateBadgeCount(allBookings);
+    
     setLoading(false);
   };
 
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(() => { 
+    fetchBookings(); 
+  }, []);
 
   const handleUpdateStatus = async (bookingId, newStatus) => {
     setLoading(true);
@@ -37,16 +57,23 @@ const PartnerBookings = () => {
       await axiosClient.patch(`/hotels/bookings/${bookingId}/`, { status: newStatus });
       fetchBookings();
     } catch (error) {
+      // Logic xử lý offline/demo
       const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
       const updatedLocalData = localData.map(b => 
         (b.id_booking === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b
       );
       localStorage.setItem('mock_bookings', JSON.stringify(updatedLocalData));
-      setBookings(prev => prev.map(b => 
+      
+      const newBookingsState = bookings.map(b => 
         (b.id_booking === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b
-      ));
+      );
+      
+      setBookings(newBookingsState);
+      updateBadgeCount(newBookingsState); // Cập nhật lại Badge ngay lập tức
       antdMessage?.success(`[Demo] Đã chuyển sang ${newStatus}`);
-    } finally { setLoading(false); }
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const filteredBookings = activeTab === 'all' 
@@ -64,7 +91,6 @@ const PartnerBookings = () => {
       title: 'Khách hàng', 
       key: 'customer',
       width: 140,
-      ellipsis: true,
       render: (record) => (
         <Space direction="vertical" size={0}>
           <Text strong style={{fontSize: '12px'}}><UserOutlined /> {record.customer_name || 'Khách'}</Text>
@@ -77,7 +103,6 @@ const PartnerBookings = () => {
       dataIndex: 'hotel_name',
       key: 'hotel_name',
       width: 130,
-      ellipsis: true,
       render: (name) => <Text strong style={{fontSize: '11px'}}><BankOutlined /> {name}</Text>
     },
     { 
@@ -116,7 +141,6 @@ const PartnerBookings = () => {
       width: 100,
       align: 'center',
       render: (record) => {
-        // Fix: Ép mặc định 'pending' nếu dữ liệu rỗng
         const s = (record.status || record.Status || 'pending').toLowerCase();
         const statusConfig = {
           'pending': { color: 'orange', text: 'CHỜ DUYỆT' },
@@ -172,7 +196,12 @@ const PartnerBookings = () => {
         <Card bordered={false} style={{ marginBottom: 12, borderRadius: 8 }}>
           <Row justify="space-between" align="middle">
             <Col><Title level={4} style={{ margin: 0 }}>Quản lý Đơn hàng (Partner)</Title></Col>
-            <Col><Badge status="processing" text="Dữ liệu thực" /></Col>
+            <Col>
+              <Space>
+                <Badge status="processing" text="Dữ liệu thực" />
+                <Button size="small" onClick={fetchBookings}>Làm mới</Button>
+              </Space>
+            </Col>
           </Row>
         </Card>
 
@@ -190,7 +219,6 @@ const PartnerBookings = () => {
             dataSource={filteredBookings} 
             rowKey={(record) => record.id_booking || record.id}
             loading={loading}
-            // Loại bỏ hoàn toàn thanh cuộn ngang bằng cách không set scroll.x
             pagination={{ pageSize: 8, size: 'small', current: currentPage, onChange: (p) => setCurrentPage(p) }}
           />
         </Card>
