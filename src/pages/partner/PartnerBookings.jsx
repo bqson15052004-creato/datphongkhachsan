@@ -12,7 +12,7 @@ const PartnerBookings = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-
+  const pageSize = 10; // Số dòng mỗi trang
   // Hàm cập nhật Badge thông báo cho PartnerLayout (nếu ông dùng Event hoặc Storage)
   const updateBadgeCount = (allBookings) => {
     const pendingCount = allBookings.filter(b => {
@@ -81,6 +81,15 @@ const PartnerBookings = () => {
     : bookings.filter(b => (b.status || b.Status || 'pending').toLowerCase() === activeTab.toLowerCase());
 
   const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
     { 
       title: 'Mã đơn', 
       key: 'id_booking',
@@ -153,7 +162,7 @@ const PartnerBookings = () => {
       }
     },
     {
-      title: 'Hành động',
+      title: 'Thao tác',
       key: 'action',
       width: 80,
       align: 'center',

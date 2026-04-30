@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, ApartmentOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message, Tooltip, Row, Col } from 'antd';
+import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, AppstoreOutlined } from '@ant-design/icons';
 
 // Đảm bảo file mockData.jsx đã được thêm status: 'active' như mình đã bàn
 import { HOTEL_TYPES } from '../../constants/mockData.jsx';
@@ -12,7 +12,8 @@ const AdminCategories = () => {
   const [editing_key, setEditingKey] = useState(null); 
   const [form] = Form.useForm();
   const [categories_list, setCategoriesList] = useState([]);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // Số dòng mỗi trang
   useEffect(() => {
     const saved_categories = localStorage.getItem('HOTEL_CATEGORIES');
     if (saved_categories) {
@@ -63,10 +64,20 @@ const AdminCategories = () => {
   };
 
   const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
     { 
       title: 'Loại khách sạn', 
       dataIndex: 'category_name', 
-      key: 'category_name', 
+      key: 'category_name',
+      width: 200,
       render: (text) => <Text strong>{text}</Text>
     },
     { 
@@ -79,7 +90,7 @@ const AdminCategories = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: 150,
+      width: 100,
       align: 'center',
       render: (status) => {
         const isActive = !status || status === 'active'; 
@@ -95,9 +106,9 @@ const AdminCategories = () => {
       }
     },
     {
-      title: 'Hành động',
+      title: 'Thao tác',
       key: 'action',
-      align: 'right',
+      align: 'center',
       width: 120,
       render: (_, record) => {
         const is_active = !record.status || record.status === 'active';
@@ -158,16 +169,15 @@ const AdminCategories = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
+      <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Title level={4} style={{ margin: 0 }}><AppstoreOutlined /> Quản lý loại khách sạn</Title>
+          </Col>
+        </Row>
+      </Card>
       <Card
-        variant={false}
-        style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
-        title={
-          <Space>
-            <ApartmentOutlined style={{ fontSize: '24px', color: '#1677ff' }} />
-            <Title level={4} style={{ margin: 0 }}>Danh mục loại khách sạn</Title>
-          </Space>
-        }
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKey(null); form.resetFields(); setIsModalVisible(true); }}>
             Thêm loại khách sạn mới

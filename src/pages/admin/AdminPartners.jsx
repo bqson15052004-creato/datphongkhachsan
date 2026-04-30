@@ -4,7 +4,7 @@ import {
   Modal, Descriptions, Badge, Tabs, App as AntApp, Empty, Image, Row, Col
 } from 'antd';
 import {
-  CheckCircleOutlined, EyeOutlined, SafetyOutlined, CloseCircleOutlined
+  CheckCircleOutlined, EyeOutlined, SafetyOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -14,7 +14,8 @@ const AdminPartners = () => {
   const [is_modal_open, set_is_modal_open] = useState(false);
   const [selected_partner, set_selected_partner] = useState(null);
   const [partner_list, set_partner_list] = useState([]);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // Số dòng mỗi trang
   // 1. Đồng bộ dữ liệu từ localStorage
   const load_partners_data = () => {
     const all_hotels = JSON.parse(localStorage.getItem('ALL_HOTELS')) || [];
@@ -84,34 +85,53 @@ const AdminPartners = () => {
   };
 
   const columns = [
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
     { 
       title: 'Mã khách sạn', 
       dataIndex: 'id_hotel', 
       key: 'id_hotel',
+      width: 100,
+      align: 'center',
       render: (id) => <Text code>{id}</Text>
     },
     { 
       title: 'Tên cơ sở', 
       dataIndex: 'hotel_name', 
       key: 'hotel_name',
+      width: 200,
+      align: 'center',
       render: (text) => <Text strong>{text}</Text>
     },
     { 
       title: 'Loại hình', 
       dataIndex: 'type', 
       key: 'type',
+      width: 120,
+      align: 'center',
       render: (type) => <Tag color="blue">{type?.toUpperCase()}</Tag>
     },
     { 
       title: 'Ngày gửi đơn', 
       dataIndex: 'created_at', 
       key: 'created_at',
+      width: 150,
+      align: 'center',
       render: (date) => date || '12/04/2026'
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
+      width: 180,
+      align: 'center',
       render: (status) => {
         const config = {
           'active': { color: 'green', text: 'ĐANG HOẠT ĐỘNG' }, 
@@ -125,7 +145,8 @@ const AdminPartners = () => {
     {
       title: 'Thao tác',
       key: 'action',
-      align: 'right',
+      width: 220,
+      align: 'center',
       render: (_, record) => (
         <Space>
           <Button
@@ -154,11 +175,17 @@ const AdminPartners = () => {
   ];
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
+      <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Title level={4} style={{ margin: 0 }}><SafetyOutlined /> Phê duyệt yêu cầu đối tác</Title>
+          </Col>
+        </Row>
+      </Card>
       <Card 
         bordered={false}
         style={{ borderRadius: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
-        title={<Title level={4} style={{margin:0}}><SafetyOutlined /> Phê duyệt yêu cầu đối tác</Title>}
       >
         <Tabs 
           defaultActiveKey="1" 

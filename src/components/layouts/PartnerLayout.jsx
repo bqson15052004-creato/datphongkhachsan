@@ -225,6 +225,7 @@ const PartnerLayout = () => {
           background: colorBgContainer, 
           borderRadius: borderRadiusLG,
           flex: 1,
+          height: 'calc(100vh - 64px)',
           overflowY: 'auto'
         }}>
           <Outlet />

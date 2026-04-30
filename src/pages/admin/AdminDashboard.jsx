@@ -99,11 +99,11 @@ const AdminReports = () => {
   if (!report_summary) return null;
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
       {/* Header */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <Title level={3} style={{ margin: 0 }}>
-          <ShoppingOutlined /> Thống kê kinh doanh hệ thống
+          <ShoppingOutlined /> Tổng quan kinh doanh hệ thống
         </Title>
         <Space>
           <Text strong>Thời gian báo cáo (Năm):</Text>

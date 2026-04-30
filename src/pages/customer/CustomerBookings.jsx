@@ -7,7 +7,7 @@ import {
 import { 
   HistoryOutlined, StarOutlined, StarFilled,
   ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined,
-  CalendarOutlined, MessageOutlined, EyeOutlined 
+  CalendarOutlined, MessageOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 

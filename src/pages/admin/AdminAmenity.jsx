@@ -88,10 +88,10 @@ const AdminAmenity = () => {
 
   const columns = [
     {
-      title: 'Mã TN',
+      title: 'Mã tiện nghi',
       dataIndex: 'id',
       width: 150,
-      render: (text) => <Text type="secondary">{text}</Text>,
+      render: (text) => <Text strong>{text}</Text>,
     },
     {
       title: 'Tên tiện nghi',
@@ -103,25 +103,42 @@ const AdminAmenity = () => {
       dataIndex: 'status',
       width: 200,
       render: (status) => (
-        <Tag color={status ? 'green' : 'red'}>
+        <Tag color={status ? 'green' : 'red'} style={{ fontWeight: 500 }}>
           {status ? 'ĐANG HOẠT ĐỘNG' : 'ĐANG KHÓA'}
         </Tag>
       ),
     },
     {
       title: 'Thao tác',
-      align: 'right',
       width: 150,
       render: (_, record) => (
         <Space size="middle">
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>Sửa</Button>
           <Button 
             type="link" 
-            danger={record.status}
-            icon={record.status ? <LockOutlined /> : <UnlockOutlined />} 
-            onClick={() => handleToggleStatus(record)} 
+            icon={<EditOutlined />} 
+            onClick={() => handleEdit(record)}
           >
-            {record.status ? 'Khóa' : 'Mở'}
+            Sửa
+          </Button>
+          
+          <Button 
+            type="link" 
+            onClick={() => handleToggleStatus(record)}
+            style={{ padding: 0 }}
+          >
+            <Space size={4}>
+              {record.status ? (
+                <>
+                  <UnlockOutlined style={{ color: '#006efeff' }} />
+                  <span style={{ color: '#006efeff' }}>Mở</span>
+                </>
+              ) : (
+                <>
+                  <LockOutlined style={{ color: '#f5222d' }} />
+                  <span style={{ color: '#f5222d' }}>Khóa</span>
+                </>
+              )}
+            </Space>
           </Button>
         </Space>
       ),
@@ -133,7 +150,7 @@ const AdminAmenity = () => {
       <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
         <Row justify="space-between" align="middle">
           <Col>
-            <Title level={4} style={{ margin: 0 }}><AppstoreOutlined /> Quản lý Tiện nghi Phòng</Title>
+            <Title level={4} style={{ margin: 0 }}><AppstoreOutlined /> Quản lý tiện nghi phòng</Title>
           </Col>
         </Row>
       </Card>

@@ -175,7 +175,7 @@ const RoomNumbers = () => {
       ),
     },
     {
-      title: 'Hành động',
+      title: 'Thao tác',
       key: 'action',
       align: 'center',
       render: (_, record) => (

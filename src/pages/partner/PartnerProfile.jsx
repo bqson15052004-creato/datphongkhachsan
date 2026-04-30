@@ -109,7 +109,6 @@ const PartnerProfile = () => {
               <Avatar size={80} src={userData.avatar} style={{ border: '3px solid #e6f7ff' }} />
               <div>
                 <Title level={4} style={{ margin: 0 }}>{userData.full_name}</Title>
-                <Text type="secondary">Người đại diện pháp luật</Text>
                 <div style={{ marginTop: 8 }}>
                   {userData.status === 'active' ? (
                     <Tag color="green" icon={<SafetyCertificateOutlined />}>Đang hoạt động</Tag>

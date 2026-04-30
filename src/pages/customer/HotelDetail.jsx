@@ -3,8 +3,7 @@ import {
   Row, Col, Typography, Button, Card, Tag, Table, Tabs, Image, Rate, Divider, Space, Spin, Empty, Alert, App as AntApp, List, Avatar, Tooltip
 } from 'antd';
 import {
-  EnvironmentOutlined,
-  ArrowLeftOutlined, UserOutlined, SafetyCertificateOutlined, MessageOutlined, CalendarOutlined, BankOutlined
+  EnvironmentOutlined, ArrowLeftOutlined, UserOutlined, MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 

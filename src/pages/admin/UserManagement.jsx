@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Table, Tag, Space, Button, Card, Typography, Alert, 
-  message, Modal, Input, Badge, Select, Descriptions, Avatar, Tooltip, Form
+  Table, Tag, Space, Button, Card, Typography, Alert, Row, Col,
+  message, Modal, Input, Badge, Descriptions, Avatar, Tooltip, Form
 } from 'antd';
 import {
   SearchOutlined, UserOutlined,
@@ -23,7 +23,8 @@ const UserManagement = () => {
   const [selected_user, setSelectedUser] = useState(null);
   const [is_add_modal_open, setIsAddModalOpen] = useState(false);
   const [form] = Form.useForm();
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // Số dòng mỗi trang
   // Khởi tạo dữ liệu
   useEffect(() => {
     const database_data = JSON.parse(localStorage.getItem('SYSTEM_USERS'));
@@ -103,6 +104,15 @@ const UserManagement = () => {
 
   const columns = [
     {
+      title: 'STT',
+      key: 'stt',
+      width: 60,
+      align: 'center',
+      render: (_, __, index) => (
+        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
+      ),
+    },
+    {
       title: 'Người dùng',
       key: 'user_info',
       render: (_, record) => (
@@ -172,146 +182,154 @@ const UserManagement = () => {
   ];
 
   return (
-    <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
-        <Title level={4} style={{ margin: 0 }}><UserOutlined /> Quản lý người dùng</Title>
-        <Space>
-          <Input
-            placeholder="Tìm tên, email hoặc tài khoản..."
-            prefix={<SearchOutlined />}
-            allowClear
-            style={{ width: 280, borderRadius: 8 }}
-            onChange={e => setSearchText(e.target.value)}
-          />
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={() => setIsAddModalOpen(true)}
-            style={{ borderRadius: 8, fontWeight: 500 }}
-          >
-            Thêm Admin
-          </Button>
-        </Space>
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={users.filter(u => 
-          u.full_name?.toLowerCase().includes(search_text.toLowerCase()) || 
-          u.email_address?.toLowerCase().includes(search_text.toLowerCase()) ||
-          u.user_name?.toLowerCase().includes(search_text.toLowerCase())
-        )}
-        rowKey="email_address"
-        pagination={{ pageSize: 8 }}
-      />
-
-      {/* MODAL XEM CHI TIẾT */}
-      <Modal
-        title="Thông tin người dùng"
-        open={is_modal_open}
-        onCancel={() => setIsModalOpen(false)}
-        footer={[<Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
-      >
-        {selected_user && (
-          <Descriptions bordered column={1} size="small">
-            <Descriptions.Item label="Tên tài khoản">{selected_user.user_name}</Descriptions.Item>
-            <Descriptions.Item label="Họ và tên">{selected_user.full_name}</Descriptions.Item>
-            <Descriptions.Item label="Email">{selected_user.email_address}</Descriptions.Item>
-            <Descriptions.Item label="Số điện thoại">{selected_user.phone_number}</Descriptions.Item>
-            <Descriptions.Item label="Vai trò">
-                <Tag color="blue">{selected_user.user_role.toUpperCase()}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày tham gia">
-                {new Date(selected_user.created_at).toLocaleDateString('vi-VN')}
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
-
-      {/* MODAL THÊM ADMIN CẤP 2 */}
-      <Modal
-        title={<Title level={4} style={{ margin: 0 }}>Tạo tài khoản Admin Cấp 2</Title>}
-        open={is_add_modal_open}
-        onCancel={() => { setIsAddModalOpen(false); form.resetFields(); }}
-        onOk={() => form.submit()}
-        okText="Xác nhận tạo"
-        cancelText="Hủy"
-        width={500}
-      >
-        <Form 
-          form={form} 
-          layout="vertical" 
-          onFinish={handle_add_admin}
-          style={{ marginTop: 20 }}
-        >
-          <Form.Item 
-            name="user_name" 
-            label="Tên tài khoản (Username)" 
-            rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
-          >
-            <Input prefix={<IdcardOutlined />} placeholder="Ví dụ: admin_phong" />
-          </Form.Item>
-
-          <Form.Item 
-            name="full_name" 
-            label="Họ và tên" 
-            rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
-          >
-            <Input prefix={<UserOutlined />} placeholder="Nhập tên đầy đủ" />
-          </Form.Item>
-
-          <Space style={{ display: 'flex' }} align="baseline">
-            <Form.Item 
-                name="email" 
-                label="Email" 
-                rules={[{ required: true, type: 'email', message: 'Email không hợp lệ!' }]}
+    <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
+      <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Title level={4} style={{ margin: 0 }}><UserOutlined /> Quản lý người dùng</Title>
+          </Col>
+        </Row>
+      </Card>
+      <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+          <Space>
+            <Input
+              placeholder="Tìm tên, email hoặc tài khoản..."
+              prefix={<SearchOutlined />}
+              allowClear
+              style={{ width: 280, borderRadius: 8 }}
+              onChange={e => setSearchText(e.target.value)}
+            />
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => setIsAddModalOpen(true)}
+              style={{ borderRadius: 8, fontWeight: 500 }}
             >
-                <Input prefix={<MailOutlined />} placeholder="Email liên lạc" />
-            </Form.Item>
-            <Form.Item 
-                name="phone" 
-                label="Số điện thoại"
-                rules={[{ required: true, message: 'Vui lòng nhập SĐT!' }]}
-            >
-                <Input prefix={<PhoneOutlined />} placeholder="Số điện thoại" />
-            </Form.Item>
+              Thêm Admin
+            </Button>
           </Space>
+        </div>
 
-          <Form.Item 
-            name="password" 
-            label="Mật khẩu" 
-            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
-          >
-            <Input.Password prefix={<KeyOutlined />} placeholder="Nhập mật khẩu" />
-          </Form.Item>
+        <Table
+          columns={columns}
+          dataSource={users.filter(u => 
+            u.full_name?.toLowerCase().includes(search_text.toLowerCase()) || 
+            u.email_address?.toLowerCase().includes(search_text.toLowerCase()) ||
+            u.user_name?.toLowerCase().includes(search_text.toLowerCase())
+          )}
+          rowKey="email_address"
+          pagination={{ pageSize: 8 }}
+        />
 
-          <Form.Item 
-            name="confirm" 
-            label="Nhập lại mật khẩu" 
-            dependencies={['password']}
-            rules={[
-              { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('password') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('Mật khẩu không khớp!'));
-                },
-              }),
-            ]}
+        {/* MODAL XEM CHI TIẾT */}
+        <Modal
+          title="Thông tin người dùng"
+          open={is_modal_open}
+          onCancel={() => setIsModalOpen(false)}
+          footer={[<Button key="close" onClick={() => setIsModalOpen(false)}>Đóng</Button>]}
+        >
+          {selected_user && (
+            <Descriptions bordered column={1} size="small">
+              <Descriptions.Item label="Tên tài khoản">{selected_user.user_name}</Descriptions.Item>
+              <Descriptions.Item label="Họ và tên">{selected_user.full_name}</Descriptions.Item>
+              <Descriptions.Item label="Email">{selected_user.email_address}</Descriptions.Item>
+              <Descriptions.Item label="Số điện thoại">{selected_user.phone_number}</Descriptions.Item>
+              <Descriptions.Item label="Vai trò">
+                  <Tag color="blue">{selected_user.user_role.toUpperCase()}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày tham gia">
+                  {new Date(selected_user.created_at).toLocaleDateString('vi-VN')}
+              </Descriptions.Item>
+            </Descriptions>
+          )}
+        </Modal>
+
+        {/* MODAL THÊM ADMIN CẤP 2 */}
+        <Modal
+          title={<Title level={4} style={{ margin: 0 }}>Tạo tài khoản Admin Cấp 2</Title>}
+          open={is_add_modal_open}
+          onCancel={() => { setIsAddModalOpen(false); form.resetFields(); }}
+          onOk={() => form.submit()}
+          okText="Xác nhận tạo"
+          cancelText="Hủy"
+          width={500}
+        >
+          <Form 
+            form={form} 
+            layout="vertical" 
+            onFinish={handle_add_admin}
+            style={{ marginTop: 20 }}
           >
-            <Input.Password prefix={<KeyOutlined />} placeholder="Xác nhận mật khẩu" />
-          </Form.Item>
-          
-          <Alert 
-            message="Tài khoản này sẽ được cấp quyền Admin Cấp 2 theo mặc định hệ thống." 
-            type="info" 
-            showIcon 
-          />
-        </Form>
-      </Modal>
-    </Card>
+            <Form.Item 
+              name="user_name" 
+              label="Tên tài khoản (Username)" 
+              rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
+            >
+              <Input prefix={<IdcardOutlined />} placeholder="Ví dụ: admin_phong" />
+            </Form.Item>
+
+            <Form.Item 
+              name="full_name" 
+              label="Họ và tên" 
+              rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="Nhập tên đầy đủ" />
+            </Form.Item>
+
+            <Space style={{ display: 'flex' }} align="baseline">
+              <Form.Item 
+                  name="email" 
+                  label="Email" 
+                  rules={[{ required: true, type: 'email', message: 'Email không hợp lệ!' }]}
+              >
+                  <Input prefix={<MailOutlined />} placeholder="Email liên lạc" />
+              </Form.Item>
+              <Form.Item 
+                  name="phone" 
+                  label="Số điện thoại"
+                  rules={[{ required: true, message: 'Vui lòng nhập SĐT!' }]}
+              >
+                  <Input prefix={<PhoneOutlined />} placeholder="Số điện thoại" />
+              </Form.Item>
+            </Space>
+
+            <Form.Item 
+              name="password" 
+              label="Mật khẩu" 
+              rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+            >
+              <Input.Password prefix={<KeyOutlined />} placeholder="Nhập mật khẩu" />
+            </Form.Item>
+
+            <Form.Item 
+              name="confirm" 
+              label="Nhập lại mật khẩu" 
+              dependencies={['password']}
+              rules={[
+                { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('password') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('Mật khẩu không khớp!'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password prefix={<KeyOutlined />} placeholder="Xác nhận mật khẩu" />
+            </Form.Item>
+            
+            <Alert 
+              message="Tài khoản này sẽ được cấp quyền Admin Cấp 2 theo mặc định hệ thống." 
+              type="info" 
+              showIcon 
+            />
+          </Form>
+        </Modal>
+      </Card>
+    </div>
   );
 };
 
