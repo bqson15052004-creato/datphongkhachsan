@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Row, Col, Typography, Button, Space, Divider, ConfigProvider } from 'antd';
+import { Card, Row, Col, Typography, Button, Space, Divider } from 'antd';
 import { UserOutlined, ShopOutlined, ArrowRightOutlined, CheckCircleFilled } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 

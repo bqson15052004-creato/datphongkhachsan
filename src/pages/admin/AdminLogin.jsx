@@ -63,7 +63,7 @@ const AdminLogin = () => {
               type="primary" 
               htmlType="submit" 
               block 
-              danger // Giữ màu đỏ cho Admin
+              danger
               style={{ height: 45, fontWeight: 'bold' }}
             >
               ĐĂNG NHẬP

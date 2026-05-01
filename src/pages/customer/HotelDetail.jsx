@@ -9,7 +9,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 
 // IMPORT CONTEXT & MOCK DATA
 import AuthContext from '../../contexts/AuthContext';
-import { MOCK_ROOMS, MOCK_HOTELS, MOCK_BOOKINGS } from '../../constants/mockData.jsx';
+import { MOCK_ROOMS, MOCK_HOTELS, MOCK_BOOKINGS, ALL_AMENITIES } from '../../constants/mockData.jsx';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -123,6 +123,30 @@ const HotelDetail = () => {
         <Space direction="vertical" size={0}>
           <Text strong style={{ fontSize: 16 }}>{record.room_type}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>Mã phòng: #{record.id_room}</Text>
+        </Space>
+      )
+    },
+    {
+      title: 'Số phòng',
+      dataIndex: 'room_number',
+      key: 'room_number',
+      render: (text) => <Text strong style={{ color: '#1890ff' }}>{text}</Text>,
+    },
+    {
+      title: 'Tiện nghi',
+      dataIndex: 'amenities',
+      key: 'amenities',
+      width: 200,
+      render: (amenityIds) => (
+        <Space size={[0, 4]} wrap>
+          {amenityIds?.map(id => {
+            const info = ALL_AMENITIES.find(a => a.id === id);
+            return (
+              <Tag color="blue" key={id}>
+                {info ? info.name : id}
+              </Tag>
+            );
+          })}
         </Space>
       )
     },

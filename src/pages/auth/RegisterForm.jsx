@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'; // Thêm useEffect
+import React, { useState, useEffect } from 'react';
 import axiosClient from '../../services/axiosClient';
-import { Form, Input, Button, Card, Typography, App as AntApp, Space } from 'antd';
+import { Form, Input, Button, Card, Typography, App as AntApp } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined, MailOutlined, BorderOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 

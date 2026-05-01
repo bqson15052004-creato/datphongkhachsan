@@ -1,12 +1,13 @@
-/* Reset mặc định của trình duyệt */
+/* Reset mặc định của trình duyệt 
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden; /* Khóa thanh cuộn ngoài cùng */
+  overflow: hidden; /* Khóa thanh cuộn ngoài cùng 
 }
 
 #root {
   height: 100%;
 }
+

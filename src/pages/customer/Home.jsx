@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Typography, Row, Col, Card, Rate, Skeleton, Space, Tag } from 'antd';
+import { Input, Button, Typography, Row, Col, Card, Skeleton, Space } from 'antd';
 import { 
   SearchOutlined, 
   EnvironmentOutlined, 
