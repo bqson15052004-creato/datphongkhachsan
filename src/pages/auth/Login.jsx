@@ -33,32 +33,46 @@ const Login = () => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    const { account, password } = values;
+    const { email, password } = values;
     try {
-      const response = await axiosClient.post('/accounts/login/', {
-        user_name: account.trim(),
-        password: password
-      });
+      // const response = await axiosClient.post('/auth/login/', {
+      //   user_name: account.trim(),
+      //   password: password
+      // });
 
-      login(response.user, { access: response.access });
-      message.success(`Chào mừng ${response.user?.full_name} quay trở lại!`);
-      handleNavigation(response.user?.role);
+      const response = await fetch("http://localhost:3000/api/v1/management-hotel/auth/login",{
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password
+        })
+      })
+      // const data = await response.json();
+      console.log(response);
+
+      // login(response.user, { access: response.access });
+      // message.success(`Chào mừng ${response.user?.full_name} quay trở lại!`);
+      // handleNavigation(response.user?.role);
 
     } catch (error) {
-      console.warn("Đăng nhập BE thất bại, đang check Mock Data...");
+      throw new Error(error);
+      // console.warn("Đăng nhập BE thất bại, đang check Mock Data...");
 
-      const mockUser = MOCK_USERS.find(
-        (u) => (u.email === account || u.user_name === account) && u.password === password
-      );
+      // const mockUser = MOCK_USERS.find(
+      //   (u) => (u.email === account || u.user_name === account) && u.password === password
+      // );
 
-      if (mockUser) {
-        login(mockUser, { access: `mock_token_${mockUser.role}` });
-        message.success(`[Mock] Đăng nhập thành công với quyền ${mockUser.role}`);
-        handleNavigation(mockUser.role);
-      } else {
-        const errorMsg = error.response?.data?.detail || 'Tài khoản hoặc mật khẩu không chính xác!';
-        message.error(errorMsg);
-      }
+      // if (mockUser) {
+      //   login(mockUser, { access: `mock_token_${mockUser.role}` });
+      //   message.success(`[Mock] Đăng nhập thành công với quyền ${mockUser.role}`);
+      //   handleNavigation(mockUser.role);
+      // } else {
+      //   const errorMsg = error.response?.data?.detail || 'Tài khoản hoặc mật khẩu không chính xác!';
+      //   message.error(errorMsg);
+      // }
     } finally {
       setLoading(false);
     }
@@ -74,7 +88,7 @@ const Login = () => {
 
         <Form name="login_form" onFinish={onFinish} size="large" layout="vertical">
           <Form.Item
-            name="account"
+            name="email"
             label={<Text strong>Tài khoản hoặc Email</Text>}
             rules={[{ required: true, message: 'Vui lòng nhập tài khoản hoặc email!' }]}
           >

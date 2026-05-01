@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 //const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-const API_BASE = 'https://jsonplaceholder.typicode.com';
+const API_BASE = 'http://localhost:3000/api/v1/management-hotel';
 
 const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -16,7 +16,7 @@ axiosClient.interceptors.request.use(
   (config) => {
     // SỬA TẠI ĐÂY: Chuyển từ localStorage sang sessionStorage
     const token = sessionStorage.getItem('access_token') || sessionStorage.getItem('token');
-    
+    console.log(token)
     if (token && !token.startsWith('mock_')) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -57,7 +57,7 @@ axiosClient.interceptors.response.use(
         console.error("Hệ thống Server đang gặp sự cố.");
       }
     } else if (error.request) {
-      console.error("Không thể kết nối đến máy chủ. Kiểm tra lại Backend (Port 8000) nhé ông!");
+      console.error("Không thể kết nối đến máy chủ. Kiểm tra lại Backend!");
     }
 
     return Promise.reject(error);

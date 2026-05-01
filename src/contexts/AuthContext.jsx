@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const raw = sessionStorage.getItem('user');
+      console.log(raw)
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
