@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tooltip, Empty, Tabs, Row, Col } from 'antd';
-import { CheckOutlined, CloseOutlined, UserOutlined, CalendarOutlined, DollarOutlined, BankOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Table, Tag, Button, Space, Card, Typography, App as AntApp, Badge, Tooltip, Tabs, Row, Col, Input, DatePicker } from 'antd';
+import { 
+  CheckOutlined, 
+  CloseOutlined, 
+  UserOutlined, 
+  BankOutlined, 
+  InfoCircleOutlined, 
+  SearchOutlined
+} from '@ant-design/icons';
+import dayjs from 'dayjs'; // QUAN TRỌNG: Nhớ import cái này để xử lý ngày tháng
 import axiosClient from '../../services/axiosClient';
 import { MOCK_BOOKINGS } from '../../constants/mockData.jsx';
 
@@ -8,24 +16,17 @@ const { Title, Text } = Typography;
 
 const PartnerBookings = () => {
   const { message: antdMessage } = AntApp.useApp();
+  
+  // KHAI BÁO STATE
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // Số dòng mỗi trang
-  // Hàm cập nhật Badge thông báo cho PartnerLayout (nếu ông dùng Event hoặc Storage)
-  const updateBadgeCount = (allBookings) => {
-    const pendingCount = allBookings.filter(b => {
-      const s = (b.status || b.Status || 'pending').toLowerCase();
-      return s === 'pending' || s === 'chờ duyệt';
-    }).length;
-    
-    // Lưu vào localStorage để PartnerLayout có thể lấy về hiển thị Badge
-    localStorage.setItem('pending_bookings_count', pendingCount);
-    // Phát một event để Layout biết mà cập nhật (nếu cần)
-    window.dispatchEvent(new Event('storage'));
-  };
+  const [searchText, setSearchText] = useState('');
+  const [filterDateRange, setFilterDateRange] = useState(null); // State cho DatePicker
+  const pageSize = 10;
 
+  // --- LOGIC FETCH DỮ LIỆU ---
   const fetchBookings = async () => {
     setLoading(true);
     let apiData = [];
@@ -36,20 +37,22 @@ const PartnerBookings = () => {
       console.warn("Dùng dữ liệu giả lập.");
     }
     const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
-    
-    // Ưu tiên đơn mới từ LocalStorage (đơn khách vừa đặt)
     const allBookings = [...localData.reverse(), ...apiData, ...MOCK_BOOKINGS];
     setBookings(allBookings);
-    
-    // Cập nhật số lượng Badge thông báo
     updateBadgeCount(allBookings);
-    
     setLoading(false);
   };
 
-  useEffect(() => { 
-    fetchBookings(); 
-  }, []);
+  const updateBadgeCount = (allBookings) => {
+    const pendingCount = allBookings.filter(b => {
+      const s = (b.status || b.Status || 'pending').toLowerCase();
+      return s === 'pending' || s === 'chờ duyệt';
+    }).length;
+    localStorage.setItem('pending_bookings_count', pendingCount);
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  useEffect(() => { fetchBookings(); }, []);
 
   const handleUpdateStatus = async (bookingId, newStatus) => {
     setLoading(true);
@@ -57,28 +60,41 @@ const PartnerBookings = () => {
       await axiosClient.patch(`/hotels/bookings/${bookingId}/`, { status: newStatus });
       fetchBookings();
     } catch (error) {
-      // Logic xử lý offline/demo
       const localData = JSON.parse(localStorage.getItem('mock_bookings') || '[]');
       const updatedLocalData = localData.map(b => 
         (b.id_booking === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b
       );
       localStorage.setItem('mock_bookings', JSON.stringify(updatedLocalData));
-      
       const newBookingsState = bookings.map(b => 
         (b.id_booking === bookingId || b.id === bookingId) ? { ...b, status: newStatus } : b
       );
-      
       setBookings(newBookingsState);
-      updateBadgeCount(newBookingsState); // Cập nhật lại Badge ngay lập tức
+      updateBadgeCount(newBookingsState);
       antdMessage?.success(`[Demo] Đã chuyển sang ${newStatus}`);
-    } finally { 
-      setLoading(false); 
-    }
+    } finally { setLoading(false); }
   };
 
-  const filteredBookings = activeTab === 'all' 
-    ? bookings 
-    : bookings.filter(b => (b.status || b.Status || 'pending').toLowerCase() === activeTab.toLowerCase());
+  // --- HÀM LỌC TỔNG HỢP (Fix lỗi logic ở image_3ca11e.png) ---
+  const filteredBookings = bookings.filter(b => {
+    const statusMatch = activeTab === 'all' || 
+      (b.status || b.Status || 'pending').toLowerCase() === activeTab.toLowerCase();
+
+    const search = (searchText || '').toLowerCase();
+    const textMatch = 
+      String(b.id_booking || b.id || '').toLowerCase().includes(search) ||
+      String(b.hotel_name || '').toLowerCase().includes(search);
+
+    let dateMatch = true;
+    if (filterDateRange && filterDateRange.length === 2) {
+      const start = filterDateRange[0].startOf('day');
+      const end = filterDateRange[1].endOf('day');
+      const checkIn = dayjs(b.check_in);
+      const checkOut = dayjs(b.check_out);
+      dateMatch = (checkIn.isAfter(start) || checkIn.isSame(start)) && 
+                  (checkOut.isBefore(end) || checkOut.isSame(end));
+    }
+    return statusMatch && textMatch && dateMatch;
+  });
 
   const columns = [
     {
@@ -86,9 +102,7 @@ const PartnerBookings = () => {
       key: 'stt',
       width: 60,
       align: 'center',
-      render: (_, __, index) => (
-        <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>
-      ),
+      render: (_, __, index) => <Text strong>{(currentPage - 1) * pageSize + index + 1}</Text>,
     },
     { 
       title: 'Mã đơn', 
@@ -131,8 +145,8 @@ const PartnerBookings = () => {
       width: 140,
       render: (record) => (
         <div style={{lineHeight: '1.4', fontSize: 10}}>
-          <div><Text type="success">●</Text> {record.check_in}</div>
-          <div><Text type="danger">●</Text> {record.check_out}</div>
+          <div><Text type="success">●</Text> Nhận: {record.check_in}</div>
+          <div><Text type="danger">●</Text> Trả: {record.check_out}</div>
         </div>
       )
     },
@@ -168,33 +182,19 @@ const PartnerBookings = () => {
       align: 'center',
       render: (_, record) => {
         const s = (record.status || record.Status || 'pending').toLowerCase();
-        
         if (s === 'pending' || s === 'chờ duyệt') {
           return (
             <Space size="middle">
               <Tooltip title="Xác nhận">
-                <CheckOutlined 
-                  style={{ color: 'blue', cursor: 'pointer', fontSize: '16px' }} 
-                  onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Confirmed')}
-                />
+                <CheckOutlined style={{ color: 'blue', cursor: 'pointer' }} onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Confirmed')} />
               </Tooltip>
               <Tooltip title="Từ chối">
-                <CloseOutlined 
-                  style={{ color: 'red', cursor: 'pointer', fontSize: '16px' }} 
-                  onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Cancelled')}
-                />
+                <CloseOutlined style={{ color: 'red', cursor: 'pointer' }} onClick={() => handleUpdateStatus(record.id_booking || record.id, 'Cancelled')} />
               </Tooltip>
             </Space>
           );
         }
-        return (
-          <Tooltip title="Xem chi tiết">
-            <InfoCircleOutlined 
-              style={{ color: '#1890ff', cursor: 'pointer', fontSize: '18px' }} 
-              onClick={() => antdMessage.info("Chi tiết đơn hàng đang được cập nhật")}
-            />
-          </Tooltip>
-        );
+        return <InfoCircleOutlined style={{ color: '#1890ff', cursor: 'pointer' }} onClick={() => antdMessage.info("Đang xem chi tiết...")} />;
       }
     }
   ];
@@ -204,7 +204,7 @@ const PartnerBookings = () => {
       <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}> 
         <Card bordered={false} style={{ marginBottom: 12, borderRadius: 8 }}>
           <Row justify="space-between" align="middle">
-            <Col><Title level={4} style={{ margin: 0 }}>Quản lý Đơn hàng (Partner)</Title></Col>
+            <Col><Title level={4} style={{ margin: 0 }}>Quản lý Đơn đặt phòng</Title></Col>
             <Col>
               <Space>
                 <Badge status="processing" text="Dữ liệu thực" />
@@ -215,7 +215,27 @@ const PartnerBookings = () => {
         </Card>
 
         <Card bordered={false} style={{ borderRadius: 12 }}>
-          <Tabs activeKey={activeTab} onChange={setActiveTab} size="small"
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab} 
+            size="small"
+            tabBarExtraContent={
+              <Space style={{ paddingBottom: 8 }}>
+                <Input 
+                  placeholder="Tìm mã đơn, khách sạn..." 
+                  prefix={<SearchOutlined />} 
+                  value={searchText}
+                  onChange={e => setSearchText(e.target.value)} 
+                  allowClear
+                  style={{ width: 220, borderRadius: 8 }}
+                />
+                <DatePicker.RangePicker 
+                  placeholder={['Nhận', 'Trả']}
+                  onChange={(dates) => setFilterDateRange(dates)}
+                  style={{ borderRadius: 8, width: 230 }}
+                />
+              </Space>
+            }
             items={[
               { label: 'Tất cả', key: 'all' },
               { label: 'Chờ duyệt', key: 'pending' },
@@ -226,9 +246,15 @@ const PartnerBookings = () => {
           <Table 
             columns={columns} 
             dataSource={filteredBookings} 
-            rowKey={(record) => record.id_booking || record.id}
+            rowKey={(record, index) => record.id_booking || record.id || index}
             loading={loading}
-            pagination={{ pageSize: 8, size: 'small', current: currentPage, onChange: (p) => setCurrentPage(p) }}
+            pagination={{ 
+              current: currentPage,
+              pageSize: pageSize,
+              onChange: (page) => setCurrentPage(page),
+              showTotal: (total) => `Tổng cộng ${total} đơn`,
+              position: ['bottomRight'],
+            }}
           />
         </Card>
       </div>

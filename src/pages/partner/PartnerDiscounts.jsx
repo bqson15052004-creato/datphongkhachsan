@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Card, Table, Button, Space, Typography, Tag, Modal, Form, 
   Input, Select, DatePicker, App as AntApp, InputNumber, Row, Col 
 } from 'antd';
-import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, TagOutlined, HomeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, TagOutlined, HomeOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { MOCK_HOTELS, MOCK_DISCOUNTS } from '../../constants/mockData.jsx';
 
@@ -15,8 +15,11 @@ const PartnerDiscounts = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingId, setEditingId] = useState(null); // Trạng thái đang sửa mã nào
   const [form] = Form.useForm();
-
-  // Khởi tạo thêm status cho mock data nếu chưa có
+  
+  // Khai báo state
+  const [selectedHotel, setSelectedHotel] = useState(null); 
+  const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(false); // Thêm state này để tránh lỗi trong Table
   const [discounts, setDiscounts] = useState(
     MOCK_DISCOUNTS.map(d => ({ ...d, status: d.status || 'active' }))
   );
@@ -24,9 +27,32 @@ const PartnerDiscounts = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  // Sắp xếp mã giảm giá theo ngày bắt đầu
   const sortedDiscounts = useMemo(() => {
     return [...discounts].sort((a, b) => dayjs(a.start_date).unix() - dayjs(b.start_date).unix());
   }, [discounts]);
+
+  // --- LOGIC LỌC TÌM KIẾM ---
+  const filteredDiscounts = useMemo(() => {
+    return sortedDiscounts.filter(item => {
+      // Lọc theo khách sạn: Xử lý trường hợp id_hotels là mảng
+      const hotelMatch = !selectedHotel || 
+                         !item.id_hotels || 
+                         item.id_hotels.length === 0 || 
+                         (Array.isArray(item.id_hotels) && item.id_hotels.includes(selectedHotel));
+      
+      // Lọc theo từ khóa tìm kiếm (Mã code)
+      const searchMatch = !searchText || 
+                          item.code?.toLowerCase().includes(searchText.toLowerCase());
+
+      return hotelMatch && searchMatch;
+    });
+  }, [sortedDiscounts, selectedHotel, searchText]);
+
+  // Tự động về trang 1 khi lọc
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText, selectedHotel]);
 
   // --- LOGIC KHÓA / MỞ KHÓA ---
   const handleToggleLock = (record) => {
@@ -71,7 +97,6 @@ const PartnerDiscounts = () => {
       width: 250,
       render: (id_list) => (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-          {/* THÊM CHECK MẢNG TẠI ĐÂY */}
           {Array.isArray(id_list) && id_list.map(id => {
             const hotel = MOCK_HOTELS.find(h => h.id_hotel === id);
             return (
@@ -181,32 +206,67 @@ const PartnerDiscounts = () => {
 
   return (
     <div style={{ padding: '24px' }}>
-      <Card
-        title={
-          <Space>
-            <TagOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
-            <Title level={4} style={{ margin: 0 }}>Chương trình khuyến mãi</Title>
-          </Space>
-        }
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => {
-            setEditingId(null);
-            form.resetFields();
-            setIsModalVisible(true);
-          }}>
-            Tạo mã giảm giá mới
-          </Button>
-        }
-      >
+      <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Title level={4} style={{ margin: 0 }}><HomeOutlined /> Quản lý mã giảm giá</Title>
+            <Text type="secondary">Tổng hợp tất cả các mã giảm giá đang hoạt động</Text>
+          </Col>
+        </Row>
+      </Card>
+
+      <Card variant={false} style={{ borderRadius: 12, marginBottom: 24 }}>
+        {/* THANH CÔNG CỤ: CHỌN KHÁCH SẠN - TÌM KIẾM - NÚT THÊM */}
+        <Row gutter={16} style={{ marginBottom: 20 }}>
+          <Col span={8}>
+            <Select 
+              style={{ width: '100%' }} 
+              placeholder="Lọc theo khách sạn"
+              value={selectedHotel} 
+              onChange={setSelectedHotel}
+              allowClear
+            >
+              {MOCK_HOTELS.map(h => (
+                <Select.Option key={h.id_hotel} value={h.id_hotel}>{h.hotel_name}</Select.Option>
+              ))}
+            </Select>
+          </Col>
+          <Col span={8}>
+            <Input 
+              placeholder="Tìm mã giảm giá (VD: SUMMER20)..." 
+              prefix={<SearchOutlined />} 
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)} 
+              allowClear
+            />
+          </Col>
+          <Col span={8} style={{ textAlign: 'right' }}>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={() => {
+                setEditingId(null);
+                form.resetFields();
+                setIsModalVisible(true);
+              }}
+            >
+              Tạo mã giảm giá mới
+            </Button>
+          </Col>
+        </Row>
+
+        {/* BẢNG DANH SÁCH MÃ GIẢM GIÁ */}
         <Table 
           columns={columns} 
-          dataSource={sortedDiscounts}
+          dataSource={filteredDiscounts}
           rowKey="id_discount" 
+          loading={loading}
           pagination={{ 
             current: currentPage,
             pageSize: pageSize,
             onChange: (page) => setCurrentPage(page),
             showTotal: (total) => `Tổng cộng ${total} mã`,
+            position: ['bottomRight'],
           }}
         />
       </Card>

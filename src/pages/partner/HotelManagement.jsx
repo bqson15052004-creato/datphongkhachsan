@@ -10,7 +10,7 @@ import {
   UnlockOutlined,
   ShopOutlined, 
   EnvironmentOutlined,
-  UploadOutlined
+  SearchOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -270,24 +270,36 @@ const HotelManagement = () => {
         <Card 
           variant={false} 
           style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-          title={<Text strong>Danh sách khách sạn</Text>}
-          extra={
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => { 
-                setEditingId(null); 
-                form.resetFields(); 
-                setFileList([]); 
-                setImageUrl(''); // Reset ảnh Cloudinary
-                setIsModalOpen(true); 
-              }}
-              style={{ borderRadius: 8, height: 40 }}
-            >
-              Đăng ký khách sạn mới
-            </Button>
-          }
         >
+          <Row gutter={16} style={{ marginBottom: 20 }} justify="space-between">
+            <Col span={12}>
+              <Input 
+                placeholder="Tìm kiếm theo tên khách sạn" 
+                prefix={<SearchOutlined />} 
+                onChange={e => setSearchText(e.target.value)} 
+                allowClear
+                size="large"
+                style={{ borderRadius: 8 }}
+              />
+            </Col>
+            <Col>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => { 
+                  setEditingId(null); 
+                  form.resetFields(); 
+                  setFileList([]); 
+                  setImageUrl(''); 
+                  setIsModalOpen(true); 
+                }} 
+                size="large"
+                style={{ borderRadius: 8, fontWeight: 500 }}
+              >
+                Đăng ký khách sạn mới
+              </Button>
+            </Col>
+          </Row>
           <Table 
             columns={columns} 
             dataSource={hotels}
@@ -365,25 +377,6 @@ const HotelManagement = () => {
               {/* COMPONENT CLOUDINARY ĐƯỢC CHÈN VÀO ĐÂY */}
               <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
               {imageUrl && <img src={imageUrl} alt="preview" style={{ width: 100, marginTop: 10, display: 'block' }} />}
-
-              <div style={{ marginTop: 10 }}>
-                <Text type="secondary">Hoặc tải trực tiếp (Base64):</Text>
-                <Upload
-                  listType="picture-card"
-                  fileList={fileList}
-                  onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-                  beforeUpload={() => false} 
-                  maxCount={1}
-                  accept="image/*"
-                >
-                  {fileList.length < 1 && (
-                    <div>
-                      <PlusOutlined />
-                      <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                    </div>
-                  )}
-                </Upload>
-              </div>
             </Form.Item>
 
             <Form.Item name="description" label="Mô tả">

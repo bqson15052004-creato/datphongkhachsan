@@ -175,9 +175,6 @@ const PartnerProfile = () => {
             <Space direction="vertical" style={{ width: '100%' }}>
               {/* Tích hợp Cloudinary */}
               <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
-              
-              <Divider plain><Text type="secondary" style={{ fontSize: '12px' }}>Hoặc dùng file local</Text></Divider>
-
               <Upload
                 fileList={fileList}
                 onChange={({ fileList: newFileList }) => {
@@ -191,7 +188,6 @@ const PartnerProfile = () => {
                     setImageUrl('');
                 }}
               >
-                <Button icon={<UploadOutlined />}>Chọn file từ máy tính</Button>
               </Upload>
               
               {(imageUrl || fileList.length > 0) && (

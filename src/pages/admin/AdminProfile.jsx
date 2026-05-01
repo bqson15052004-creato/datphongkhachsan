@@ -157,25 +157,6 @@ const AdminProfile = () => {
             <Space direction="vertical" style={{ width: '100%' }}>
               {/* Tích hợp Cloudinary */}
               <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
-
-              <Divider plain><Text type="secondary" style={{ fontSize: '11px' }}>Hoặc tải từ thiết bị</Text></Divider>
-
-              <Upload
-                fileList={fileList}
-                onChange={({ fileList: newFileList }) => {
-                  setFileList(newFileList);
-                  if (newFileList.length === 0) setImageUrl('');
-                }}
-                beforeUpload={() => false}
-                maxCount={1}
-                onRemove={() => {
-                  setFileList([]);
-                  setImageUrl('');
-                }}
-              >
-                <Button icon={<UploadOutlined />}>Chọn file ảnh từ máy tính</Button>
-              </Upload>
-              
               {(imageUrl || fileList.length > 0) && (
                 <div style={{ marginTop: 8 }}>
                   <Text type="secondary" style={{ fontSize: '12px' }}>Xem trước:</Text>

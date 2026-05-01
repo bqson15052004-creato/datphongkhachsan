@@ -10,7 +10,8 @@ import {
   EditOutlined, 
   LockOutlined, 
   UnlockOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 import axiosClient from '../../services/axiosClient';
 import CloudinaryUpload from '../../components/common/CloudinaryUpload';
@@ -201,23 +202,36 @@ const PartnerRooms = () => {
         <Card 
           variant={false} 
           style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-          title={<Text strong style={{ fontSize: 16 }}>Danh sách loại phòng</Text>}
-          extra={
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => { 
-                set_editing_room(null); 
-                form.resetFields(); 
-                setImageUrl(''); // Reset ảnh khi thêm mới
-                set_is_modal_open(true); 
-              }}
-              style={{ borderRadius: 8 }}
-            >
-              Thêm loại phòng mới
-            </Button>
-          }
         >
+          {/* Phần điều khiển: Tìm kiếm và Thêm mới */}
+          <Row gutter={16} style={{ marginBottom: 20 }} justify="space-between">
+            <Col span={12}>
+              <Input 
+                placeholder="Tìm kiếm loại phòng..." 
+                prefix={<SearchOutlined />} 
+                onChange={e => setSearchText(e.target.value)} 
+                allowClear
+                size="large"
+                style={{ borderRadius: 8 }}
+              />
+            </Col>
+            <Col>
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => { 
+                  set_editing_room(null); 
+                  form.resetFields(); 
+                  setImageUrl(''); // Reset ảnh khi thêm mới
+                  set_is_modal_open(true); 
+                }} 
+                size="large"
+                style={{ borderRadius: 8, fontWeight: 500 }}
+              >
+                Thêm loại phòng mới
+              </Button>
+            </Col>
+          </Row>
           <Table 
             columns={columns} 
             dataSource={room_list}
@@ -249,13 +263,6 @@ const PartnerRooms = () => {
             {/* PHẦN CLOUDINARY UPDATE Ở ĐÂY */}
             <Form.Item label="Hình ảnh minh họa">
               <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
-              {imageUrl && (
-                <div style={{ marginTop: 15, textAlign: 'center', border: '1px dashed #d9d9d9', padding: '10px', borderRadius: '8px' }}>
-                  <img src={imageUrl} alt="preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px' }} />
-                  <br />
-                  <Button type="link" danger onClick={() => setImageUrl('')}>Xóa ảnh và chọn lại</Button>
-                </div>
-              )}
             </Form.Item>
 
             <Form.Item name="description" label="Mô tả" rules={[{ required: true, message: 'Nhập mô tả!' }]}>

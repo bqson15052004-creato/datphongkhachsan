@@ -283,27 +283,7 @@ const RoomNumbers = () => {
           </Form.Item>
 
           <Form.Item label="Hình ảnh phòng">
-            {/* Tích hợp Cloudinary */}
             <CloudinaryUpload onUploadSuccess={(url) => setImageUrl(url)} />
-            {imageUrl && <img src={imageUrl} alt="preview" style={{ width: 100, marginTop: 10, display: 'block' }} />}
-
-            <div style={{ marginTop: 10 }}>
-              <Text type="secondary">Hoặc tải trực tiếp (Base64):</Text>
-              <Upload
-                listType="picture-card"
-                fileList={fileList}
-                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-                beforeUpload={() => false}
-                maxCount={1}
-              >
-                {fileList.length < 1 && (
-                  <div>
-                    <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                  </div>
-                )}
-              </Upload>
-            </div>
           </Form.Item>
 
           <Form.Item name="status" label="Trạng thái sẵn sàng" valuePropName="checked">

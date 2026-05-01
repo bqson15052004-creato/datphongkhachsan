@@ -15,17 +15,18 @@ import { MOCK_USERS } from '../../constants/mockData.jsx';
 const { Title, Text } = Typography;
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [search_text, setSearchText] = useState('');
+  const [form] = Form.useForm();
   
-  // State cho modal
+  // --- STATE ---
+  const [users, setUsers] = useState([]);
+  const [search_text, setSearchText] = useState(''); // Đồng nhất dùng search_text
   const [is_modal_open, setIsModalOpen] = useState(false);
   const [selected_user, setSelectedUser] = useState(null);
   const [is_add_modal_open, setIsAddModalOpen] = useState(false);
-  const [form] = Form.useForm();
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; // Số dòng mỗi trang
-  // Khởi tạo dữ liệu
+  const pageSize = 8;
+
+  // --- LOGIC DỮ LIỆU (useEffect & LocalStorage) ---
   useEffect(() => {
     const database_data = JSON.parse(localStorage.getItem('SYSTEM_USERS'));
     
@@ -37,7 +38,7 @@ const UserManagement = () => {
         user_name: user.id || `user_${Math.random().toString(36).substr(2, 5)}`,
         full_name: user.full_name,
         user_role: user.role || 'customer',
-        is_root: user.role === 'admin' && user.email === 'admin@gmail.com', // Giả định admin gốc
+        is_root: user.role === 'admin' && user.email === 'admin@gmail.com',
         account_status: 'active',
         created_at: new Date().toISOString(),
         phone_number: user.phone || '0900 000 000',
@@ -52,6 +53,7 @@ const UserManagement = () => {
     setUsers(new_users);
   };
 
+  // --- HANDLERS (Xử lý sự kiện) ---
   const handle_toggle_status = (user) => {
     const action = user.account_status === 'active' ? 'KHÓA' : 'MỞ KHÓA';
     Modal.confirm({
@@ -70,7 +72,6 @@ const UserManagement = () => {
     });
   };
 
-  // Hàm xử lý thêm Admin Cấp 2 mới
   const handle_add_admin = (values) => {
     if (users.some(u => u.email_address === values.email)) {
       message.error('Email này đã tồn tại!');
@@ -102,6 +103,17 @@ const UserManagement = () => {
     form.resetFields();
   };
 
+  // --- FILTER LOGIC (Đã sửa lỗi và ép kiểu String) ---
+  const filtered_users = users.filter(u => {
+    const name = String(u.full_name || '').toLowerCase();
+    const email = String(u.email_address || '').toLowerCase();
+    const username = String(u.user_name || '').toLowerCase();
+    const search = search_text.toLowerCase();
+    
+    return name.includes(search) || email.includes(search) || username.includes(search);
+  });
+
+  // --- TABLE COLUMNS ---
   const columns = [
     {
       title: 'STT',
@@ -164,7 +176,6 @@ const UserManagement = () => {
           <Tooltip title="Xem chi tiết">
             <Button size="small" icon={<EyeOutlined />} onClick={() => { setSelectedUser(record); setIsModalOpen(true); }} />
           </Tooltip>
-          
           {!record.is_root && (
             <Tooltip title={record.account_status === 'active' ? "Khóa tài khoản" : "Mở khóa"}>
               <Button 
@@ -181,6 +192,7 @@ const UserManagement = () => {
     },
   ];
 
+  // --- RENDER ---
   return (
     <div style={{ padding: '20px', background: '#f5f7fa', minHeight: '100vh' }}>
       <Card variant={false} style={{ marginBottom: 20, borderRadius: 12 }}>
@@ -190,36 +202,41 @@ const UserManagement = () => {
           </Col>
         </Row>
       </Card>
+
       <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
-          <Space>
-            <Input
-              placeholder="Tìm tên, email hoặc tài khoản..."
-              prefix={<SearchOutlined />}
+        <Row gutter={16} style={{ marginBottom: 20 }} justify="space-between">
+          <Col span={12}>
+            <Input 
+              placeholder="Tìm tên, email hoặc tài khoản..." 
+              prefix={<SearchOutlined />} 
+              onChange={e => setSearchText(e.target.value)} 
               allowClear
-              style={{ width: 280, borderRadius: 8 }}
-              onChange={e => setSearchText(e.target.value)}
+              size="large"
+              style={{ borderRadius: 8 }}
             />
+          </Col>
+          <Col>
             <Button 
               type="primary" 
               icon={<PlusOutlined />} 
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => setIsAddModalOpen(true)} 
+              size="large"
               style={{ borderRadius: 8, fontWeight: 500 }}
             >
-              Thêm Admin
+              Thêm Admin mới
             </Button>
-          </Space>
-        </div>
+          </Col>
+        </Row>
 
         <Table
           columns={columns}
-          dataSource={users.filter(u => 
-            u.full_name?.toLowerCase().includes(search_text.toLowerCase()) || 
-            u.email_address?.toLowerCase().includes(search_text.toLowerCase()) ||
-            u.user_name?.toLowerCase().includes(search_text.toLowerCase())
-          )}
+          dataSource={filtered_users}
           rowKey="email_address"
-          pagination={{ pageSize: 8 }}
+          pagination={{ 
+            pageSize: pageSize,
+            current: currentPage,
+            onChange: (page) => setCurrentPage(page)
+          }}
         />
 
         {/* MODAL XEM CHI TIẾT */}
@@ -268,7 +285,6 @@ const UserManagement = () => {
             >
               <Input prefix={<IdcardOutlined />} placeholder="Ví dụ: admin_phong" />
             </Form.Item>
-
             <Form.Item 
               name="full_name" 
               label="Họ và tên" 
@@ -276,24 +292,26 @@ const UserManagement = () => {
             >
               <Input prefix={<UserOutlined />} placeholder="Nhập tên đầy đủ" />
             </Form.Item>
-
-            <Space style={{ display: 'flex' }} align="baseline">
-              <Form.Item 
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item 
                   name="email" 
                   label="Email" 
                   rules={[{ required: true, type: 'email', message: 'Email không hợp lệ!' }]}
-              >
+                >
                   <Input prefix={<MailOutlined />} placeholder="Email liên lạc" />
-              </Form.Item>
-              <Form.Item 
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
                   name="phone" 
                   label="Số điện thoại"
                   rules={[{ required: true, message: 'Vui lòng nhập SĐT!' }]}
-              >
+                >
                   <Input prefix={<PhoneOutlined />} placeholder="Số điện thoại" />
-              </Form.Item>
-            </Space>
-
+                </Form.Item>
+              </Col>
+            </Row>
             <Form.Item 
               name="password" 
               label="Mật khẩu" 
@@ -301,7 +319,6 @@ const UserManagement = () => {
             >
               <Input.Password prefix={<KeyOutlined />} placeholder="Nhập mật khẩu" />
             </Form.Item>
-
             <Form.Item 
               name="confirm" 
               label="Nhập lại mật khẩu" 
@@ -320,7 +337,6 @@ const UserManagement = () => {
             >
               <Input.Password prefix={<KeyOutlined />} placeholder="Xác nhận mật khẩu" />
             </Form.Item>
-            
             <Alert 
               message="Tài khoản này sẽ được cấp quyền Admin Cấp 2 theo mặc định hệ thống." 
               type="info" 

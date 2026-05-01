@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Button, Space, Typography, Tag, Modal, Form, Input, message, Tooltip, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, AppstoreOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, LockOutlined, UnlockOutlined, AppstoreOutlined, SearchOutlined } from '@ant-design/icons';
 
 // Đảm bảo file mockData.jsx đã được thêm status: 'active' như mình đã bàn
 import { HOTEL_TYPES } from '../../constants/mockData.jsx';
@@ -177,14 +177,43 @@ const AdminCategories = () => {
           </Col>
         </Row>
       </Card>
-      <Card
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKey(null); form.resetFields(); setIsModalVisible(true); }}>
-            Thêm loại khách sạn mới
-          </Button>
-        }
-      >
-        <Table columns={columns} dataSource={categories_list} rowKey="key" pagination={{ pageSize: 7 }} />
+      <Card>
+        {/* Thanh điều khiển: Tìm kiếm + Nút Thêm mới */}
+        <Row gutter={16} style={{ marginBottom: 20 }} justify="space-between">
+          <Col span={12}>
+            <Input 
+              placeholder="Tìm kiếm loại khách sạn..." 
+              prefix={<SearchOutlined />} 
+              onChange={e => setSearchText(e.target.value)} // Đảm bảo ông có state setSearchText
+              allowClear
+              size="large"
+              style={{ borderRadius: 8 }}
+            />
+          </Col>
+          <Col>
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              size="large"
+              style={{ borderRadius: 8, fontWeight: 500 }}
+              onClick={() => { 
+                setEditingKey(null); 
+                form.resetFields(); 
+                setIsModalVisible(true); 
+              }}
+            >
+              Thêm loại khách sạn mới
+            </Button>
+          </Col>
+        </Row>
+
+        {/* Bảng dữ liệu */}
+        <Table 
+          columns={columns} 
+          dataSource={categories_list} 
+          rowKey="key" 
+          pagination={{ pageSize: 7 }} 
+        />
       </Card>
 
       <Modal

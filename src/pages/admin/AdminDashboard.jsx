@@ -19,12 +19,16 @@ const AdminReports = () => {
   const [top_hotels, setTopHotels] = useState([]);
   const [report_summary, setReportSummary] = useState(null);
 
+  // SỬA LỖI TẠI ĐÂY: Khai báo biến ở phạm vi Component để phần return có thể đọc được
+  const currentMonth = dayjs().month() + 1; 
+
   useEffect(() => {
     // 1. Lấy dữ liệu gốc
     const now = dayjs();
     const currentYear = now.year();
-    const currentMonth = now.month() + 1;
-
+    // Biến currentMonth bên trong useEffect này chỉ dùng cho logic tính toán nội bộ
+    const monthInternal = now.month() + 1; 
+    
     const saved_revenue = localStorage.getItem('REVENUE_DATA');
     const saved_top_hotels = localStorage.getItem('TOP_HOTELS');
     const saved_summary = localStorage.getItem('REPORT_SUMMARY');
@@ -41,13 +45,11 @@ const AdminReports = () => {
 
     // 2. LOGIC TẠO DỮ LIỆU THEO NĂM
     const isCurrentYear = selectedYear === currentYear;
-    // Tạo factor để biến đổi dữ liệu giữa các năm cho sinh động
     const factor = isCurrentYear ? 1 : 0.6 + (Math.random() * 0.5);
 
-    // Bước A: Tính toán doanh thu và số lượng đơn đã scale theo factor
     const calculatedMonths = Array.from({ length: 12 }).map((_, index) => {
       const month = index + 1;
-      if (isCurrentYear && month > currentMonth) return null;
+      if (isCurrentYear && month > monthInternal) return null;
 
       const existingMonthData = baseRevenue[index];
       const revenue = existingMonthData 
@@ -66,7 +68,6 @@ const AdminReports = () => {
       };
     }).filter(Boolean);
 
-    // Bước B: Gắn trend_status bằng cách so sánh tháng hiện tại với tháng trước đó trong mảng đã tính
     const finalRevenueData = calculatedMonths.map((item, index) => {
       const prevRevenue = index > 0 ? calculatedMonths[index - 1].total_revenue : item.total_revenue;
       return {
@@ -75,7 +76,6 @@ const AdminReports = () => {
       };
     });
 
-    // 3. Cập nhật các danh sách khác
     const filteredTopHotels = baseTopHotels.map(item => ({
       ...item,
       revenue_value: item.revenue_value * factor,
@@ -123,12 +123,20 @@ const AdminReports = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card variant={false} hoverable style={{ borderRadius: '12px', borderLeft: '4px solid #52c41a' }}>
             <Statistic
-              title={<Space>Doanh thu tháng <Tooltip title="Tổng tiền sau khi trừ chiết khấu"><InfoCircleOutlined /></Tooltip></Space>}
-              value={report_summary.monthly_revenue}
+              title={
+                <Space>
+                  Doanh thu tháng {currentMonth}
+                  <Tooltip title="Tổng tiền sau khi trừ chiết khấu">
+                    <InfoCircleOutlined />
+                  </Tooltip>
+                </Space>
+              }
+              value={revenue_data.length > 0 ? revenue_data[revenue_data.length - 1].total_revenue : 0}
               formatter={(val) => <Text style={{ color: '#3f8600', fontSize: '24px', fontWeight: 'bold' }}>{format_currency(val)}</Text>}
             />
           </Card>
         </Col>
+        {/* ... giữ nguyên các phần Col khác của ông */}
         <Col xs={24} sm={12} lg={6}>
           <Card variant={false} hoverable style={{ borderRadius: '12px', borderLeft: '4px solid #1890ff' }}>
             <Statistic
@@ -162,8 +170,8 @@ const AdminReports = () => {
         </Col>
       </Row>
 
+      {/* Bảng dữ liệu phía dưới giữ nguyên như cũ */}
       <Row gutter={[16, 16]}>
-        {/* Bảng Doanh thu */}
         <Col xs={24} lg={15}>
           <Card title="Biểu đồ tăng trưởng doanh thu" variant={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <Table
@@ -194,8 +202,6 @@ const AdminReports = () => {
             />
           </Card>
         </Col>
-
-        {/* Khách sạn doanh thu cao nhất */}
         <Col xs={24} lg={9}>
           <Card title="Khách sạn doanh thu cao nhất theo từng năm" variant={false} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             {top_hotels.map((item, index) => (
@@ -209,7 +215,7 @@ const AdminReports = () => {
                     percent={item.occupancy_rate} 
                     showInfo={false}
                     strokeColor={index === 0 ? '#52c41a' : '#1890ff'}
-                    size={12}
+                    strokeWidth={12}
                   />
                 </Tooltip>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
