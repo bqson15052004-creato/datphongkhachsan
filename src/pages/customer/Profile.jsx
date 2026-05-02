@@ -46,6 +46,12 @@ const { Title, Text } = Typography;
 const Profile = () => {
   const [cookies, _, removeCookie] = useCookies(["user"]);
   const [user,setUser] = useState();
+  const [password, setPassword] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
+
 
   const navigate = useNavigate();
   const { message: antdMessage, modal: antdModal } = AntApp.useApp();
@@ -84,7 +90,6 @@ const Profile = () => {
         return antdMessage.error(myProfile.data.message);
       }
       setLoading(false);
-      console.log(loading)
       setUser(myProfile.data.account);
     }
     fetchApi();
@@ -138,6 +143,19 @@ const Profile = () => {
       },
     });
   };
+
+  const handleChangePassword = async() => {
+    if(!password.current_password || password.current_password === ""){
+      return antdMessage.error("Hãy nhập mật khẩu hiện tại");
+    }
+    if(password.new_password !== password.confirm_password){
+      return antdMessage.error("Mật khẩu xác nhận chưa khớp");
+    }
+    const response = await AccountApiClient.changePassword(user._id,password);
+    antdMessage.success(response.data.message);
+    setIsPasswordModalOpen(false);
+    
+  }
 
   const renderUserInfo = () => (
     <Card bordered={false} style={{ borderRadius: borderRadiusLG }}>
@@ -219,7 +237,7 @@ const Profile = () => {
   );
 
   return (
-    !loading && (
+    (!loading || user) && (
       <>
         <Layout
           style={{
@@ -382,16 +400,34 @@ const Profile = () => {
             title="Đổi mật khẩu"
             open={isPasswordModalOpen}
             onCancel={() => setIsPasswordModalOpen(false)}
-            onOk={() => setIsPasswordModalOpen(false)}
+            onOk={handleChangePassword}
           >
             <Form layout="vertical">
-              <Form.Item label="Mật khẩu hiện tại" required>
+              <Form.Item label="Mật khẩu hiện tại" required onChange={e => {
+                setPassword({
+                  ...password,
+                  current_password: e.target.value
+                })
+                
+              }}>
                 <Input.Password size="large" />
               </Form.Item>
-              <Form.Item label="Mật khẩu mới" required>
+              <Form.Item label="Mật khẩu mới" required onChange={e => {
+                setPassword({
+                  ...password,
+                  new_password: e.target.value
+                })
+                
+              }}>
                 <Input.Password size="large" />
               </Form.Item>
-              <Form.Item label="Xác nhận mật khẩu mới" required>
+              <Form.Item label="Xác nhận mật khẩu mới" required onChange={e => {
+                setPassword({
+                  ...password,
+                  confirm_password: e.target.value
+                })
+                
+              }}>
                 <Input.Password size="large" />
               </Form.Item>
             </Form>

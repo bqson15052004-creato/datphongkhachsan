@@ -23,5 +23,14 @@ export const AccountApiClient = {
       catch(error){
           throw new Error(error);
       }
+  },
+  changePassword: async function(id_user,password) {
+      try{
+        const res = await axios.post(API_CLIENT + `/account/change-password/${id_user}`,password);
+        return res;
+      }
+      catch(error){
+          throw new Error(error);
+      }
   }
 }
