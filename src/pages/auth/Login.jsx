@@ -5,7 +5,9 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../../contexts/AuthContext';
 import { MOCK_USERS } from '../../constants/mockData.jsx'; 
+import { useCookies } from "react-cookie"
 
+import { AuthApiClient } from '../../services/Client/apiClient.jsx';
 const { Title, Text } = Typography;
 
 const Login = () => {
@@ -14,78 +16,58 @@ const Login = () => {
   const { login } = useContext(AuthContext); 
   const { message: antdMessage } = AntApp.useApp();
   const [loading, setLoading] = useState(false);
+  const [cookies, setCookie] = useCookies();
 
   // Lấy trang trước đó từ location state (ví dụ từ trang Chi tiết khách sạn gửi sang)
-  const from = location.state?.from || null;
+  // const from = location.state?.from || null;
 
-  const handleNavigation = (role) => {
-    if (from) {
-      let targetPath = from;
+  const handleNavigation = (account) => {
+    antdMessage.success(`Chào mừng ${account.full_name} quay trở lại!`);
+    setCookie("user",account);
+    navigate("/")
+    // if (from) {
+    //   let targetPath = from;
 
-      // Nếu role là customer, mình sẽ lái hướng đi vào phân vùng /customer
-      if (role === 'customer') {
-        // Trường hợp 1: Nếu link cũ là /hotel/1 -> đổi thành /customer/hotel/1
-        if (from.startsWith('/hotel')) {
-          targetPath = `/customer${from}`;
-        } 
-        // Trường hợp 2: Nếu link cũ đã có tiền tố /guest/hotel/1 -> đổi thành /customer/hotel/1
-        else if (from.startsWith('/guest')) {
-          targetPath = from.replace('/guest', '/customer');
-        }
-      }
+    //   // Nếu role là customer, mình sẽ lái hướng đi vào phân vùng /customer
+    //   if (account.role === 'Khách hàng') {
+    //     // Trường hợp 1: Nếu link cũ là /hotel/1 -> đổi thành /customer/hotel/1
+    //     if (from.startsWith('/hotel')) {
+    //       targetPath = `/customer${from}`;
+    //     } 
+    //     // Trường hợp 2: Nếu link cũ đã có tiền tố /guest/hotel/1 -> đổi thành /customer/hotel/1
+    //     else if (from.startsWith('/guest')) {
+    //       targetPath = from.replace('/guest', '/customer');
+    //     }
+    //   }
 
-      console.log("Điều hướng về trang đích:", targetPath);
-      navigate(targetPath, { replace: true });
+    //   console.log("Điều hướng về trang đích:", targetPath);
+    //   navigate(targetPath, { replace: true });
 
-    } else {
-      // Luồng đăng nhập bình thường không qua nút Đặt phòng
-      const dashboardMap = {
-        admin: '/admin/dashboard',
-        partner: '/partner/dashboard',
-        customer: '/customer/home'
-      };
-      navigate(dashboardMap[role] || '/');
-    }
+    // } else {
+    //   // Luồng đăng nhập bình thường không qua nút Đặt phòng
+    //   const dashboardMap = {
+    //     admin: '/admin/dashboard',
+    //     partner: '/partner/dashboard',
+    //     customer: '/customer/home'
+    //   };
+    //   navigate(dashboardMap[account.role] || '/');
+    // }
   };
 
   const onFinish = async (values) => {
     setLoading(true);
-    const { account, password } = values;
-    try {
-      // 1. GỌI API THẬT
-      const response = await axiosClient.post('/accounts/login/', {
-        user_name: account.trim(),
-        password: password
-      });
-
-      // Cập nhật Context
-      login(response.user, { access: response.access });
-      antdMessage.success(`Chào mừng ${response.user?.full_name} quay trở lại!`);
-      
-      // Delay 100ms để AuthContext kịp lưu vào LocalStorage và Navbar nhận diện được State mới
-      setTimeout(() => handleNavigation(response.user?.role), 100);
-
-    } catch (error) {
-      console.warn("API Fail -> Switch to Mock Data");
-
-      // 2. FALLBACK SANG MOCK DATA
-      const mockUser = MOCK_USERS.find(
-        (u) => (u.email === account || u.user_name === account) && u.password === password
-      );
-
-      if (mockUser) {
-        login(mockUser, { access: `mock_token_${mockUser.role}` });
-        antdMessage.success(`Đăng nhập thành công!`);
-        
-        // Delay tương tự cho Mock Data
-        setTimeout(() => handleNavigation(mockUser.role), 100);
-      } else {
-        const errorMsg = error.response?.data?.detail || 'Tài khoản hoặc mật khẩu không chính xác!';
-        antdMessage.error(errorMsg);
+    const { email, password } = values;
+    // 1. GỌI API THẬT
+      const response = await AuthApiClient.login({ email, password });
+      console.log(response);
+      if(response.status !== 200){
+        return antdMessage.success("Lỗi hệ thống");
       }
-    } finally {
+      antdMessage.success(`Đăng nhập thành công!`);
+
+      // Delay 100ms để AuthContext kịp lưu vào LocalStorage và Navbar nhận diện được State mới
+      setTimeout(() => handleNavigation(response.data.account), 1000);
       setLoading(false);
-    }
   };
 
   return (
@@ -108,7 +90,7 @@ const Login = () => {
           requiredMark={false}
         >
           <Form.Item
-            name="account"
+            name="email"
             label="Tài khoản hoặc Email"
             rules={[{ required: true, message: 'Vui lòng nhập tài khoản!' }]}
           >

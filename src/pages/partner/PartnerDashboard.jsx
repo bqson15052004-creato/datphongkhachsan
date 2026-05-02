@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Statistic, Table, Tag, Typography, Spin, Space, Select } from 'antd';
-import { Column } from '@ant-design/plots';
+// import { Column } from '@ant-design/plots';
 import { 
   LineChartOutlined, 
   BarChartOutlined,
@@ -123,7 +123,7 @@ const PartnerDashboard = () => {
             {/* Biểu đồ xu hướng */}
             <Col span={24}>
               <Card title={<Space><BarChartOutlined />Biểu đồ xu hướng 12 tháng gần nhất</Space>} variant={false} style={{ borderRadius: 12 }}>
-                <div style={{ height: 350 }}><Column {...config} /></div>
+                <div style={{ height: 350 }}></div>
               </Card>
             </Col>
 
