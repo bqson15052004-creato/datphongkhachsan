@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Layout, Button, Dropdown, Avatar, Space, Typography, App as AntApp, Badge, Tooltip } from 'antd';
 import { 
   UserOutlined, 
@@ -20,9 +20,7 @@ const Navbar = () => {
   const { message } = AntApp.useApp();
   
   // Lấy trực tiếp user từ cookie
-  // const { user, logout } = useContext(AuthContext);
-  const [cookies, removeCookie] = useCookies(["user"]);
-
+  const [cookies, _, removeCookie] = useCookies(["user"]);
 
   const handle_logout = () => {
     removeCookie("user");
@@ -35,7 +33,7 @@ const Navbar = () => {
       key: 'profile',
       label: 'Hồ sơ cá nhân',
       icon: <UserOutlined />,
-      onClick: () => navigate('/customer/profile'),
+      onClick: () => navigate('/profile'),
     },
     { type: 'divider' },
     {
@@ -93,7 +91,6 @@ const Navbar = () => {
                 <Avatar 
                   style={{ backgroundColor: '#1890ff' }} 
                   src={cookies.user.avartar ? cookies.user.avartar : avartar} 
-                  // src="https://res.cloudinary.com/dcaf9udji/image/upload/v1776495613/uploads/y63la6momf6epnrbcyvx.jpg"
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                   <Text strong style={{ fontSize: '14px' }}>

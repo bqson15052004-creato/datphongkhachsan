@@ -7,7 +7,7 @@ import AuthContext from '../../contexts/AuthContext';
 import { MOCK_USERS } from '../../constants/mockData.jsx'; 
 import { useCookies } from "react-cookie"
 
-import { AuthApiClient } from '../../services/Client/apiClient.jsx';
+import { AuthApiClient } from '../../services/apiClient.jsx';
 const { Title, Text } = Typography;
 
 const Login = () => {
@@ -60,8 +60,9 @@ const Login = () => {
     // 1. GỌI API THẬT
       const response = await AuthApiClient.login({ email, password });
       console.log(response);
-      if(response.status !== 200){
-        return antdMessage.success("Lỗi hệ thống");
+      if(response.data.status >= 400){
+        setLoading(false);
+        return antdMessage.error(response.data.message);
       }
       antdMessage.success(`Đăng nhập thành công!`);
 
