@@ -9,6 +9,8 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../contexts/AuthContext';
+import { useCookies } from 'react-cookie';
+import avartar from "../../../public/avartar.jpg"
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
@@ -17,11 +19,13 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
   
-  // Lấy trực tiếp user từ Context
-  const { user, logout } = useContext(AuthContext);
+  // Lấy trực tiếp user từ cookie
+  // const { user, logout } = useContext(AuthContext);
+  const [cookies, removeCookie] = useCookies(["user"]);
+
 
   const handle_logout = () => {
-    logout();
+    removeCookie("user");
     message.success('Đã đăng xuất thành công!');
     navigate('/'); 
   };
@@ -49,7 +53,7 @@ const Navbar = () => {
       <div 
         className="logo" 
         style={logoStyle} 
-        onClick={() => navigate(user ? '/customer/home' : '/')}
+        onClick={() => navigate(cookies.user ? '/customer/home' : '/')}
       >
         <HomeOutlined style={{ fontSize: '24px', color: '#1890ff', marginRight: '8px' }} />
         <Title level={4} style={{ margin: 0, color: '#1890ff', letterSpacing: '0.5px' }}>
@@ -59,7 +63,7 @@ const Navbar = () => {
 
       {/* 2. RIGHT SECTION: LOGIN STATUS */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        {user ? (
+        {cookies.user ? (
           <Space size="large">
             {/* 1. Tin nhắn */}
             <Tooltip title="Tin nhắn">
@@ -88,15 +92,15 @@ const Navbar = () => {
               <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'all 0.3s' }} className="user-dropdown-hover">
                 <Avatar 
                   style={{ backgroundColor: '#1890ff' }} 
-                  icon={<UserOutlined />} 
-                  src={user.avatar} 
+                  src={cookies.user.avartar ? cookies.user.avartar : avartar} 
+                  // src="https://res.cloudinary.com/dcaf9udji/image/upload/v1776495613/uploads/y63la6momf6epnrbcyvx.jpg"
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                   <Text strong style={{ fontSize: '14px' }}>
-                    {user.full_name || user.user_name || 'Người dùng'}
+                    {cookies.user.full_name || cookies.user.user_name || 'Người dùng'}
                   </Text>
                   <Text type="secondary" style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 600 }}>
-                    {user.role || 'Thành viên'}
+                    {cookies.user.role || 'Thành viên'}
                   </Text>
                 </div>
               </Space>
