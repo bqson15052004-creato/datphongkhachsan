@@ -16,12 +16,17 @@ import {
   TagOutlined 
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useCookies } from 'react-cookie';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 const { confirm } = Modal;
 
 const PartnerLayout = () => {
+
+  const [cookies,_,removeCookie] = useCookies(["partner"]); 
+  const [partner,setPartner] = useState();
+
   const [collapsed, setCollapsed] = useState(false);
   
   // 1. Quản lý số lượng thông báo (Booking và Messages)
@@ -45,34 +50,34 @@ const PartnerLayout = () => {
 
   // 2. Kiểm tra quyền truy cập
   useEffect(() => {
-    if (!user || user.role !== 'partner') {
+    if (!cookies.partner) {
       message.error('Bạn không có quyền truy cập vùng đối tác!');
-      navigate('/'); 
+      navigate('/partner/login'); 
     }
-  }, [user, navigate, message]);
+  }, [cookies.partner, navigate, message]);
 
   // 3. Lắng nghe thay đổi dữ liệu từ localStorage (Real-time giả lập)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setNewBookingCount(parseInt(localStorage.getItem('pending_bookings_count')) || 0);
-      setNewMessageCount(parseInt(localStorage.getItem('unread_messages_count')) || 0);
-    };
+  // useEffect(() => {
+  //   const handleStorageChange = () => {
+  //     setNewBookingCount(parseInt(localStorage.getItem('pending_bookings_count')) || 0);
+  //     setNewMessageCount(parseInt(localStorage.getItem('unread_messages_count')) || 0);
+  //   };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  //   window.addEventListener('storage', handleStorageChange);
+  //   return () => window.removeEventListener('storage', handleStorageChange);
+  // }, []);
 
   // 4. Tự động xóa badge khi người dùng nhấn vào trang tương ứng
-  useEffect(() => {
-    if (location.pathname === '/partner/bookings') {
-      setNewBookingCount(0);
-      localStorage.setItem('pending_bookings_count', 0);
-    }
-    if (location.pathname === '/partner/messages') {
-      setNewMessageCount(0);
-      localStorage.setItem('unread_messages_count', 0);
-    }
-  }, [location.pathname]);
+  // useEffect(() => {
+  //   if (location.pathname === '/partner/bookings') {
+  //     setNewBookingCount(0);
+  //     localStorage.setItem('pending_bookings_count', 0);
+  //   }
+  //   if (location.pathname === '/partner/messages') {
+  //     setNewMessageCount(0);
+  //     localStorage.setItem('unread_messages_count', 0);
+  //   }
+  // }, [location.pathname]);
 
   const handle_logout = () => {
     confirm({
@@ -83,9 +88,10 @@ const PartnerLayout = () => {
       okType: 'danger',
       cancelText: 'Hủy',
       async onOk() {
-        sessionStorage.clear();
+        removeCookie("partner");
         message.success('Đã đăng xuất thành công!');
-        window.location.href = '/'; 
+        // navigate("/partner/login");
+        window.location.href = "/partner/login"
       },
     });
   };
@@ -204,15 +210,15 @@ const PartnerLayout = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '0 12px' }}>
               <div style={{ textAlign: 'right', lineHeight: '1.2' }}>
                 <Text strong style={{ display: 'block' }}>
-                  {user.business_name || user.full_name}
+                  {cookies.partner.full_name}
                 </Text>
                 <Text type="secondary" style={{ fontSize: '11px' }}>
-                  {user.role?.toUpperCase()}
+                  {cookies.partner.role?.toUpperCase()}
                 </Text>
               </div>
               <Avatar 
                 style={{ backgroundColor: '#1890ff' }} 
-                src={user.avatar} 
+                src={cookies.partner.avatar} 
                 icon={<UserOutlined />} 
               />
             </div>

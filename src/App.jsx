@@ -116,7 +116,7 @@ function App() {
               <Route path="/partner/register" element={<PartnerRegister />} />
 
               {/* PARTNER SYSTEM */}
-              <Route element={<ProtectedRoute allowedRoles={["partner"]} />}>
+              <Route>
                 <Route path="/partner" element={<PartnerLayout />}>
                   <Route
                     index

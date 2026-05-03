@@ -78,12 +78,12 @@ const Profile = () => {
   const [cloudinaryUrl, setCloudinaryUrl] = useState("");
 
   useEffect(() => {
-    if (!cookies.user) {
+    if (!cookies.id_user) {
       navigate("/login");
     };
 
     const fetchApi = async () => {
-      const myProfile = await AccountApiClient.myAccount(cookies.user._id);
+      const myProfile = await AccountApiClient.myAccount(cookies.id_user);
       console.log(myProfile)
       if(myProfile.status >= 400){
         setLoading(true);
@@ -93,7 +93,7 @@ const Profile = () => {
       setUser(myProfile.account);
     }
     fetchApi();
-  }, [cookies.user, navigate, antdMessage,loading]);
+  }, [cookies.id_user, navigate, antdMessage,loading]);
 
   const handleFileChange = ({ file }) => {
     if (file.status === "removed") {
@@ -138,7 +138,7 @@ const Profile = () => {
       okText: "Đăng xuất",
       okType: "danger",
       onOk: () => {
-        removeCookie("user");
+        removeCookie("id_user");
         navigate("/");
       },
     });

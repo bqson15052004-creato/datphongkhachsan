@@ -3,30 +3,49 @@ import { Form, Input, Button, Card, Typography, App as AntApp } from 'antd';
 import { LockOutlined, UserOutlined, ShopOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { MOCK_USERS } from '../../constants/mockData.jsx';
+import { AuthApiPartner } from '../../services/apiPartner.jsx';
+import { useCookies } from 'react-cookie';
 
 const { Title, Text } = Typography;
 
 const PartnerLogin = () => {
+  const [cookies,setCookie] = useCookies(["partner"]);
+
   const navigate = useNavigate();
   const { message } = AntApp.useApp();
 
-  const onFinish = (values) => {
-    const { account, password } = values;
 
-    const user = MOCK_USERS.find(
-      (u) => 
-        (u.email === account || u.user_name === account) && 
-        u.password === password && 
-        u.role === 'partner'
-    );
+  const handleNavigation = (account) => {
+    message.success(`Chào mừng đối tác ${account.full_name} quay trở lại`);
+    setCookie("partner",account);
+    navigate("/partner/dashboard");
+  }
+  const onFinish = async (values) => {
+    const { email, password } = values;
 
-    if (user) {
-      sessionStorage.setItem('user', JSON.stringify(user));
-      message.success('Đăng nhập Kênh Đối Tác thành công!');
-      navigate('/partner/dashboard');
-    } else {
-      message.error('Tài khoản hoặc mật khẩu không chính xác!');
+    const response = await AuthApiPartner.login({email, password});
+    if(response.status === 200){
+      message.success(response.message);
+      setTimeout(() => handleNavigation(response.account), 1000);
     }
+    else{
+      message.error(response.message);
+    }
+    // setCookie("partner",response.account);
+    // const user = MOCK_USERS.find(
+    //   (u) => 
+    //     (u.email === account || u.user_name === account) && 
+    //     u.password === password && 
+    //     u.role === 'partner'
+    // );
+
+    // if (user) {
+    //   sessionStorage.setItem('user', JSON.stringify(user));
+    //   message.success('Đăng nhập Kênh Đối Tác thành công!');
+    //   navigate('/partner/dashboard');
+    // } else {
+    //   message.error('Tài khoản hoặc mật khẩu không chính xác!');
+    // }
   };
 
   return (
@@ -40,7 +59,7 @@ const PartnerLogin = () => {
 
         <Form name="partner_login" onFinish={onFinish} layout="vertical" size="large">
           <Form.Item 
-            name="account" 
+            name="email" 
             label="Tài khoản hoặc Email" 
             rules={[{ required: true, message: 'Vui lòng nhập tài khoản hoặc email!' }]}
           >

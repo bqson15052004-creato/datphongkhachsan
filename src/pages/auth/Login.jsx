@@ -18,40 +18,12 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [cookies, setCookie] = useCookies();
 
-  // Lấy trang trước đó từ location state (ví dụ từ trang Chi tiết khách sạn gửi sang)
-  // const from = location.state?.from || null;
 
   const handleNavigation = (account) => {
     antdMessage.success(`Chào mừng ${account.full_name} quay trở lại!`);
     setCookie("user",account);
     navigate("/")
-    // if (from) {
-    //   let targetPath = from;
-
-    //   // Nếu role là customer, mình sẽ lái hướng đi vào phân vùng /customer
-    //   if (account.role === 'Khách hàng') {
-    //     // Trường hợp 1: Nếu link cũ là /hotel/1 -> đổi thành /customer/hotel/1
-    //     if (from.startsWith('/hotel')) {
-    //       targetPath = `/customer${from}`;
-    //     } 
-    //     // Trường hợp 2: Nếu link cũ đã có tiền tố /guest/hotel/1 -> đổi thành /customer/hotel/1
-    //     else if (from.startsWith('/guest')) {
-    //       targetPath = from.replace('/guest', '/customer');
-    //     }
-    //   }
-
-    //   console.log("Điều hướng về trang đích:", targetPath);
-    //   navigate(targetPath, { replace: true });
-
-    // } else {
-    //   // Luồng đăng nhập bình thường không qua nút Đặt phòng
-    //   const dashboardMap = {
-    //     admin: '/admin/dashboard',
-    //     partner: '/partner/dashboard',
-    //     customer: '/customer/home'
-    //   };
-    //   navigate(dashboardMap[account.role] || '/');
-    // }
+    
   };
 
   const onFinish = async (values) => {
