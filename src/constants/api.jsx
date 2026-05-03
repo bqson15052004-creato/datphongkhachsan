@@ -1,1 +1,0 @@
-export const API_CLIENT = "http://localhost:3000/api/v1/management-hotel"

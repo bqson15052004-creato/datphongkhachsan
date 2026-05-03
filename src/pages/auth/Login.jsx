@@ -60,14 +60,14 @@ const Login = () => {
     // 1. GỌI API THẬT
       const response = await AuthApiClient.login({ email, password });
       console.log(response);
-      if(response.data.status >= 400){
+      if(response.status >= 400){
         setLoading(false);
-        return antdMessage.error(response.data.message);
+        return antdMessage.error(response.message);
       }
       antdMessage.success(`Đăng nhập thành công!`);
 
       // Delay 100ms để AuthContext kịp lưu vào LocalStorage và Navbar nhận diện được State mới
-      setTimeout(() => handleNavigation(response.data.account), 1000);
+      setTimeout(() => handleNavigation(response.account), 1000);
       setLoading(false);
   };
 

@@ -3,6 +3,7 @@ import axiosClient from '../../services/axiosClient';
 import { Form, Input, Button, Card, Typography, App as AntApp } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined, MailOutlined, BorderOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { AuthApiClient } from '../../services/apiClient';
 
 const { Title, Text } = Typography;
 
@@ -23,8 +24,6 @@ const RegisterForm = () => {
     }
   }, [role, navigate]);
 
-  // Vì Partner đã bị đá đi ở trên, nên ở đây mặc định là customer
-  const finalRole = 'customer';
 
   const capitalize_words = (str) => {
     if (!str) return '';
@@ -36,27 +35,31 @@ const RegisterForm = () => {
     const normalized_fullname = capitalize_words(values.full_name);
 
     const payload = {
-      user_name: values.user_name.trim(), 
-      password: values.password,
       full_name: normalized_fullname,
       email: values.email.trim(),
       phone: values.phone.trim(),
-      role: finalRole,
-      note: values.note || ""
+      password: values.password,
+      confirm_password: values.confirm_password,
     };
 
     try {
-      const response = await axiosClient.post('/accounts/register/', payload);
-      if (response) {
-        message.success(`Đăng ký tài khoản Khách hàng thành công!`);
-        navigate('/login');
+      const response = await AuthApiClient.register(payload);
+      console.log(response);
+      if(response.status === 201){
+        message.success(response.message);
+        setLoading(false);
+        navigate("/login");
+        return;
+      }
+      if(response.status >= 400){
+        message.error(response.message);
+        setLoading(false);
+        return;
       }
     } catch (error) {
-      const errorData = error.response?.data;
-      message.error(errorData && typeof errorData === 'object' ? String(Object.values(errorData)[0]) : 'Lỗi kết nối server!');
-    } finally {
-      setLoading(false);
-    }
+      throw new Error(error);
+      // message.error(errorData && typeof errorData === 'object' ? String(Object.values(errorData)[0]) : 'Lỗi kết nối server!');
+    } 
   };
 
   return (
@@ -68,9 +71,6 @@ const RegisterForm = () => {
         </div>
 
         <Form form={form} name="register" onFinish={onFinish} layout="vertical" size="large" requiredMark={false}>
-          <Form.Item label="Tài khoản" name="user_name" rules={[{ required: true, message: 'Vui lòng nhập tài khoản!' }, { min: 4, message: 'Tối thiểu 4 ký tự!' }]}>
-            <Input prefix={<BorderOutlined style={{ color: '#bfbfbf' }} />} placeholder="Tên đăng nhập" />
-          </Form.Item>
 
           <Form.Item label="Họ và tên" name="full_name" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}>
             <Input 
@@ -92,7 +92,7 @@ const RegisterForm = () => {
             <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} />
           </Form.Item>
 
-          <Form.Item label="Xác nhận mật khẩu" name="confirm" dependencies={['password']} rules={[{ required: true, message: 'Vui lòng xác nhận!' }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue('password') === value) return Promise.resolve(); return Promise.reject(new Error('Mật khẩu không khớp!')); } })]}>
+          <Form.Item label="Xác nhận mật khẩu" name="confirm_password" dependencies={['password']} rules={[{ required: true, message: 'Vui lòng xác nhận!' }, ({ getFieldValue }) => ({ validator(_, value) { if (!value || getFieldValue('password') === value) return Promise.resolve(); return Promise.reject(new Error('Mật khẩu không khớp!')); } })]}>
             <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} />
           </Form.Item>
 

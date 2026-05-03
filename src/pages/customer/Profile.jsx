@@ -85,12 +85,12 @@ const Profile = () => {
     const fetchApi = async () => {
       const myProfile = await AccountApiClient.myAccount(cookies.user._id);
       console.log(myProfile)
-      if(myProfile.data.status >= 400){
+      if(myProfile.status >= 400){
         setLoading(true);
-        return antdMessage.error(myProfile.data.message);
+        return antdMessage.error(myProfile.message);
       }
       setLoading(false);
-      setUser(myProfile.data.account);
+      setUser(myProfile.account);
     }
     fetchApi();
   }, [cookies.user, navigate, antdMessage,loading]);
@@ -152,7 +152,7 @@ const Profile = () => {
       return antdMessage.error("Mật khẩu xác nhận chưa khớp");
     }
     const response = await AccountApiClient.changePassword(user._id,password);
-    antdMessage.success(response.data.message);
+    antdMessage.success(response.message);
     setIsPasswordModalOpen(false);
     
   }
